@@ -1,0 +1,87 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --paper-color: #fdfbf7;
+  --ink-color: #2d2d2d;
+  --pencil-gray: #555;
+  --grid-color: #e5e5e5;
+}
+
+body {
+  font-family: 'Patrick Hand', cursive;
+  background-color: var(--paper-color);
+  color: var(--ink-color);
+  background-image: radial-gradient(var(--grid-color) 1px, transparent 1px);
+  background-size: 20px 20px;
+  overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  margin: 0;
+}
+
+app-root {
+  display: block;
+  width: 100%;
+  min-height: 100vh;
+}
+
+h1, h2, h3, .marker-font {
+  font-family: 'Permanent Marker', cursive;
+}
+
+/* Doodle Utility Classes */
+.doodle-border {
+  border: 2px solid var(--ink-color);
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  transition: all 0.2s ease-in-out;
+}
+
+.doodle-btn {
+  background: var(--paper-color);
+  color: var(--ink-color);
+  border: 2px solid var(--ink-color);
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  padding: 0.5rem 1.5rem;
+  font-size: 1.25rem;
+  cursor: pointer;
+  box-shadow: 2px 2px 0px rgba(0,0,0,0.1);
+  transition: transform 0.1s;
+  font-family: 'Patrick Hand', cursive;
+}
+.doodle-btn:hover {
+  transform: scale(1.05) rotate(-1deg);
+  box-shadow: 3px 3px 0px rgba(0,0,0,0.2);
+}
+.doodle-btn:active {
+  transform: scale(0.95);
+}
+
+.doodle-input {
+  background: transparent;
+  border: none;
+  border-bottom: 2px dashed var(--pencil-gray);
+  font-family: 'Patrick Hand', cursive;
+  font-size: 1.2rem;
+  color: var(--ink-color);
+  outline: none;
+  padding: 4px;
+  width: 100%;
+}
+.doodle-input:focus {
+  border-bottom: 2px solid var(--ink-color);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 10px;
+  border: 2px solid var(--paper-color);
+}
