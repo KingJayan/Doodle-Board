@@ -7,8 +7,7 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [angular()],
     define: {
-      'process.env.API_KEY': JSON.stringify(env.API_KEY),
-      'process.env': {}
+      'process.env.API_KEY': JSON.stringify(env.API_KEY)
     }
   };
 });
