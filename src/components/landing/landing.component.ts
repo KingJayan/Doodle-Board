@@ -1,9 +1,10 @@
-
-import { Component, output, signal } from '@angular/core';
+import { Component, Output, EventEmitter, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-landing',
   standalone: true,
+  imports: [CommonModule],
   template: `
     <div 
       class="min-h-screen flex flex-col md:flex-row items-center justify-center p-8 gap-12 bg-pattern overflow-hidden"
@@ -74,7 +75,7 @@ import { Component, output, signal } from '@angular/core';
   `]
 })
 export class LandingComponent {
-  enter = output<void>();
+  @Output() enter = new EventEmitter<void>();
   isExiting = signal(false);
 
   startExit() {
