@@ -14,12 +14,11 @@
     "@angular/core": "^18.2.0",
     "@angular/forms": "^18.2.0",
     "@angular/platform-browser": "^18.2.0",
-    "@google/genai": "^0.0.2",
+    "@google/genai": "*",
     "js-yaml": "^4.1.0",
     "jszip": "^3.10.1",
     "rxjs": "~7.8.0",
-    "tslib": "^2.3.0",
-    "zone.js": "~0.14.10"
+    "tslib": "^2.3.0"
   },
   "devDependencies": {
     "@analogjs/vite-plugin-angular": "^1.12.0",
