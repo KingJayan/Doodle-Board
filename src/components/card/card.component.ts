@@ -1,5 +1,4 @@
-
-import { Component, input, output, computed, signal, ChangeDetectionStrategy, inject, OnDestroy } from '@angular/core';
+import { Component, input, Output, EventEmitter, computed, signal, ChangeDetectionStrategy, inject, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Card, BoardService } from '../../services/board.service';
 import { ToastService } from '../../services/toast.service';
@@ -300,12 +299,12 @@ export class CardComponent implements OnDestroy {
   card = input.required<Card>();
   searchQuery = input<string>('');
 
-  update = output<Card>();
-  delete = output<string>();
-  expand = output<Card>();
-  tagClick = output<string>();
-  stickerToggle = output<string>(); 
-  pinToggle = output<void>();
+  @Output() update = new EventEmitter<Card>();
+  @Output() delete = new EventEmitter<string>();
+  @Output() expand = new EventEmitter<Card>();
+  @Output() tagClick = new EventEmitter<string>();
+  @Output() stickerToggle = new EventEmitter<string>(); 
+  @Output() pinToggle = new EventEmitter<void>();
 
   isDeleting = signal(false);
   isEditing = false;
