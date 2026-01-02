@@ -1,5 +1,4 @@
-
-import { Component, inject, signal, computed, output, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, Output, EventEmitter, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BoardService, Card, Folder } from '../../services/board.service';
@@ -509,7 +508,7 @@ export class BoardComponent implements OnInit {
   toastService = inject(ToastService);
   themeService = inject(ThemeService);
   
-  goHome = output<void>();
+  @Output() goHome = new EventEmitter<void>();
 
   searchQuery = signal('');
   activeTag = signal<string | null>(null);
