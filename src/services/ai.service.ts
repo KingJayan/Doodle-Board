@@ -1,4 +1,3 @@
-
 import { Injectable } from '@angular/core';
 import { GoogleGenAI, Type } from '@google/genai';
 
@@ -9,7 +8,7 @@ export class AiService {
   private ai: GoogleGenAI;
 
   constructor() {
-    this.ai = new GoogleGenAI({ apiKey: process.env['API_KEY'] || '' });
+    this.ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
   }
 
   async brainstormCard(topic: string): Promise<{ title: string; content: string; tags: string[] }> {
@@ -45,7 +44,7 @@ export class AiService {
       console.error('AI Error:', error);
       return {
         title: 'Oops!',
-        content: 'The creativity genie is sleeping. Try again later.',
+        content: 'The genie is sleeping. Try again later.',
         tags: ['error', 'try-again']
       };
     }
@@ -55,8 +54,8 @@ export class AiService {
     try {
       let prompt = '';
       if (mode === 'fix') prompt = 'Fix grammar and spelling. Keep the formatting markdown.';
-      if (mode === 'expand') prompt = 'Expand on this thought with 1-2 sentences. Keep it informal.';
-      if (mode === 'tone') prompt = 'Rewrite this to sound more enthusiastic and playful.';
+      if (mode === 'expand') prompt = 'Expand on this thought with 1-2 sentences. Keep the same tone but clean it up.';
+      if (mode === 'tone') prompt = 'Rewrite this to improve the tone on the respective input, based on the context.';
 
       const response = await this.ai.models.generateContent({
         model: 'gemini-2.5-flash',
