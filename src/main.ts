@@ -1,11 +1,12 @@
-import 'zone.js';
 import { bootstrapApplication } from '@angular/platform-browser';
-import { provideAnimations } from '@angular/platform-browser/animations';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { AppComponent } from './app.component';
 import './styles.css';
 
 bootstrapApplication(AppComponent, {
   providers: [
-    provideAnimations()
+    provideAnimationsAsync(),
+    provideZonelessChangeDetection()
   ]
 }).catch((err) => console.error(err));
