@@ -1,12 +1,10 @@
-import { bootstrapApplication } from '@angular/platform-browser';
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-import { provideZonelessChangeDetection } from '@angular/core';
-import { AppComponent } from './app.component';
-import './styles.css';
+import { defineConfig } from 'vite';
+import angular from '@analogjs/vite-plugin-angular';
 
-bootstrapApplication(AppComponent, {
-  providers: [
-    provideAnimationsAsync(),
-    provideZonelessChangeDetection()
-  ]
-}).catch((err) => console.error(err));
+export default defineConfig(({ mode }) => {
+  return {
+    plugins: [angular()],
+    define: {
+    }
+  };
+});
