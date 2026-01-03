@@ -16,7 +16,7 @@
               "base": "./dist",
               "browser": "."
             },
-            "browser": "index.tsx",
+            "polyfills": [],
             "tsConfig": "tsconfig.json"
           },
           "configurations": {
