@@ -8,7 +8,7 @@ export default defineConfig(({ mode }) => {
     plugins: [angular()],
     build: {
       target: 'esnext',
-      minify: 'esbuild',
+      minify: 'terser',
       sourcemap: false,
       rollupOptions: {
         output: {

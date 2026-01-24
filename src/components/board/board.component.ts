@@ -564,20 +564,20 @@ export class BoardComponent implements OnInit {
     const tag = this.activeTag();
     const folder = this.activeFolderId();
 
-    const filtered = cards.filter(card => {
+    const filtered = cards.filter((card: Card) => {
       if (card.folderId !== folder) return false;
 
       const matchesSearch = 
         card.title.toLowerCase().includes(query) || 
         card.content.toLowerCase().includes(query) ||
-        card.tags.some(t => t.toLowerCase().includes(query));
+        card.tags.some((t: string) => t.toLowerCase().includes(query));
       
       const matchesTag = tag ? card.tags.includes(tag) : true;
 
       return matchesSearch && matchesTag;
     });
 
-    return filtered.sort((a, b) => {
+    return filtered.sort((a: Card, b: Card) => {
         if (a.isPinned && !b.isPinned) return -1;
         if (!a.isPinned && b.isPinned) return 1;
         return 0;
@@ -585,7 +585,7 @@ export class BoardComponent implements OnInit {
   });
 
   getCurrentFolderName() {
-    return this.boardService.folders().find(f => f.id === this.activeFolderId())?.name || 'Folder';
+    return this.boardService.folders().find((f: Folder) => f.id === this.activeFolderId())?.name || 'Folder';
   }
 
   createFolder(name: string) {
@@ -732,7 +732,7 @@ export class BoardComponent implements OnInit {
       const zip = new JSZip();
       const cards = this.filteredCards();
 
-      cards.forEach(card => {
+      cards.forEach((card: Card) => {
         const filename = `${card.title.replace(/[^a-z0-9]/gi, '_') || 'untitled'}-${card.id.substring(0,4)}.md`;
         const content = this.createMarkdownContent(card);
         zip.file(filename, content);
