@@ -6,6 +6,16 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [angular()],
+    build: {
+      target: 'esnext',
+      minify: 'esbuild',
+      sourcemap: false,
+      rollupOptions: {
+        output: {
+          manualChunks: undefined
+        }
+      }
+    },
     define: {
       'process.env.API_KEY': JSON.stringify(env.API_KEY),
       'process.env': JSON.stringify({}) 
