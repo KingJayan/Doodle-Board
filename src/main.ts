@@ -1,10 +1,7 @@
-import { defineConfig } from 'vite';
-import angular from '@analogjs/vite-plugin-angular';
+import { bootstrapApplication } from '@angular/platform-browser';
+import { AppComponent } from './app.component';
+import 'zone.js';
 
-export default defineConfig(({ mode }) => {
-  return {
-    plugins: [angular()],
-    define: {
-    }
-  };
-});
+bootstrapApplication(AppComponent, {
+  providers: []
+}).catch((err) => console.error(err));

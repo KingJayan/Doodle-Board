@@ -61,7 +61,10 @@ export default defineConfig(({ mode }) => {
                 resolve: () => '',
                 dirname: () => '',
                 basename: () => '',
-                extname: () => ''
+                dirname: () => '',
+                basename: () => '',
+                extname: () => '',
+                normalize: () => ''
               };
               const pathStub = {
                 join: () => '',
@@ -143,7 +146,7 @@ export default defineConfig(({ mode }) => {
     },
     define: {
       'process.env.API_KEY': JSON.stringify(env.API_KEY),
-      'process.env': JSON.stringify({}) 
+      'process.env': JSON.stringify({})
     }
   };
 });
