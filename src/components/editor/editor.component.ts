@@ -50,22 +50,24 @@ import { IoService } from '../../services/io.service';
           </div>
 
           <!-- ai polish -->
-          <div class="flex gap-1 items-center">
-            <button
-              (click)="polishContent('fix')"
-              class="flex items-center gap-1 px-2 py-1 rounded bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 text-xs font-bold"
-              [disabled]="isPolishing()"
-            >
-              ✨ Fix Grammar
-            </button>
-            <button
-              (click)="polishContent('expand')"
-              class="flex items-center gap-1 px-2 py-1 rounded bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 text-xs font-bold"
-              [disabled]="isPolishing()"
-            >
-              📝 Expand
-            </button>
-          </div>
+          @if (aiAvailable) {
+            <div class="flex gap-1 items-center">
+              <button
+                (click)="polishContent('fix')"
+                class="flex items-center gap-1 px-2 py-1 rounded bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 text-xs font-bold"
+                [disabled]="isPolishing()"
+              >
+                ✨ Fix Grammar
+              </button>
+              <button
+                (click)="polishContent('expand')"
+                class="flex items-center gap-1 px-2 py-1 rounded bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 text-xs font-bold"
+                [disabled]="isPolishing()"
+              >
+                📝 Expand
+              </button>
+            </div>
+          }
 
           <div class="ml-auto text-xs text-gray-400 hidden sm:block">Markdown Enabled</div>
         </div>
@@ -124,6 +126,7 @@ import { IoService } from '../../services/io.service';
 export class EditorComponent implements OnChanges {
   private boardService = inject(BoardService);
   private aiService = inject(AiService);
+  aiAvailable = this.aiService.isAvailable;
   private toastService = inject(ToastService);
   private ioService = inject(IoService);
 

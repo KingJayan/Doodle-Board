@@ -5,19 +5,25 @@ import { GoogleGenAI, Type } from '@google/genai';
   providedIn: 'root'
 })
 export class AiService {
-  private ai: GoogleGenAI;
+  private ai: GoogleGenAI | null = null;
+  readonly isAvailable: boolean;
 
   constructor() {
-    this.ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+    const apiKey = process.env.API_KEY;
+    this.isAvailable = !!apiKey;
+    if (apiKey) {
+      this.ai = new GoogleGenAI({ apiKey });
+    }
   }
 
   async brainstormCard(topic: string): Promise<{ title: string; content: string; tags: string[] }> {
+    if (!this.ai) return { title: 'No AI', content: 'Add an API key to enable AI features.', tags: ['ai-disabled'] };
     if (!topic) topic = 'Something random and interesting';
 
     try {
       const response = await this.ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: `Create a creative sticky note about: "${topic}". 
+        contents: `Create a creative sticky note about: "${topic}".
         Return a JSON object with 'title' (max 5 words), 'content' (max 20 words), and 'tags' (array of 1-3 strings).
         Keep the tone playful and handwritten.`,
         config: {
@@ -27,7 +33,7 @@ export class AiService {
             properties: {
               title: { type: Type.STRING },
               content: { type: Type.STRING },
-              tags: { 
+              tags: {
                 type: Type.ARRAY,
                 items: { type: Type.STRING }
               }
@@ -51,6 +57,8 @@ export class AiService {
   }
 
   async polishText(text: string, mode: 'fix' | 'expand' | 'tone'): Promise<string> {
+    if (!this.ai) throw new Error('AI not available');
+
     try {
       let prompt = '';
       if (mode === 'fix') prompt = 'Fix grammar and spelling. Keep the formatting markdown.';
