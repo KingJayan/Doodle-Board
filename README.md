@@ -46,7 +46,7 @@ VITE_API_KEY=your_google_ai_api_key_here
 
 4. run the dev server:
 ```bash
-bun dev # localhost:5173
+bun dev # http://localhost:5173
 ```
 
 ### building for prod
@@ -65,4 +65,4 @@ bun run build # outputs to dist
 
 ## License
 
-+ MIT
++ GNU GPL-3.0

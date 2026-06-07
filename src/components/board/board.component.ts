@@ -76,7 +76,9 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
             <button (click)="helpPanelOpen.set(true)" class="doodle-btn px-3 text-lg" title="Help">❓</button>
             <button (click)="settingsPanelOpen.set(true)" class="doodle-btn px-2 text-xl" title="Settings">⚙️</button>
             <button (click)="sharePanelOpen.set(true)" class="doodle-btn text-base" title="Backup & Share">📤 Share</button>
-            <button (click)="aiPanelOpen.set(!aiPanelOpen())" class="doodle-btn bg-[#e1f5fe] text-black text-base" title="Ask the Genie">✨ Genie</button>
+            @if (aiAvailable) {
+              <button (click)="aiPanelOpen.set(!aiPanelOpen())" class="doodle-btn bg-[#e1f5fe] text-black text-base" title="Ask the Genie">✨ Genie</button>
+            }
             <button (click)="createNewCard()" class="doodle-btn bg-[#c8e6c9] text-black font-bold text-base">+ New Note</button>
           </div>
         </div>
@@ -279,10 +281,17 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
               </div>
               <div class="flex gap-4 items-start">
                 <div class="text-4xl">✨</div>
-                <div>
-                  <h3 class="font-bold text-xl">Genie Powers</h3>
-                  <p>Use the <strong>Genie</strong> button to brainstorm topics. Inside the editor, use the <strong>Magic Pencil</strong> to fix grammar!</p>
-                </div>
+                @if (aiAvailable) {
+                  <div>
+                    <h3 class="font-bold text-xl">Genie Powers</h3>
+                    <p>Use the <strong>Genie</strong> button to brainstorm topics. Inside the editor, use the <strong>Magic Pencil</strong> to fix grammar!</p>
+                  </div>
+                } @else {
+                  <div>
+                    <h3 class="font-bold text-xl">AI Features Disabled</h3>
+                    <p>Set an <strong>API_KEY</strong> environment variable to enable Genie brainstorm and Magic Pencil polish.</p>
+                  </div>
+                }
               </div>
             </div>
             <div class="mt-8 text-center">
@@ -352,6 +361,7 @@ export class BoardComponent implements OnInit {
   boardService = inject(BoardService);
   themeService = inject(ThemeService);
   private aiService = inject(AiService);
+  aiAvailable = this.aiService.isAvailable;
   private toastService = inject(ToastService);
   private ioService = inject(IoService);
 
