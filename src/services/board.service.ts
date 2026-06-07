@@ -9,6 +9,7 @@ export class BoardService {
   readonly cards = signal<Card[]>([]);
   readonly folders = signal<Folder[]>([]);
   readonly saveStatus = signal<string>('Saved');
+  private saveTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
     this.loadInitialData();
@@ -75,16 +76,20 @@ export class BoardService {
   }
 
   private saveToStorage() {
+    if (this.saveTimer) clearTimeout(this.saveTimer);
     this.saveStatus.set('Saving...');
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.cards()));
-    localStorage.setItem(this.FOLDERS_KEY, JSON.stringify(this.folders()));
-    setTimeout(() => this.saveStatus.set('Saved'), 800);
+    this.saveTimer = setTimeout(() => {
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.cards()));
+      localStorage.setItem(this.FOLDERS_KEY, JSON.stringify(this.folders()));
+      this.saveStatus.set('Saved');
+      this.saveTimer = null;
+    }, 500);
   }
 
   // Folder actions
 
   addFolder(name: string): string {
-    const newFolder: Folder = { id: Math.random().toString(36).substring(2, 9), name };
+    const newFolder: Folder = { id: crypto.randomUUID(), name };
     this.folders.update(f => [...f, newFolder]);
     this.saveToStorage();
     return newFolder.id;
@@ -109,7 +114,7 @@ export class BoardService {
   addCard(cardData: Partial<Card> & { title: string; content: string; tags: string[] }) {
     const randomColor = CARD_COLORS[Math.floor(Math.random() * CARD_COLORS.length)];
     const newCard: Card = {
-      id: cardData.id ?? Math.random().toString(36).substring(2, 9),
+      id: cardData.id ?? crypto.randomUUID(),
       folderId: cardData.folderId ?? 'default',
       title: cardData.title,
       content: cardData.content,
