@@ -61,7 +61,7 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
             </div>
 
             <div class="text-xs font-mono opacity-60 w-16 text-center hidden md:block">
-              {{ boardService.saveStatus() }}
+              {{ saveStatus() }}
             </div>
 
             @if (activeTag()) {
@@ -97,7 +97,7 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
           <h3 class="marker-font text-xl border-b-2 border-dashed border-gray-400 pb-2 mb-2">📂 Folders</h3>
 
           <div class="flex-grow overflow-y-auto flex flex-col gap-2">
-            @for (folder of boardService.folders(); track folder.id) {
+            @for (folder of folders(); track folder.id) {
               <div
                 class="flex items-center gap-2 p-2 rounded cursor-pointer transition-colors group relative"
                 [class.bg-yellow-100]="activeFolderId() === folder.id"
@@ -106,7 +106,18 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
                 (click)="activeFolderId.set(folder.id); sidebarOpen.set(false)"
               >
                 <span class="text-xl">📁</span>
-                <span class="truncate flex-grow">{{ folder.name }}</span>
+                @if (renamingFolderId() === folder.id) {
+                  <input
+                    class="doodle-input text-sm flex-grow"
+                    [value]="folder.name"
+                    (keyup.enter)="commitRename($any($event.target).value, folder.id)"
+                    (keyup.escape)="renamingFolderId.set(null)"
+                    (blur)="commitRename($any($event.target).value, folder.id)"
+                    (click)="$event.stopPropagation()"
+                  >
+                } @else {
+                  <span class="truncate flex-grow" (dblclick)="renamingFolderId.set(folder.id); $event.stopPropagation()">{{ folder.name }}</span>
+                }
                 @if (folder.id !== 'default') {
                   <button
                     class="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 px-1"
@@ -188,12 +199,12 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
                 <app-card
                   [card]="card"
                   [searchQuery]="searchQuery()"
-                  (update)="boardService.updateCard($event)"
+                  (update)="updateCard($event)"
                   (delete)="handleDeleteCard($event)"
                   (expand)="editingCard.set($event)"
                   (tagClick)="activeTag.set($event)"
-                  (stickerToggle)="boardService.toggleSticker(card.id, $event)"
-                  (pinToggle)="boardService.togglePin(card.id)"
+                  (stickerToggle)="toggleSticker(card.id, $event)"
+                  (pinToggle)="togglePin(card.id)"
                 ></app-card>
               </div>
             }
@@ -241,12 +252,18 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
   `]
 })
 export class BoardComponent implements OnInit {
-  boardService = inject(BoardService);
+  private boardService = inject(BoardService);
   themeService = inject(ThemeService);
   router = inject(Router);
   private aiService = inject(AiService);
   aiAvailable = this.aiService.isAvailable;
   private toastService = inject(ToastService);
+
+  saveStatus = this.boardService.saveStatus;
+  folders = this.boardService.folders;
+  updateCard = (card: Card) => this.boardService.updateCard(card);
+  toggleSticker = (id: string, sticker: string) => this.boardService.toggleSticker(id, sticker);
+  togglePin = (id: string) => this.boardService.togglePin(id);
 
   searchQuery = signal('');
   activeTag = signal<string | null>(null);
@@ -260,6 +277,7 @@ export class BoardComponent implements OnInit {
   isGenerating = signal(false);
 
   editingCard = signal<Card | null>(null);
+  renamingFolderId = signal<string | null>(null);
 
   doodles: { x: number; y: number; rot: number; scale: number; path: string }[] = [];
   private draggedCardId: string | null = null;
@@ -318,6 +336,11 @@ export class BoardComponent implements OnInit {
     const id = this.boardService.addFolder(name);
     this.activeFolderId.set(id);
     this.toastService.show(`Created folder "${name}"`, 'success');
+  }
+
+  commitRename(name: string, id: string) {
+    if (name.trim()) this.boardService.renameFolder(id, name.trim());
+    this.renamingFolderId.set(null);
   }
 
   deleteFolder(id: string, event: Event) {

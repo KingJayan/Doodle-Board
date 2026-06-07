@@ -63,7 +63,7 @@ export class AiService {
       let prompt = '';
       if (mode === 'fix') prompt = 'Fix grammar and spelling. Keep the formatting markdown.';
       if (mode === 'expand') prompt = 'Expand on this thought with 1-2 sentences. Keep the same tone but clean it up.';
-      if (mode === 'tone') prompt = 'Rewrite this to improve the tone on the respective input, based on the context.';
+      if (mode === 'tone') prompt = 'Rewrite this to sound more clear, confident, and engaging. Keep the meaning intact.';
 
       const response = await this.ai.models.generateContent({
         model: 'gemini-2.5-flash',
