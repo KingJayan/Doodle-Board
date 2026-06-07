@@ -1,42 +1,15 @@
+import { Injectable, signal } from '@angular/core';
+import { Card, Folder, CARD_COLORS } from '../models/card.model';
 
-import { Injectable, signal, computed } from '@angular/core';
-
-export interface Folder {
-  id: string;
-  name: string;
-}
-
-export interface Card {
-  id: string;
-  folderId: string;
-  title: string;
-  content: string;
-  tags: string[];
-  color: string;
-  rotation: number;
-  stickers: string[];
-  isPinned: boolean;
-  updatedAt: number;
-  width?: number;
-  height?: number;
-  isMinimized?: boolean;
-}
-
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class BoardService {
   private readonly STORAGE_KEY = 'doodle_board_data';
   private readonly FOLDERS_KEY = 'doodle_board_folders';
-  
-  private cardsSignal = signal<Card[]>([]);
-  private foldersSignal = signal<Folder[]>([]);
-  
-  readonly cards = computed(() => this.cardsSignal());
-  readonly folders = computed(() => this.foldersSignal());
-  
+
+  readonly cards = signal<Card[]>([]);
+  readonly folders = signal<Folder[]>([]);
   readonly saveStatus = signal<string>('Saved');
-  
+
   constructor() {
     this.loadInitialData();
   }
@@ -45,28 +18,25 @@ export class BoardService {
     const storedFolders = localStorage.getItem(this.FOLDERS_KEY);
     if (storedFolders) {
       try {
-        this.foldersSignal.set(JSON.parse(storedFolders));
-      } catch (e) {
-        this.foldersSignal.set([{ id: 'default', name: 'General' }]);
+        this.folders.set(JSON.parse(storedFolders));
+      } catch {
+        this.folders.set([{ id: 'default', name: 'General' }]);
       }
     } else {
-      this.foldersSignal.set([{ id: 'default', name: 'General' }]);
+      this.folders.set([{ id: 'default', name: 'General' }]);
     }
 
     const storedCards = localStorage.getItem(this.STORAGE_KEY);
     if (storedCards) {
       try {
         const parsed = JSON.parse(storedCards);
-        const migrated = parsed.map((c: any) => ({ 
-          ...c, 
-          stickers: c.stickers || [],
-          folderId: c.folderId || 'default',
-          isPinned: c.isPinned || false,
-          // Defaults for existing cards if needed, though optional properties work fine
-        }));
-        this.cardsSignal.set(migrated);
-      } catch (e) {
-        console.error('Failed to parse stored data', e);
+        this.cards.set(parsed.map((c: Card) => ({
+          ...c,
+          stickers: c.stickers ?? [],
+          folderId: c.folderId ?? 'default',
+          isPinned: c.isPinned ?? false
+        })));
+      } catch {
         this.seedData();
       }
     } else {
@@ -75,7 +45,7 @@ export class BoardService {
   }
 
   private seedData() {
-    const seeds: Card[] = [
+    this.cards.set([
       {
         id: '1',
         folderId: 'default',
@@ -100,139 +70,113 @@ export class BoardService {
         isPinned: false,
         updatedAt: Date.now()
       }
-    ];
-    this.cardsSignal.set(seeds);
+    ]);
     this.saveToStorage();
   }
 
   private saveToStorage() {
     this.saveStatus.set('Saving...');
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.cardsSignal()));
-    localStorage.setItem(this.FOLDERS_KEY, JSON.stringify(this.foldersSignal()));
+    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.cards()));
+    localStorage.setItem(this.FOLDERS_KEY, JSON.stringify(this.folders()));
     setTimeout(() => this.saveStatus.set('Saved'), 800);
   }
 
-//folder actions
-  addFolder(name: string) {
-    const newFolder: Folder = {
-      id: Math.random().toString(36).substring(2, 9),
-      name
-    };
-    this.foldersSignal.update(f => [...f, newFolder]);
+  // Folder actions
+
+  addFolder(name: string): string {
+    const newFolder: Folder = { id: Math.random().toString(36).substring(2, 9), name };
+    this.folders.update(f => [...f, newFolder]);
     this.saveToStorage();
     return newFolder.id;
   }
 
   deleteFolder(folderId: string) {
     if (folderId === 'default') return;
-    
-    this.cardsSignal.update(cards => 
+    this.cards.update(cards =>
       cards.map(c => c.folderId === folderId ? { ...c, folderId: 'default' } : c)
     );
-    
-    this.foldersSignal.update(f => f.filter(x => x.id !== folderId));
+    this.folders.update(f => f.filter(x => x.id !== folderId));
     this.saveToStorage();
   }
 
   renameFolder(id: string, name: string) {
-    this.foldersSignal.update(f => f.map(x => x.id === id ? { ...x, name } : x));
+    this.folders.update(f => f.map(x => x.id === id ? { ...x, name } : x));
     this.saveToStorage();
   }
 
-// card actions
+  // Card actions
 
-  async addCard(cardData: Partial<Card> & { title: string, content: string, tags: string[] }): Promise<void> {
-    const colors = ['#fff9c4', '#e1bee7', '#c8e6c9', '#bbdefb', '#ffccbc'];
-    const randomColor = colors[Math.floor(Math.random() * colors.length)];
-
+  addCard(cardData: Partial<Card> & { title: string; content: string; tags: string[] }) {
+    const randomColor = CARD_COLORS[Math.floor(Math.random() * CARD_COLORS.length)];
     const newCard: Card = {
-      id: cardData.id || Math.random().toString(36).substring(2, 9),
-      folderId: cardData.folderId || 'default',
+      id: cardData.id ?? Math.random().toString(36).substring(2, 9),
+      folderId: cardData.folderId ?? 'default',
       title: cardData.title,
       content: cardData.content,
       tags: cardData.tags,
-      color: cardData.color || randomColor,
-      rotation: cardData.rotation !== undefined ? cardData.rotation : (Math.random() * 6 - 3),
-      stickers: cardData.stickers || [],
-      isPinned: cardData.isPinned || false,
-      updatedAt: cardData.updatedAt || Date.now(),
-      width: 280, // Default width
-      height: 320 // Default height
+      color: cardData.color ?? randomColor,
+      rotation: cardData.rotation !== undefined ? cardData.rotation : Math.random() * 6 - 3,
+      stickers: cardData.stickers ?? [],
+      isPinned: cardData.isPinned ?? false,
+      updatedAt: cardData.updatedAt ?? Date.now(),
+      width: cardData.width ?? 280,
+      height: cardData.height ?? 320
     };
-    //add to top of list
-    this.cardsSignal.update(cards => [newCard, ...cards]);
+    this.cards.update(cards => [newCard, ...cards]);
     this.saveToStorage();
   }
 
-  async updateCard(updatedCard: Card): Promise<void> {
-    this.cardsSignal.update(cards => 
+  updateCard(updatedCard: Card) {
+    this.cards.update(cards =>
       cards.map(c => c.id === updatedCard.id ? { ...updatedCard, updatedAt: Date.now() } : c)
     );
     this.saveToStorage();
   }
 
-  async deleteCard(id: string): Promise<void> {
-    this.cardsSignal.update(cards => cards.filter(c => c.id !== id));
+  deleteCard(id: string) {
+    this.cards.update(cards => cards.filter(c => c.id !== id));
     this.saveToStorage();
   }
 
-  async toggleSticker(cardId: string, sticker: string): Promise<void> {
-    this.cardsSignal.update(cards => 
+  toggleSticker(cardId: string, sticker: string) {
+    this.cards.update(cards =>
       cards.map(c => {
-        if (c.id === cardId) {
-          const hasSticker = c.stickers.includes(sticker);
-          const newStickers = hasSticker 
-            ? c.stickers.filter(s => s !== sticker) 
-            : [...c.stickers, sticker];
-          return { ...c, stickers: newStickers, updatedAt: Date.now() };
-        }
-        return c;
+        if (c.id !== cardId) return c;
+        const stickers = c.stickers.includes(sticker)
+          ? c.stickers.filter(s => s !== sticker)
+          : [...c.stickers, sticker];
+        return { ...c, stickers, updatedAt: Date.now() };
       })
     );
     this.saveToStorage();
   }
 
   togglePin(cardId: string) {
-    this.cardsSignal.update(cards => 
+    this.cards.update(cards =>
       cards.map(c => c.id === cardId ? { ...c, isPinned: !c.isPinned } : c)
     );
     this.saveToStorage();
   }
 
-  reorderCard(movedCardId: string, targetCardId: string) {
-    const allCards = this.cardsSignal();
-    const movedIndex = allCards.findIndex(c => c.id === movedCardId);
-    const targetIndex = allCards.findIndex(c => c.id === targetCardId);
-
-    if (movedIndex === -1 || targetIndex === -1 || movedIndex === targetIndex) return;
-
-    const [movedCard] = allCards.splice(movedIndex, 1);
-    allCards.splice(targetIndex, 0, movedCard);
-
-    this.cardsSignal.set([...allCards]);
+  reorderCard(movedId: string, targetId: string) {
+    const all = [...this.cards()];
+    const from = all.findIndex(c => c.id === movedId);
+    const to = all.findIndex(c => c.id === targetId);
+    if (from === -1 || to === -1 || from === to) return;
+    const [card] = all.splice(from, 1);
+    all.splice(to, 0, card);
+    this.cards.set(all);
     this.saveToStorage();
   }
 
-  importData(cards: Card[]) {
-    const migrated = cards.map(c => ({ 
-      ...c, 
-      stickers: c.stickers || [], 
-      folderId: c.folderId || 'default',
-      isPinned: c.isPinned || false
-    }));
-
-    this.cardsSignal.set(migrated);
-    this.saveToStorage();
-  }
-  
   importCardsIntoFolder(newCards: Card[], folderId: string) {
-      const migrated = newCards.map(c => ({
-          ...c,
-          folderId: folderId,
-          stickers: c.stickers || [],
-          isPinned: c.isPinned || false
-      }));
-      this.cardsSignal.update(current => [...current, ...migrated]);
-      this.saveToStorage();
+    const migrated = newCards.map(c => ({
+      ...c,
+      folderId,
+      stickers: c.stickers ?? [],
+      isPinned: c.isPinned ?? false
+    }));
+    this.cards.update(current => [...current, ...migrated]);
+    this.saveToStorage();
   }
 }
