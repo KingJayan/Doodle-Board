@@ -304,12 +304,30 @@ export class CardComponent implements OnDestroy {
   }
 
   parsedContent = computed(() => {
-    let text = this.escapeHtml(this.card().content || '');
-    text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
-    text = text.replace(/^-\s+(.*)$/gm, '<ul><li>$1</li></ul>');
-    text = text.replace(/<\/ul>\s*<ul>/g, '');
-    text = text.replace(/^>\s+(.*)$/gm, '<blockquote>$1</blockquote>');
+    const inlineFormat = (s: string) =>
+      this.escapeHtml(s)
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/`(.*?)`/g, '<code>$1</code>');
+
+    const lines = (this.card().content || '').split('\n');
+    const out: string[] = [];
+    let inList = false;
+
+    for (const line of lines) {
+      const listMatch = line.match(/^-\s+(.*)/);
+      if (listMatch) {
+        if (!inList) { out.push('<ul>'); inList = true; }
+        out.push(`<li>${inlineFormat(listMatch[1])}</li>`);
+      } else {
+        if (inList) { out.push('</ul>'); inList = false; }
+        const quoteMatch = line.match(/^>\s+(.*)/);
+        out.push(quoteMatch ? `<blockquote>${inlineFormat(quoteMatch[1])}</blockquote>` : inlineFormat(line));
+      }
+    }
+    if (inList) out.push('</ul>');
+
+    let text = out.join('\n');
     const query = this.searchQuery();
     if (query) {
       try {
