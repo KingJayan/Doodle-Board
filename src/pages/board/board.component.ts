@@ -1,12 +1,13 @@
-import { Component, inject, signal, computed, Output, EventEmitter, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { BoardService } from '../../services/board.service';
-import { CardComponent } from '../card/card.component';
-import { EditorComponent } from '../editor/editor.component';
-import { SettingsModalComponent } from '../settings-modal/settings-modal.component';
-import { HelpModalComponent } from '../help-modal/help-modal.component';
-import { ShareModalComponent } from '../share-modal/share-modal.component';
+import { CardComponent } from '../../components/card/card.component';
+import { EditorComponent } from '../../components/editor/editor.component';
+import { SettingsModalComponent } from '../../components/settings-modal/settings-modal.component';
+import { HelpModalComponent } from '../../components/help-modal/help-modal.component';
+import { ShareModalComponent } from '../../components/share-modal/share-modal.component';
 import { AiService } from '../../services/ai.service';
 import { ToastService } from '../../services/toast.service';
 import { ThemeService } from '../../services/theme.service';
@@ -40,7 +41,7 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
       <header class="sticky top-0 z-40 bg-[var(--paper-color)]/95 backdrop-blur-sm border-b-2 border-[var(--ink-color)] shadow-sm p-4 transition-all">
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row gap-4 justify-between items-center">
 
-          <div class="flex items-center gap-2 cursor-pointer group" (click)="goHome.emit()">
+          <div class="flex items-center gap-2 cursor-pointer group" (click)="router.navigate(['/'])">
             <button class="md:hidden text-2xl mr-2" (click)="sidebarOpen.set(!sidebarOpen()); $event.stopPropagation()">☰</button>
             <span class="text-3xl marker-font text-[#ff6b6b] -rotate-2 group-hover:rotate-0 transition-transform">DoodleBoard</span>
             <span class="text-sm bg-black text-white px-2 rounded-full transform rotate-3">Beta</span>
@@ -242,10 +243,10 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
 export class BoardComponent implements OnInit {
   boardService = inject(BoardService);
   themeService = inject(ThemeService);
+  router = inject(Router);
   private aiService = inject(AiService);
   aiAvailable = this.aiService.isAvailable;
   private toastService = inject(ToastService);
-  @Output() goHome = new EventEmitter<void>();
 
   searchQuery = signal('');
   activeTag = signal<string | null>(null);

@@ -1,27 +1,14 @@
-import { Component, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { LandingComponent } from './components/landing/landing.component';
-import { BoardComponent } from './components/board/board.component';
+import { Component } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
 import { ToastComponent } from './components/toast/toast.component';
-
-type ViewState = 'landing' | 'board';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, LandingComponent, BoardComponent, ToastComponent],
+  imports: [RouterOutlet, ToastComponent],
   template: `
     <app-toast></app-toast>
-    @switch (view()) {
-      @case ('landing') {
-        <app-landing (enter)="view.set('board')"></app-landing>
-      }
-      @case ('board') {
-        <app-board (goHome)="view.set('landing')"></app-board>
-      }
-    }
+    <router-outlet></router-outlet>
   `
 })
-export class AppComponent {
-  view = signal<ViewState>('landing');
-}
+export class AppComponent {}

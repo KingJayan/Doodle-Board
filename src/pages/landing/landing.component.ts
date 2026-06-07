@@ -1,16 +1,17 @@
-import { Component, Output, EventEmitter, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-landing',
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div 
+    <div
       class="min-h-screen flex flex-col md:flex-row items-center justify-center p-8 gap-12 bg-pattern overflow-hidden"
       [class.animate-fallOff]="isExiting()"
     >
-      
+
       <div class="flex-1 max-w-md text-center md:text-left">
         <h1 class="text-6xl md:text-8xl mb-4 text-[#ff6b6b] drop-shadow-sm rotate-[-2deg] animate-wiggle">
           Doodle<br>Board
@@ -28,7 +29,7 @@ import { CommonModule } from '@angular/common';
           <button (click)="startExit()" class="doodle-btn bg-[#ffd93d] text-2xl px-8 py-3 transform rotate-1 hover:rotate-2 hover:scale-105 transition-all">
             Start Brainstorming ->
           </button>
-          
+
           <div class="text-sm text-gray-400 mt-8 max-w-xs border-l-2 border-gray-300 pl-4 italic">
             "It's like sticky notes, but online."
             <br>
@@ -40,7 +41,7 @@ import { CommonModule } from '@angular/common';
       <div class="flex-1 max-w-md">
         <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" class="w-full h-auto drop-shadow-xl transform rotate-3 hover:rotate-6 transition-transform duration-500">
           <path fill="#ffffff" d="M43.6,-74.6C56.6,-68.1,67.6,-57.8,75.9,-46.2C84.2,-34.5,89.8,-21.5,88.7,-8.9C87.6,3.7,79.9,15.9,71.2,27.1C62.5,38.2,52.8,48.3,41.4,56.7C30,65.1,16.8,71.7,3.1,72.2C-10.6,72.7,-24.8,67,-37.2,59.3C-49.6,51.6,-60.2,41.9,-68.9,30.3C-77.6,18.7,-84.3,5.2,-83.4,-7.8C-82.5,-20.8,-73.9,-33.3,-63.3,-42.6C-52.7,-51.9,-40.1,-58,-27.9,-64.9C-15.7,-71.8,-3.9,-79.6,9.1,-81.2C22.1,-82.8,30.6,-81.1,43.6,-74.6Z" transform="translate(100 100)" stroke="#333" stroke-width="2" />
-          
+
           <g stroke="#333" stroke-width="3" fill="none" stroke-linecap="round">
             <path d="M120 140 L160 100 L170 110 L130 150 Z" fill="#ffcc00" />
             <path d="M120 140 L110 150 L115 155 Z" fill="#333" />
@@ -75,13 +76,11 @@ import { CommonModule } from '@angular/common';
   `]
 })
 export class LandingComponent {
-  @Output() enter = new EventEmitter<void>();
+  private router = inject(Router);
   isExiting = signal(false);
 
   startExit() {
     this.isExiting.set(true);
-    setTimeout(() => {
-      this.enter.emit();
-    }, 700);
+    setTimeout(() => this.router.navigate(['/board']), 700);
   }
 }
