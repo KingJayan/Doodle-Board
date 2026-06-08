@@ -1,4 +1,4 @@
-import { defineConfig, loadEnv } from 'vite';
+import { defineConfig } from 'vite';
 import angular from '@analogjs/vite-plugin-angular';
 
 const NODE_BUILTINS = new Set([
@@ -28,9 +28,7 @@ function fixAnalogPlugin(plugins: any): any {
   return p;
 }
 
-export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '');
-  return {
+export default defineConfig({
     plugins: [
       {
         name: 'browser-stubs',
@@ -61,10 +59,5 @@ export default defineConfig(({ mode }) => {
         transformMixedEsModules: true
       }
     },
-    optimizeDeps: { exclude: ['vite', '@angular/compiler-cli'] },
-    define: {
-      'process.env.API_KEY': JSON.stringify(env.API_KEY),
-      'process.env': JSON.stringify({})
-    }
-  };
+    optimizeDeps: { exclude: ['vite', '@angular/compiler-cli'] }
 });
