@@ -4,7 +4,7 @@
 
 a collaborative knowledge board built with Angular 18 and Vite.
 
-version: 1.13.0
+version: 1.13.1
 
 ## features
 
@@ -58,7 +58,7 @@ bun run build # outputs to dist
 ```
 
 > [!NOTE]
-> uses [husky](https://github.com/KingJayan/Doodle-Board/blob/main/.husky/commit-msg) for inline commit versioning, just append 'major', 'minor', or 'patch' to the end of a commit message to bump the version
+> uses [husky](https://github.com/KingJayan/Doodle-Board/blob/main/.husky/commit-msg) for inline commit versioning. just append 'major', 'minor', or 'patch' to the end of a commit message to bump the version
 
 ## stack
 
