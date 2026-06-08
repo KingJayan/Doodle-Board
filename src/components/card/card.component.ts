@@ -34,7 +34,7 @@ import { ToastService } from '../../services/toast.service';
 
       <!-- card inner -->
       <div
-        class="group relative p-4 flex flex-col gap-2 h-full min-h-[100px] transition-all duration-300 card-shadow bg-card rounded-sm"
+        class="group relative p-4 flex flex-col gap-2 h-full min-h-[100px] transition-all duration-300 card-shadow card-ink rounded-sm"
         [class.hover:scale-[1.02]]="!isEditing() && !isResizing()"
         [class.hover:z-card-float]="!isEditing() && !isResizing()"
         [class.animate-scribbleOut]="isDeleting()"

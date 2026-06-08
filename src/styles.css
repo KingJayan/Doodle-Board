@@ -4,10 +4,24 @@
 @tailwind utilities;
 
 :root {
+  /* Core ink/paper (overridden per-theme by ThemeService) */
   --paper-color: #fdfbf7;
   --ink-color: #2d2d2d;
   --pencil-gray: #555;
-  --grid-color: #e5e5e5;
+  --grid-color: #e3ddd0;
+
+  /* Semantic surface/text tokens (overridden per-theme) */
+  --surface: #fffdf8;
+  --surface-2: #f4f0e6;
+  --surface-hover: #eee8d9;
+  --muted: #7a756b;
+  --border-soft: #ddd6c6;
+  --accent: #ff6b6b;
+  --scroll-thumb: #cfc8b8;
+  --bg-image: radial-gradient(var(--grid-color) 1px, transparent 1px);
+  --bg-size: 20px 20px;
+  --motif-opacity: 0.1;
+
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-stamp: cubic-bezier(0.175, 0.885, 0.32, 1.275);
   --ease-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -17,12 +31,24 @@ body {
   font-family: 'Patrick Hand', cursive;
   background-color: var(--paper-color);
   color: var(--ink-color);
-  background-image: radial-gradient(var(--grid-color) 1px, transparent 1px);
-  background-size: 20px 20px;
+  background-image: var(--bg-image);
+  background-size: var(--bg-size);
   overflow-x: hidden;
   transition: background-color 0.3s ease, color 0.3s ease;
   margin: 0;
 }
+
+/* Semantic theme helpers */
+.text-muted { color: var(--muted); }
+.bg-surface { background-color: var(--surface); }
+.bg-surface-2 { background-color: var(--surface-2); }
+.border-soft { border-color: var(--border-soft); }
+.hover-surface { transition: background-color 0.15s ease; }
+.hover-surface:hover { background-color: var(--surface-hover); }
+
+/* Cards keep their bright sticky-note colors in every theme,
+   so their text must stay dark to remain legible. */
+.card-ink { color: #2d2d2d; }
 
 app-root {
   display: block;
@@ -84,7 +110,7 @@ h1, h2, h3, .marker-font {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #ccc;
+  background: var(--scroll-thumb);
   border-radius: 10px;
   border: 2px solid var(--paper-color);
 }

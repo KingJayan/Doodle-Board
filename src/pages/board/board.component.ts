@@ -20,19 +20,20 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
   template: `
     <div class="h-screen flex flex-col overflow-hidden">
 
-      <!-- bg doodles -->
+      <!-- bg motifs per-theme -->
       <div class="absolute inset-0 pointer-events-none z-0 overflow-hidden">
         @for (doodle of doodles; track $index) {
           <svg
-            class="absolute opacity-10 transition-colors duration-500"
+            class="absolute transition-colors duration-500"
             [style.left.%]="doodle.x"
             [style.top.%]="doodle.y"
+            [style.opacity]="'var(--motif-opacity)'"
             [style.transform]="'rotate(' + doodle.rot + 'deg) scale(' + doodle.scale + ')'"
             [style.color]="'var(--ink-color)'"
             width="100" height="100" viewBox="0 0 100 100"
-            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
           >
-            <path [attr.d]="doodle.path" />
+            <path [attr.d]="motifs()[doodle.mi % motifs().length]" />
           </svg>
         }
       </div>
@@ -55,7 +56,7 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
                 [ngModel]="searchQuery()"
                 (ngModelChange)="searchQuery.set($event)"
                 placeholder="Search scribbles..."
-                class="doodle-input bg-white/50 rounded-full px-4 py-1 w-48 focus:w-64 transition-all"
+                class="doodle-input bg-[var(--surface)]/60 rounded-full px-4 py-1 w-48 focus:w-64 transition-all"
               />
               <span class="absolute right-3 top-2 opacity-50">🔍</span>
             </div>
@@ -94,15 +95,13 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
           class="absolute md:static top-0 left-0 bottom-0 z-30 w-64 bg-[var(--paper-color)] border-r-2 border-[var(--ink-color)] transform transition-transform duration-300 md:translate-x-0 p-4 flex flex-col gap-4 shadow-xl md:shadow-none h-full"
           [class.-translate-x-full]="!sidebarOpen()"
         >
-          <h3 class="marker-font text-xl border-b-2 border-dashed border-gray-400 pb-2 mb-2">📂 Folders</h3>
+          <h3 class="marker-font text-xl border-b-2 border-dashed border-soft pb-2 mb-2">📂 Folders</h3>
 
           <div class="flex-grow overflow-y-auto flex flex-col gap-2">
             @for (folder of folders(); track folder.id) {
               <div
-                class="flex items-center gap-2 p-2 rounded cursor-pointer transition-colors group relative"
-                [class.bg-yellow-100]="activeFolderId() === folder.id"
-                [class.font-bold]="activeFolderId() === folder.id"
-                [class.hover:bg-gray-100]="activeFolderId() !== folder.id"
+                class="folder-item flex items-center gap-2 p-2 rounded cursor-pointer transition-colors group relative"
+                [class.active]="activeFolderId() === folder.id"
                 (click)="activeFolderId.set(folder.id); sidebarOpen.set(false)"
               >
                 <span class="text-xl">📁</span>
@@ -129,7 +128,7 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
             }
           </div>
 
-          <div class="pt-2 border-t-2 border-dashed border-gray-400">
+          <div class="pt-2 border-t-2 border-dashed border-soft">
             <div class="flex gap-2">
               <input
                 #newFolderInput
@@ -234,6 +233,12 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
     </div>
   `,
   styles: [`
+    .folder-item:hover { background-color: var(--surface-hover); }
+    .folder-item.active {
+      background-color: var(--surface-hover);
+      font-weight: bold;
+      box-shadow: inset 3px 0 0 var(--accent);
+    }
     .animate-slideDown {
       animation: slideDown 0.3s ease-out forwards;
     }
@@ -279,7 +284,9 @@ export class BoardComponent implements OnInit {
   editingCard = signal<Card | null>(null);
   renamingFolderId = signal<string | null>(null);
 
-  doodles: { x: number; y: number; rot: number; scale: number; path: string }[] = [];
+  /** Background motif paths for the active theme (doodles / chalk math / blueprint / neon). */
+  motifs = this.themeService.motifs;
+  doodles: { x: number; y: number; rot: number; scale: number; mi: number }[] = [];
   private draggedCardId: string | null = null;
 
   ngOnInit() {
@@ -288,21 +295,14 @@ export class BoardComponent implements OnInit {
   }
 
   private generateBackgroundDoodles() {
-    const paths = [
-      'M10 10 Q 50 90 90 10',
-      'M10 50 Q 50 10 90 50 T 170 50',
-      'M50 10 L 60 40 L 90 50 L 60 60 L 50 90 L 40 60 L 10 50 L 40 40 Z',
-      'M20 20 L 80 80 M 80 20 L 20 80',
-      'M50 50 m -40 0 a 40 40 0 1 0 80 0 a 40 40 0 1 0 -80 0',
-      'M10 90 L 50 10 L 90 90 Z',
-      'M10 50 C 20 20, 80 20, 90 50'
-    ];
-    this.doodles = Array.from({ length: 12 }, () => ({
+    // Position/rotation is fixed; the actual glyph is pulled from the current
+    // theme's motif set so the background restyles itself when the theme changes.
+    this.doodles = Array.from({ length: 14 }, (_, i) => ({
       x: Math.random() * 100,
       y: Math.random() * 100,
       rot: Math.random() * 360,
       scale: 0.5 + Math.random() * 1.5,
-      path: paths[Math.floor(Math.random() * paths.length)]
+      mi: i
     }));
   }
 

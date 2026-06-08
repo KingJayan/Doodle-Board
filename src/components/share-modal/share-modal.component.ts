@@ -14,12 +14,12 @@ import { Card, CARD_PALETTE } from '../../models/card.model';
       <div role="dialog" aria-modal="true" aria-labelledby="share-title" class="bg-[var(--paper-color)] p-8 rounded-lg max-w-lg w-full m-4 shadow-xl doodle-border relative text-[var(--ink-color)]" (click)="$event.stopPropagation()">
         <button (click)="close.emit()" class="absolute top-4 right-4 text-2xl hover:text-red-500" aria-label="Close">×</button>
         <h2 id="share-title" class="text-3xl marker-font mb-6 text-center">Backup & Export</h2>
-        <div class="text-center text-sm text-gray-500 mb-4">Current Folder: {{ folderName() }}</div>
+        <div class="text-center text-sm text-muted mb-4">Current Folder: {{ folderName() }}</div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div class="bg-green-50 p-4 rounded-lg border border-green-200 md:col-span-2">
             <h3 class="font-bold mb-2">📄 Import Sketch</h3>
-            <p class="text-xs text-gray-600 mb-2">Upload a single <code>.md</code> file.</p>
+            <p class="text-xs text-gray-700 mb-2">Upload a single <code>.md</code> file.</p>
             <input
               type="file" accept=".md,.txt"
               (change)="importSingleFile($event)"

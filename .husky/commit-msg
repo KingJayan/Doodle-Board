@@ -11,7 +11,11 @@ if [ "$TYPE" = "patch" ] || [ "$TYPE" = "minor" ] || [ "$TYPE" = "major" ]; then
   
   bun -e "const fs = require('fs'); let r = fs.readFileSync('README.md','utf8'); const v = require('./package.json').version; r = r.replace(/(version: |version-)\d+\.\d+\.\d+/g, '\\\$1' + v); fs.writeFileSync('README.md', r);"
 
-  git add package.json README.md
+  VERSION=$(node -p "require('./package.json').version")
+  FILE="src/components/settings-modal/settings-modal.component.ts"
+  sed -i '' "s/const version = '[^']*';/const version = '$VERSION';/" "$FILE"
+
+  git add package.json README.md "$FILE"
   [ -f package-lock.json ] && git add package-lock.json
   [ -f bun.lockb ] && git add bun.lockb
 

@@ -20,35 +20,35 @@ import { IoService } from '../../services/io.service';
         role="dialog"
         aria-modal="true"
         aria-labelledby="editor-title"
-        class="bg-white w-full md:max-w-4xl min-h-[90vh] shadow-2xl flex flex-col relative animate-slideUp border border-gray-300 mt-0 md:mt-4 mb-20"
+        class="bg-[var(--surface)] text-[var(--ink-color)] w-full md:max-w-4xl min-h-[90vh] shadow-2xl flex flex-col relative animate-slideUp border border-soft mt-0 md:mt-4 mb-20"
         (click)="$event.stopPropagation()"
       >
         <!-- file menu bar -->
-        <div class="bg-gray-100 p-2 border-b border-gray-300 flex items-center gap-4 text-sm text-gray-700 select-none">
-          <span class="font-bold text-gray-900 px-2">File</span>
-          <button (click)="save()" class="hover:bg-gray-200 px-2 rounded">Save</button>
-          <button (click)="downloadMd()" class="hover:bg-gray-200 px-2 rounded">Download .md</button>
-          <button (click)="requestClose()" class="hover:bg-red-100 text-red-600 px-2 rounded ml-auto" aria-label="Close editor">Close ✕</button>
+        <div class="bg-[var(--surface-2)] p-2 border-b border-soft flex items-center gap-4 text-sm text-muted select-none">
+          <span class="font-bold text-[var(--ink-color)] px-2">File</span>
+          <button (click)="save()" class="hover-surface px-2 rounded">Save</button>
+          <button (click)="downloadMd()" class="hover-surface px-2 rounded">Download .md</button>
+          <button (click)="requestClose()" class="hover:bg-red-500/15 text-red-500 px-2 rounded ml-auto" aria-label="Close editor">Close ✕</button>
         </div>
 
         <!-- toolbar -->
-        <div class="p-3 bg-white border-b border-gray-200 flex gap-2 flex-wrap items-center shadow-sm sticky top-0 z-10 text-gray-800">
-          <div class="flex gap-1 border-r pr-2 border-gray-300">
-            <button (click)="applyFormat('h1')" class="w-8 h-8 rounded hover:bg-gray-100 font-bold text-lg" title="Title">H1</button>
-            <button (click)="applyFormat('h2')" class="w-8 h-8 rounded hover:bg-gray-100 font-bold" title="Subtitle">H2</button>
+        <div class="p-3 bg-[var(--surface)] border-b border-soft flex gap-2 flex-wrap items-center shadow-sm sticky top-0 z-10 text-[var(--ink-color)]">
+          <div class="flex gap-1 border-r pr-2 border-soft">
+            <button (click)="applyFormat('h1')" class="w-8 h-8 rounded hover-surface font-bold text-lg" title="Title">H1</button>
+            <button (click)="applyFormat('h2')" class="w-8 h-8 rounded hover-surface font-bold" title="Subtitle">H2</button>
           </div>
 
-          <div class="flex gap-1 border-r pr-2 border-gray-300">
-            <button (click)="applyFormat('bold')" class="w-8 h-8 rounded hover:bg-gray-100 font-bold" title="Bold">B</button>
-            <button (click)="applyFormat('italic')" class="w-8 h-8 rounded hover:bg-gray-100 italic" title="Italic">I</button>
-            <button (click)="applyFormat('code')" class="w-8 h-8 rounded hover:bg-gray-100 font-mono text-xs" title="Code"><></button>
+          <div class="flex gap-1 border-r pr-2 border-soft">
+            <button (click)="applyFormat('bold')" class="w-8 h-8 rounded hover-surface font-bold" title="Bold">B</button>
+            <button (click)="applyFormat('italic')" class="w-8 h-8 rounded hover-surface italic" title="Italic">I</button>
+            <button (click)="applyFormat('code')" class="w-8 h-8 rounded hover-surface font-mono text-xs" title="Code"><></button>
           </div>
 
-          <div class="flex gap-1 border-r pr-2 border-gray-300">
-            <button (click)="applyFormat('list')" class="w-8 h-8 rounded hover:bg-gray-100" title="Bullet List">• List</button>
-            <button (click)="applyFormat('quote')" class="w-8 h-8 rounded hover:bg-gray-100" title="Quote">"</button>
-            <button (click)="applyFormat('hr')" class="w-8 h-8 rounded hover:bg-gray-100 flex items-center justify-center" title="Divider">
-              <div class="h-px w-4 bg-gray-500"></div>
+          <div class="flex gap-1 border-r pr-2 border-soft">
+            <button (click)="applyFormat('list')" class="w-8 h-8 rounded hover-surface" title="Bullet List">• List</button>
+            <button (click)="applyFormat('quote')" class="w-8 h-8 rounded hover-surface" title="Quote">"</button>
+            <button (click)="applyFormat('hr')" class="w-8 h-8 rounded hover-surface flex items-center justify-center" title="Divider">
+              <div class="h-px w-4 bg-[var(--muted)]"></div>
             </button>
           </div>
 
@@ -79,39 +79,39 @@ import { IoService } from '../../services/io.service';
             </div>
           }
 
-          <div class="ml-auto text-xs text-gray-400 hidden sm:block">Markdown Enabled</div>
+          <div class="ml-auto text-xs text-muted hidden sm:block">Markdown Enabled</div>
         </div>
 
         <!-- doc content -->
         <div class="flex-grow p-8 md:p-16 flex flex-col gap-6 relative">
           @if (isPolishing()) {
-            <div class="absolute inset-0 bg-white/50 backdrop-blur-sm z-50 flex items-center justify-center flex-col">
+            <div class="absolute inset-0 bg-[var(--surface)]/70 backdrop-blur-sm z-50 flex items-center justify-center flex-col">
               <div class="text-4xl animate-bounce">✏️</div>
-              <div class="font-bold text-gray-500 mt-2">Genie is polishing your draft...</div>
+              <div class="font-bold text-muted mt-2">Genie is polishing your draft...</div>
             </div>
           }
 
           <input
             id="editor-title"
             [(ngModel)]="form.title"
-            class="text-4xl md:text-5xl font-bold bg-transparent outline-none w-full marker-font placeholder-gray-300 border-none p-0 text-gray-900"
+            class="text-4xl md:text-5xl font-bold bg-transparent outline-none w-full marker-font placeholder:text-muted/50 border-none p-0 text-[var(--ink-color)]"
             placeholder="Untitled Scribble"
           >
           <textarea
             #editorTextarea
             [(ngModel)]="form.content"
-            class="w-full flex-grow bg-transparent resize-none outline-none text-lg md:text-xl leading-relaxed font-hand text-gray-800 min-h-[400px]"
+            class="w-full flex-grow bg-transparent resize-none outline-none text-lg md:text-xl leading-relaxed font-hand text-[var(--ink-color)] min-h-[400px]"
             placeholder="Start writing..."
           ></textarea>
         </div>
 
         <!-- tags footer -->
-        <div class="p-8 border-t border-gray-100 bg-gray-50 text-sm text-gray-600">
+        <div class="p-8 border-t border-soft bg-[var(--surface-2)] text-sm text-muted">
           <div class="flex items-center gap-2">
             <span>🏷️ Tags:</span>
             <input
               [(ngModel)]="form.tags"
-              class="bg-transparent border-b border-gray-300 focus:border-blue-500 outline-none w-full max-w-sm px-2 py-1 text-gray-800"
+              class="bg-transparent border-b border-soft focus:border-[var(--accent)] outline-none w-full max-w-sm px-2 py-1 text-[var(--ink-color)]"
               placeholder="Add tags separated by commas..."
             >
           </div>
