@@ -62,7 +62,7 @@ import { ToastService } from '../../services/toast.service';
             <div
               class="absolute text-5xl opacity-90 drop-shadow-md animate-stamp"
               [style.top.px]="($index % 3) * 40 + 8"
-              [style.right.px]="(($index / 3 | 0)) * 45 + 8"
+              [style.right.px]="Math.floor($index / 3) * 45 + 8"
               [style.transform]="'rotate(' + (($index * 45) - 20) + 'deg)'"
             >{{ sticker }}</div>
           }
@@ -250,6 +250,7 @@ import { ToastService } from '../../services/toast.service';
   `]
 })
 export class CardComponent implements OnDestroy {
+  protected Math = Math;
   boardService = inject(BoardService);
   private toastService = inject(ToastService);
 
