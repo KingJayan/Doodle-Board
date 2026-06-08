@@ -1,0 +1,21 @@
+#!/bin/sh
+
+COMMIT_MSG_FILE=$1
+
+TYPE=$(tail -n 1 "$COMMIT_MSG_FILE" | awk '{print $NF}' | tr '[:upper:]' '[:lower:]')
+
+if [ "$TYPE" = "patch" ] || [ "$TYPE" = "minor" ] || [ "$TYPE" = "major" ]; then
+  echo "bump detected, $TYPE..."
+  
+  npm version "$TYPE" --no-git-tag-version
+  
+  bun -e "const fs = require('fs'); let r = fs.readFileSync('README.md','utf8'); const v = require('./package.json').version; r = r.replace(/(version: |version-)\d+\.\d+\.\d+/g, '\\\$1' + v); fs.writeFileSync('README.md', r);"
+
+  git add package.json README.md
+  [ -f package-lock.json ] && git add package-lock.json
+  [ -f bun.lockb ] && git add bun.lockb
+
+  git commit --no-edit --no-verify -F "$COMMIT_MSG_FILE"
+  
+  exit 0
+fi

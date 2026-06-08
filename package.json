@@ -1,6 +1,6 @@
 {
   "name": "doodle-board",
-  "version": "1.1.2",
+  "version": "1.13.0",
   "type": "module",
   "engines": {
     "node": ">=20.11.0"
@@ -8,7 +8,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "prepare": "husky"
   },
   "dependencies": {
     "@angular/animations": "^18.2.14",
@@ -32,6 +33,7 @@
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^18.19.130",
     "autoprefixer": "^10.5.0",
+    "husky": "^9.1.7",
     "postcss": "^8.5.15",
     "tailwindcss": "^3.4.19",
     "terser": "^5.48.0",
