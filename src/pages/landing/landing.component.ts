@@ -17,7 +17,7 @@ import { ThemeService } from '../../services/theme.service';
         <h1 class="text-6xl md:text-8xl mb-4 text-brand drop-shadow-sm rotate-[-2deg]" [class.animate-wiggle]="!themeService.reduceMotion()">
           Doodle<br>Board
         </h1>
-        <p class="text-2xl mb-8 font-light text-gray-700 leading-relaxed">
+        <p class="text-2xl mb-8 font-light text-[var(--ink-color)] leading-relaxed">
           A messy place for your ideas. <br>
           <span class="text-sm opacity-60 flex items-center justify-center md:justify-start gap-2 mt-2">
             Created by Jayan Patel
@@ -31,7 +31,7 @@ import { ThemeService } from '../../services/theme.service';
             Start Brainstorming ->
           </button>
 
-          <div class="text-sm text-gray-400 mt-8 max-w-xs border-l-2 border-gray-300 pl-4 italic">
+          <div class="text-sm text-muted mt-8 max-w-xs border-l-2 border-soft pl-4 italic">
             Local-only · No account · No sync
           </div>
         </div>
@@ -74,8 +74,8 @@ import { ThemeService } from '../../services/theme.service';
   `,
   styles: [`
     .bg-pattern {
-      background-image: radial-gradient(#e5e5e5 2px, transparent 2px);
-      background-size: 30px 30px;
+      background-image: var(--bg-image);
+      background-size: var(--bg-size);
     }
     .animate-wiggle {
       animation: wiggle 3s ease-in-out infinite;
