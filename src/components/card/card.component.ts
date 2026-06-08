@@ -89,19 +89,19 @@ import { IconComponent, iconFor } from '../icon/icon.component';
               <button
                 (click)="toggleMoveMenu($event)"
                 class="w-9 h-9 bg-[var(--surface)] text-[var(--ink-color)] rounded-full flex items-center justify-center shadow-md hover-surface hover:scale-110 transition-transform doodle-border text-sm cursor-pointer"
-                aria-label="Move to folder"
+                aria-label="Move to board"
               ><app-icon name="folder-open"></app-icon></button>
 
               @if (showMoveMenu()) {
                 <div class="absolute top-full right-0 mt-2 bg-[var(--surface)] text-[var(--ink-color)] border-2 border-[var(--ink-color)] rounded-lg shadow-xl p-2 w-48 z-overlay flex flex-col gap-1" (click)="$event.stopPropagation()">
                   <div class="text-xs text-muted font-bold px-2 uppercase tracking-wide mb-1">Move to...</div>
-                  @for (folder of boardService.folders(); track folder.id) {
+                  @for (board of boardService.boards(); track board.id) {
                     <button
                       class="text-left text-sm px-3 py-2 hover-surface rounded-md truncate font-hand font-bold transition-colors"
-                      (click)="moveToFolder(folder.id)"
-                      [style.background-color]="folder.id === card().folderId ? 'var(--surface-hover)' : null"
-                      [style.color]="folder.id === card().folderId ? 'var(--accent)' : null"
-                    >{{ folder.name }}</button>
+                      (click)="moveToBoard(board.id)"
+                      [style.background-color]="board.id === card().boardId ? 'var(--surface-hover)' : null"
+                      [style.color]="board.id === card().boardId ? 'var(--accent)' : null"
+                    >{{ board.name }}</button>
                   }
                 </div>
               }
@@ -421,10 +421,10 @@ export class CardComponent implements OnDestroy {
     this.showMoveMenu.update(v => !v);
   }
 
-  moveToFolder(folderId: string) {
-    this.update.emit({ ...this.card(), folderId });
+  moveToBoard(boardId: string) {
+    this.update.emit({ ...this.card(), boardId });
     this.showMoveMenu.set(false);
-    this.toastService.show('Moved note to folder!', 'success');
+    this.toastService.show('Moved note to board!', 'success');
   }
 
   startResize(event: MouseEvent) {

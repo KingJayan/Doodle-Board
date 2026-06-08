@@ -12,7 +12,7 @@ import { IconComponent } from '../../components/icon/icon.component';
 import { AiService } from '../../services/ai.service';
 import { ToastService } from '../../services/toast.service';
 import { ThemeService } from '../../services/theme.service';
-import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.model';
+import { Card, Board, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.model';
 
 @Component({
   selector: 'app-board',
@@ -96,33 +96,33 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
           class="absolute md:static top-0 left-0 bottom-0 z-30 w-64 bg-[var(--paper-color)] border-r-2 border-[var(--ink-color)] transform transition-transform duration-300 md:translate-x-0 p-4 flex flex-col gap-4 shadow-xl md:shadow-none h-full"
           [class.-translate-x-full]="!sidebarOpen()"
         >
-          <h3 class="marker-font text-xl border-b-2 border-dashed border-soft pb-2 mb-2"><app-icon name="folder-open"></app-icon> Folders</h3>
+          <h3 class="marker-font text-xl border-b-2 border-dashed border-soft pb-2 mb-2"><app-icon name="folder-open"></app-icon> Boards</h3>
 
           <div class="flex-grow overflow-y-auto flex flex-col gap-2">
-            @for (folder of folders(); track folder.id) {
+            @for (board of boards(); track board.id) {
               <div
-                class="folder-item flex items-center gap-2 p-2 rounded cursor-pointer transition-colors group relative"
-                [class.active]="activeFolderId() === folder.id"
-                (click)="activeFolderId.set(folder.id); sidebarOpen.set(false)"
+                class="board-item flex items-center gap-2 p-2 rounded cursor-pointer transition-colors group relative"
+                [class.active]="activeBoardId() === board.id"
+                (click)="activeBoardId.set(board.id); sidebarOpen.set(false)"
               >
                 <span class="text-xl"><app-icon name="folder"></app-icon></span>
-                @if (renamingFolderId() === folder.id) {
+                @if (renamingBoardId() === board.id) {
                   <input
                     class="doodle-input text-sm flex-grow"
-                    [value]="folder.name"
-                    (keyup.enter)="commitRename($any($event.target).value, folder.id)"
-                    (keyup.escape)="renamingFolderId.set(null)"
-                    (blur)="commitRename($any($event.target).value, folder.id)"
+                    [value]="board.name"
+                    (keyup.enter)="commitRename($any($event.target).value, board.id)"
+                    (keyup.escape)="renamingBoardId.set(null)"
+                    (blur)="commitRename($any($event.target).value, board.id)"
                     (click)="$event.stopPropagation()"
                   >
                 } @else {
-                  <span class="truncate flex-grow" (dblclick)="renamingFolderId.set(folder.id); $event.stopPropagation()">{{ folder.name }}</span>
+                  <span class="truncate flex-grow" (dblclick)="renamingBoardId.set(board.id); $event.stopPropagation()">{{ board.name }}</span>
                 }
-                @if (folder.id !== 'default') {
+                @if (board.id !== 'default') {
                   <button
                     class="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 px-1"
-                    (click)="deleteFolder(folder.id, $event)"
-                    title="Delete Folder"
+                    (click)="deleteBoard(board.id, $event)"
+                    title="Delete Board"
                   >×</button>
                 }
               </div>
@@ -132,14 +132,14 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
           <div class="pt-2 border-t-2 border-dashed border-soft">
             <div class="flex gap-2">
               <input
-                #newFolderInput
+                #newBoardInput
                 type="text"
                 class="doodle-input text-sm"
-                placeholder="New Folder..."
-                (keyup.enter)="createFolder(newFolderInput.value); newFolderInput.value = ''"
+                placeholder="New Board..."
+                (keyup.enter)="createBoard(newBoardInput.value); newBoardInput.value = ''"
               >
               <button
-                (click)="createFolder(newFolderInput.value); newFolderInput.value = ''"
+                (click)="createBoard(newBoardInput.value); newBoardInput.value = ''"
                 class="doodle-btn px-2 py-0 text-lg bg-[var(--tint-green)] text-[var(--ink-color)]"
               >+</button>
             </div>
@@ -180,7 +180,7 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
           @if (filteredCards().length === 0) {
             <div class="text-center py-20 opacity-50">
               <div class="text-6xl mb-4"><app-icon name="leaf"></app-icon></div>
-              <p class="text-2xl marker-font">Empty Folder...</p>
+              <p class="text-2xl marker-font">Empty Board...</p>
               <p>Drag notes here or create new ones!</p>
             </div>
           }
@@ -225,8 +225,8 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
       }
       @if (sharePanelOpen()) {
         <app-share-modal
-          [folderId]="activeFolderId()"
-          [folderName]="currentFolderName()"
+          [boardId]="activeBoardId()"
+          [boardName]="currentBoardName()"
           [cards]="filteredCards()"
           (close)="sharePanelOpen.set(false)"
         ></app-share-modal>
@@ -234,8 +234,8 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
     </div>
   `,
   styles: [`
-    .folder-item:hover { background-color: var(--surface-hover); }
-    .folder-item.active {
+    .board-item:hover { background-color: var(--surface-hover); }
+    .board-item.active {
       background-color: var(--surface-hover);
       font-weight: bold;
       box-shadow: inset 3px 0 0 var(--accent);
@@ -266,14 +266,14 @@ export class BoardComponent implements OnInit {
   private toastService = inject(ToastService);
 
   saveStatus = this.boardService.saveStatus;
-  folders = this.boardService.folders;
+  boards = this.boardService.boards;
   updateCard = (card: Card) => this.boardService.updateCard(card);
   toggleSticker = (id: string, sticker: string) => this.boardService.toggleSticker(id, sticker);
   togglePin = (id: string) => this.boardService.togglePin(id);
 
   searchQuery = signal('');
   activeTag = signal<string | null>(null);
-  activeFolderId = signal<string>('default');
+  activeBoardId = signal<string>('default');
 
   aiPanelOpen = signal(false);
   sharePanelOpen = signal(false);
@@ -283,9 +283,8 @@ export class BoardComponent implements OnInit {
   isGenerating = signal(false);
 
   editingCard = signal<Card | null>(null);
-  renamingFolderId = signal<string | null>(null);
+  renamingBoardId = signal<string | null>(null);
 
-  /** Background motif paths for the active theme (doodles / chalk math / blueprint / neon). */
   motifs = this.themeService.motifs;
   doodles: { x: number; y: number; rot: number; scale: number; mi: number }[] = [];
   private draggedCardId: string | null = null;
@@ -296,8 +295,6 @@ export class BoardComponent implements OnInit {
   }
 
   private generateBackgroundDoodles() {
-    // Position/rotation is fixed; the actual glyph is pulled from the current
-    // theme's motif set so the background restyles itself when the theme changes.
     this.doodles = Array.from({ length: 14 }, (_, i) => ({
       x: Math.random() * 100,
       y: Math.random() * 100,
@@ -310,50 +307,54 @@ export class BoardComponent implements OnInit {
   filteredCards = computed(() => {
     const query = this.searchQuery().toLowerCase();
     const tag = this.activeTag();
-    const folder = this.activeFolderId();
+    const board = this.activeBoardId();
 
     return this.boardService.cards()
       .filter((card: Card) => {
-        if (card.folderId !== folder) return false;
+        if (card.boardId !== board) return false;
         const matchesSearch =
           card.title.toLowerCase().includes(query) ||
           card.content.toLowerCase().includes(query) ||
           card.tags.some((t: string) => t.toLowerCase().includes(query));
         return matchesSearch && (tag ? card.tags.includes(tag) : true);
-      });
+      })
+      .sort((a, b) =>
+        (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0) ||
+        (a.position ?? '').localeCompare(b.position ?? '')
+      );
   });
 
-  currentFolderName = computed(() =>
-    this.boardService.folders().find((f: Folder) => f.id === this.activeFolderId())?.name ?? 'Folder'
+  currentBoardName = computed(() =>
+    this.boardService.boards().find((b: Board) => b.id === this.activeBoardId())?.name ?? 'Board'
   );
 
-  createFolder(name: string) {
+  createBoard(name: string) {
     if (!name.trim()) return;
-    const id = this.boardService.addFolder(name);
-    this.activeFolderId.set(id);
-    this.toastService.show(`Created folder "${name}"`, 'success');
+    const id = this.boardService.addBoard(name);
+    this.activeBoardId.set(id);
+    this.toastService.show(`Created board "${name}"`, 'success');
   }
 
   commitRename(name: string, id: string) {
-    if (name.trim()) this.boardService.renameFolder(id, name.trim());
-    this.renamingFolderId.set(null);
+    if (name.trim()) this.boardService.renameBoard(id, name.trim());
+    this.renamingBoardId.set(null);
   }
 
-  deleteFolder(id: string, event: Event) {
+  deleteBoard(id: string, event: Event) {
     event.stopPropagation();
-    this.toastService.show('Delete folder? Notes will move to General.', 'warning', {
+    this.toastService.show('Delete board? Notes will move to General.', 'warning', {
       label: 'Yes, Delete',
       callback: () => {
-        this.boardService.deleteFolder(id);
-        if (this.activeFolderId() === id) this.activeFolderId.set('default');
-        this.toastService.show('Folder deleted', 'info');
+        this.boardService.deleteBoard(id);
+        if (this.activeBoardId() === id) this.activeBoardId.set('default');
+        this.toastService.show('Board deleted', 'info');
       }
     });
   }
 
   createNewCard() {
     const color = CARD_COLORS[Math.floor(Math.random() * CARD_COLORS.length)];
-    this.boardService.addCard({ title: '', content: '', tags: [], color, folderId: this.activeFolderId() });
+    this.boardService.addCard({ title: '', content: '', tags: [], color, boardId: this.activeBoardId() });
     this.toastService.show('Fresh paper extracted!', 'success');
   }
 
@@ -363,7 +364,7 @@ export class BoardComponent implements OnInit {
     try {
       const result = await this.aiService.brainstormCard(topic);
       const color = CARD_COLORS_AI[Math.floor(Math.random() * CARD_COLORS_AI.length)];
-      this.boardService.addCard({ ...result, color, folderId: this.activeFolderId() });
+      this.boardService.addCard({ ...result, color, boardId: this.activeBoardId() });
       this.aiPanelOpen.set(false);
       this.toastService.show('Genie granted your wish!', 'success');
     } catch {
@@ -405,5 +406,4 @@ export class BoardComponent implements OnInit {
     }
     this.draggedCardId = null;
   }
-
 }

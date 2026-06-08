@@ -36,13 +36,13 @@
 - pin + max/minimize
 
 ## planned features until v1
-- improved themes with full customization/personalization
+- user-custom themes
 - performance optimizations for low hardware
 - improved file CRUD + folder organization (boards over folders, +nested)
 - cloud sync across devices(supabase + dexiejs)
 
 ## v1+
-- live collaboration through cf workers + partykit
+- live collaboration through cf workers + partykit (leads to team features--paid)
 - language support, browser extension integrations
 - more ai providers + webLLM alternative support(llama 3 8b or qwen 2.5 1.5b)
 - full markdown editing, rendering, import, and export support

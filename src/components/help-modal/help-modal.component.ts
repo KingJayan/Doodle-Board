@@ -22,8 +22,8 @@ import { IconComponent } from '../icon/icon.component';
           <div class="flex gap-4 items-start">
             <div class="text-4xl"><app-icon name="folder-open"></app-icon></div>
             <div>
-              <h3 class="font-bold text-xl">Folders</h3>
-              <p>Use the sidebar to create folders and keep your notes organized.</p>
+              <h3 class="font-bold text-xl">Boards</h3>
+              <p>Use the sidebar to create boards and keep your notes organized.</p>
             </div>
           </div>
           <div class="flex gap-4 items-start">

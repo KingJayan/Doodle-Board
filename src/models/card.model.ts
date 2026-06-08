@@ -1,11 +1,12 @@
-export interface Folder {
+export interface Board {
   id: string;
   name: string;
+  position: string;
 }
 
 export interface Card {
   id: string;
-  folderId: string;
+  boardId: string;
   title: string;
   content: string;
   tags: string[];
@@ -13,6 +14,7 @@ export interface Card {
   rotation: number;
   stickers: string[];
   isPinned: boolean;
+  position?: string;
   updatedAt: number;
   width?: number;
   height?: number;

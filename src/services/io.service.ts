@@ -37,14 +37,14 @@ export class IoService {
     return { title: 'Imported Note', content: text, tags: [] };
   }
 
-  async exportFolderAsZip(cards: Card[], folderName: string): Promise<void> {
+  async exportBoardAsZip(cards: Card[], boardName: string): Promise<void> {
     const zip = new JSZip();
     cards.forEach(card => {
       const filename = `${card.title.replace(/[^a-z0-9]/gi, '_') || 'untitled'}-${card.id.substring(0, 4)}.md`;
       zip.file(filename, this.createMarkdownContent(card));
     });
     const blob = await zip.generateAsync({ type: 'blob' });
-    this.triggerDownload(blob, `doodleboard-${folderName}-${new Date().toISOString().slice(0, 10)}.zip`);
+    this.triggerDownload(blob, `doodleboard-${boardName}-${new Date().toISOString().slice(0, 10)}.zip`);
   }
 
   async importZip(file: File): Promise<Array<Partial<Card> & { content: string }>> {
