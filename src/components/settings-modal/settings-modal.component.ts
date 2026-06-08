@@ -1,6 +1,7 @@
 import { Component, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ThemeService } from '../../services/theme.service';
+import { version } from '../../../package.json';
 
 @Component({
   selector: 'app-settings-modal',
@@ -48,7 +49,7 @@ import { ThemeService } from '../../services/theme.service';
           </div>
 
           <div class="text-center text-xs opacity-60 mt-4 flex flex-col gap-1">
-            <span>DoodleBoard v1.1.0</span>
+            <span>DoodleBoard { version }</span>
             <div class="flex items-center justify-center gap-2">
               <span>By Jayan Patel</span>
               <a href="https://jayanpatel.vercel.app" target="_blank" class="text-sm hover:scale-110 transition-transform no-underline" title="Portfolio">🌐</a>

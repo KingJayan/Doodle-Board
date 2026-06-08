@@ -61,8 +61,8 @@ import { ToastService } from '../../services/toast.service';
           @for (sticker of card().stickers; track $index) {
             <div
               class="absolute text-5xl opacity-90 drop-shadow-md animate-stamp"
-              [style.top.px]="($index * 30 + 10) % 150"
-              [style.right.px]="($index * 25 + 10) % 150"
+              [style.top.px]="($index % 3) * 40 + 8"
+              [style.right.px]="(($index / 3 | 0)) * 45 + 8"
               [style.transform]="'rotate(' + (($index * 45) - 20) + 'deg)'"
             >{{ sticker }}</div>
           }

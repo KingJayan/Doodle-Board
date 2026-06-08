@@ -187,7 +187,7 @@ export class EditorComponent implements OnChanges {
       this.form.content = await this.aiService.polishText(this.form.content, mode);
       this.toastService.show('Pencil magic complete! ✨', 'success');
     } catch {
-      this.toastService.show('Genie broke the pencil...', 'error');
+      this.toastService.show('AI polish failed — check your API key', 'error');
     } finally {
       this.isPolishing.set(false);
     }
