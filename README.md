@@ -4,13 +4,15 @@
 
 a collaborative knowledge board built with Angular 18 and Vite.
 
+version: 1.13.0
+
 ## features
 
 - create and organize sticky notes
 - folder organization
 - ai-powered brainstorming (via Gemini)
 - themes
-- export/import, auto-save to lS
+- export/import, auto-save to localStorage
 - filtering + search
 - pin + max/minimize
  
