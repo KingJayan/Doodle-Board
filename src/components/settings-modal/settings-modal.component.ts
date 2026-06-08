@@ -49,7 +49,7 @@ import { version } from '../../../package.json';
           </div>
 
           <div class="text-center text-xs opacity-60 mt-4 flex flex-col gap-1">
-            <span>DoodleBoard { version }</span>
+            <span>DoodleBoard v{{ version }}</span>
             <div class="flex items-center justify-center gap-2">
               <span>By Jayan Patel</span>
               <a href="https://jayanpatel.vercel.app" target="_blank" class="text-sm hover:scale-110 transition-transform no-underline" title="Portfolio">🌐</a>
@@ -64,4 +64,5 @@ import { version } from '../../../package.json';
 export class SettingsModalComponent {
   themeService = inject(ThemeService);
   @Output() close = new EventEmitter<void>();
+  protected readonly version = version;
 }
