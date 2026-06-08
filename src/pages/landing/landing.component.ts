@@ -13,7 +13,7 @@ import { Router } from '@angular/router';
     >
 
       <div class="flex-1 max-w-md text-center md:text-left">
-        <h1 class="text-6xl md:text-8xl mb-4 text-[#ff6b6b] drop-shadow-sm rotate-[-2deg] animate-wiggle">
+        <h1 class="text-6xl md:text-8xl mb-4 text-brand drop-shadow-sm rotate-[-2deg] animate-wiggle">
           Doodle<br>Board
         </h1>
         <p class="text-2xl mb-8 font-light text-gray-700 leading-relaxed">
@@ -26,7 +26,7 @@ import { Router } from '@angular/router';
         </p>
 
         <div class="flex flex-col gap-4 items-center md:items-start">
-          <button (click)="startExit()" class="doodle-btn bg-[#ffd93d] text-2xl px-8 py-3 transform rotate-1 hover:rotate-2 hover:scale-105 transition-all">
+          <button (click)="startExit()" class="doodle-btn bg-accent-yellow text-2xl px-8 py-3 transform rotate-1 hover:rotate-2 hover:scale-105 transition-all">
             Start Brainstorming ->
           </button>
 

@@ -43,7 +43,7 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
 
           <div class="flex items-center gap-2 cursor-pointer group" (click)="router.navigate(['/'])">
             <button class="md:hidden text-2xl mr-2" (click)="sidebarOpen.set(!sidebarOpen()); $event.stopPropagation()">☰</button>
-            <span class="text-3xl marker-font text-[#ff6b6b] -rotate-2 group-hover:rotate-0 transition-transform">DoodleBoard</span>
+            <span class="text-3xl marker-font text-brand -rotate-2 group-hover:rotate-0 transition-transform">DoodleBoard</span>
             <span class="text-sm bg-black text-white px-2 rounded-full transform rotate-3">Beta</span>
           </div>
 
@@ -66,7 +66,7 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
 
             @if (activeTag()) {
               <div
-                class="bg-[#ffeb3b] px-3 py-1 rounded-full border border-black flex items-center gap-2 cursor-pointer hover:bg-red-200 transition-colors"
+                class="bg-note-yellow px-3 py-1 rounded-full border border-black flex items-center gap-2 cursor-pointer hover:bg-red-200 transition-colors"
                 (click)="activeTag.set(null)"
               >
                 <span class="text-black">#{{ activeTag() }}</span>
@@ -80,9 +80,9 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
             <button (click)="settingsPanelOpen.set(true)" class="doodle-btn px-2 text-xl" title="Settings">⚙️</button>
             <button (click)="sharePanelOpen.set(true)" class="doodle-btn text-base" title="Backup & Share">📤 Share</button>
             @if (aiAvailable) {
-              <button (click)="aiPanelOpen.set(!aiPanelOpen())" class="doodle-btn bg-[#e1f5fe] text-black text-base" title="Ask the Genie">✨ Genie</button>
+              <button (click)="aiPanelOpen.set(!aiPanelOpen())" class="doodle-btn bg-note-blue text-black text-base" title="Ask the Genie">✨ Genie</button>
             }
-            <button (click)="createNewCard()" class="doodle-btn bg-[#c8e6c9] text-black font-bold text-base">+ New Note</button>
+            <button (click)="createNewCard()" class="doodle-btn bg-note-green text-black font-bold text-base">+ New Note</button>
           </div>
         </div>
       </header>
@@ -243,7 +243,7 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
     }
     .animate-popIn {
       opacity: 0;
-      animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      animation: popIn 0.5s var(--ease-pop) forwards;
     }
     @keyframes popIn {
       from { opacity: 0; transform: scale(0.8) translateY(10px); }
