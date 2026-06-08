@@ -14,8 +14,6 @@ if [ "$TYPE" = "patch" ] || [ "$TYPE" = "minor" ] || [ "$TYPE" = "major" ]; then
   git add package.json README.md
   [ -f package-lock.json ] && git add package-lock.json
   [ -f bun.lockb ] && git add bun.lockb
-
-  git commit --no-edit --no-verify -F "$COMMIT_MSG_FILE"
-  
-  exit 0
 fi
+
+exit 0
