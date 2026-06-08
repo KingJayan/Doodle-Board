@@ -225,6 +225,10 @@ import { ToastService } from '../../services/toast.service';
       font-style: italic;
       opacity: 0.8;
     }
+    :host ::ng-deep .markdown-content code { font-family: monospace; background: rgba(0,0,0,0.08); padding: 0 3px; border-radius: 3px; font-size: 0.9em; }
+    :host ::ng-deep .markdown-content h3 { font-weight: 800; font-size: 1.1em; margin: 0.3em 0; }
+    :host ::ng-deep .markdown-content h4 { font-weight: 700; font-size: 1em; margin: 0.2em 0; }
+    :host ::ng-deep .markdown-content hr { border: none; border-top: 1px solid rgba(0,0,0,0.2); margin: 0.5em 0; }
     :host ::ng-deep mark { background-color: #fef08a; padding: 0 2px; border-radius: 2px; }
     .custom-scroll::-webkit-scrollbar { width: 6px; }
     .custom-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 4px; }
@@ -325,6 +329,11 @@ export class CardComponent implements OnDestroy {
         out.push(`<li>${inlineFormat(listMatch[1])}</li>`);
       } else {
         if (inList) { out.push('</ul>'); inList = false; }
+        if (/^---+$/.test(line.trim())) { out.push('<hr>'); continue; }
+        const h1Match = line.match(/^#\s+(.*)/);
+        if (h1Match) { out.push(`<h3>${inlineFormat(h1Match[1])}</h3>`); continue; }
+        const h2Match = line.match(/^##\s+(.*)/);
+        if (h2Match) { out.push(`<h4>${inlineFormat(h2Match[1])}</h4>`); continue; }
         const quoteMatch = line.match(/^>\s+(.*)/);
         out.push(quoteMatch ? `<blockquote>${inlineFormat(quoteMatch[1])}</blockquote>` : inlineFormat(line));
       }

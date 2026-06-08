@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import { Card, Folder, CARD_COLORS } from '../models/card.model';
+import { Card, Folder, CARD_COLORS, CARD_DEFAULTS, CARD_PALETTE } from '../models/card.model';
 
 @Injectable({ providedIn: 'root' })
 export class BoardService {
@@ -53,7 +53,7 @@ export class BoardService {
         title: 'Welcome!',
         content: 'This is your new doodle board. Click me to edit!',
         tags: ['intro', 'welcome'],
-        color: '#ffeb3b',
+        color: CARD_PALETTE[0],
         rotation: -2,
         stickers: ['⭐'],
         isPinned: true,
@@ -65,7 +65,7 @@ export class BoardService {
         title: 'Ideas 💡',
         content: 'Use the expand button (↗) to open the full editor!',
         tags: ['ideas'],
-        color: '#b2dfdb',
+        color: CARD_PALETTE[2],
         rotation: 1,
         stickers: [],
         isPinned: false,
@@ -124,8 +124,8 @@ export class BoardService {
       stickers: cardData.stickers ?? [],
       isPinned: cardData.isPinned ?? false,
       updatedAt: cardData.updatedAt ?? Date.now(),
-      width: cardData.width ?? 280,
-      height: cardData.height ?? 320
+      width: cardData.width ?? CARD_DEFAULTS.width,
+      height: cardData.height ?? CARD_DEFAULTS.height
     };
     this.cards.update(cards => [newCard, ...cards]);
     this.saveToStorage();

@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { BoardService } from '../../services/board.service';
 import { IoService } from '../../services/io.service';
 import { ToastService } from '../../services/toast.service';
-import { Card } from '../../models/card.model';
+import { Card, CARD_PALETTE } from '../../models/card.model';
 
 @Component({
   selector: 'app-share-modal',
@@ -76,7 +76,7 @@ export class ShareModalComponent {
         title: p.title || 'Untitled',
         content: p.content || '',
         tags: p.tags || [],
-        color: p.color || '#fff9c4',
+        color: p.color || CARD_PALETTE[0],
         rotation: p.rotation ?? (Math.random() * 6 - 3),
         stickers: p.stickers || [],
         isPinned: p.isPinned || false,
