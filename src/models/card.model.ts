@@ -19,6 +19,6 @@ export interface Card {
   isMinimized?: boolean;
 }
 
-export const CARD_COLORS = ['#fff9c4', '#e1bee7', '#c8e6c9', '#bbdefb', '#ffccbc'];
-export const CARD_COLORS_AI = ['#e1bee7', '#b2dfdb', '#ffecb3'];
 export const CARD_PALETTE = ['#fff9c4', '#e1bee7', '#c8e6c9', '#bbdefb', '#ffccbc', '#ffffff', '#ffab91'];
+export const CARD_COLORS = CARD_PALETTE.slice(0, 5);
+export const CARD_COLORS_AI = ['#e1bee7', '#b2dfdb', '#ffecb3'];

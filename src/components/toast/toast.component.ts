@@ -8,7 +8,7 @@ import { ToastService } from '../../services/toast.service';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="fixed bottom-6 right-6 z-[150] flex flex-col gap-3 pointer-events-none">
+    <div class="fixed bottom-6 right-6 z-toast flex flex-col gap-3 pointer-events-none">
       @for (toast of toastService.toasts(); track toast.id) {
         <div 
           class="pointer-events-auto bg-white min-w-[280px] max-w-sm p-4 relative shadow-lg transform transition-all duration-300 animate-slideIn doodle-border flex flex-col gap-2"
@@ -57,7 +57,7 @@ import { ToastService } from '../../services/toast.service';
       font-family: 'Patrick Hand', cursive;
     }
     .animate-slideIn {
-      animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: slideIn 0.3s var(--ease-spring) forwards;
     }
     @keyframes slideIn {
       from { transform: translateY(100%) scale(0.8); opacity: 0; }

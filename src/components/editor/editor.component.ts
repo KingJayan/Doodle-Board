@@ -13,7 +13,7 @@ import { IoService } from '../../services/io.service';
   imports: [CommonModule, FormsModule],
   template: `
     <div
-      class="fixed inset-0 z-[100] flex items-start justify-center p-0 md:p-8 bg-gray-900/50 backdrop-blur-sm animate-fadeIn overflow-y-auto"
+      class="fixed inset-0 z-overlay flex items-start justify-center p-0 md:p-8 bg-gray-900/50 backdrop-blur-sm animate-fadeIn overflow-y-auto"
       (click)="requestClose()"
     >
       <div
@@ -116,7 +116,7 @@ import { IoService } from '../../services/io.service';
       from { opacity: 0; }
       to { opacity: 1; }
     }
-    .animate-slideUp { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    .animate-slideUp { animation: slideUp 0.4s var(--ease-spring) forwards; }
     @keyframes slideUp {
       from { transform: translateY(50px); opacity: 0; }
       to { transform: translateY(0); opacity: 1; }

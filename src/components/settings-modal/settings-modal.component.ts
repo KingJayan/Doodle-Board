@@ -17,18 +17,18 @@ import { version } from '../../../package.json';
           <div>
             <h3 class="font-bold mb-3 text-lg border-b border-[var(--ink-color)] pb-1">Theme</h3>
             <div class="flex flex-col gap-2">
-              <button (click)="themeService.setTheme('paper')" class="flex items-center gap-3 p-3 rounded border border-gray-300 hover:bg-gray-100 transition-colors bg-[#fdfbf7] text-gray-900">
-                <div class="w-6 h-6 rounded-full border border-black bg-[#fdfbf7]"></div>
+              <button (click)="themeService.setTheme('paper')" class="flex items-center gap-3 p-3 rounded border border-gray-300 hover:bg-gray-100 transition-colors bg-theme-paper text-gray-900">
+                <div class="w-6 h-6 rounded-full border border-black bg-theme-paper"></div>
                 <span>Classic Paper</span>
                 @if (themeService.currentTheme() === 'paper') { <span class="ml-auto">✅</span> }
               </button>
-              <button (click)="themeService.setTheme('chalkboard')" class="flex items-center gap-3 p-3 rounded border border-gray-600 hover:bg-gray-700 transition-colors bg-[#2b3035] text-white">
-                <div class="w-6 h-6 rounded-full border border-white bg-[#2b3035]"></div>
+              <button (click)="themeService.setTheme('chalkboard')" class="flex items-center gap-3 p-3 rounded border border-gray-600 hover:bg-gray-700 transition-colors bg-theme-dark text-white">
+                <div class="w-6 h-6 rounded-full border border-white bg-theme-dark"></div>
                 <span>Chalkboard (Dark)</span>
                 @if (themeService.currentTheme() === 'chalkboard') { <span class="ml-auto">✅</span> }
               </button>
-              <button (click)="themeService.setTheme('blueprint')" class="flex items-center gap-3 p-3 rounded border border-blue-300 hover:bg-blue-800 transition-colors bg-[#1e408a] text-white">
-                <div class="w-6 h-6 rounded-full border border-white bg-[#1e408a]"></div>
+              <button (click)="themeService.setTheme('blueprint')" class="flex items-center gap-3 p-3 rounded border border-blue-300 hover:bg-blue-800 transition-colors bg-theme-blueprint text-white">
+                <div class="w-6 h-6 rounded-full border border-white bg-theme-blueprint"></div>
                 <span>Blueprint</span>
                 @if (themeService.currentTheme() === 'blueprint') { <span class="ml-auto">✅</span> }
               </button>

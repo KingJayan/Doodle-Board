@@ -22,7 +22,7 @@ import { ToastService } from '../../services/toast.service';
       <!-- resize preview -->
       @if (isResizing()) {
         <div
-          class="absolute top-0 left-0 border-4 border-dashed border-gray-400/50 bg-gray-100/30 rounded-lg z-[100] pointer-events-none flex items-center justify-center"
+          class="absolute top-0 left-0 border-4 border-dashed border-gray-400/50 bg-gray-100/30 rounded-lg z-overlay pointer-events-none flex items-center justify-center"
           [style.width.px]="previewWidth()"
           [style.height.px]="previewHeight()"
         >
@@ -69,7 +69,7 @@ import { ToastService } from '../../services/toast.service';
         </div>
 
         <!-- action controls -->
-        <div class="absolute -top-10 -right-6 flex flex-col gap-2 z-[60] opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-auto p-2 hover:opacity-100">
+        <div class="absolute -top-10 -right-6 flex flex-col gap-2 z-card-float opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-auto p-2 hover:opacity-100">
           <div class="flex gap-2">
             <button
               (click)="handlePin($event)"
@@ -91,7 +91,7 @@ import { ToastService } from '../../services/toast.service';
               >📂</button>
 
               @if (showMoveMenu()) {
-                <div class="absolute top-full right-0 mt-2 bg-white border-2 border-black rounded-lg shadow-xl p-2 w-48 z-[100] flex flex-col gap-1" (click)="$event.stopPropagation()">
+                <div class="absolute top-full right-0 mt-2 bg-white border-2 border-black rounded-lg shadow-xl p-2 w-48 z-overlay flex flex-col gap-1" (click)="$event.stopPropagation()">
                   <div class="text-xs text-gray-500 font-bold px-2 uppercase tracking-wide mb-1">Move to...</div>
                   @for (folder of boardService.folders(); track folder.id) {
                     <button
@@ -121,7 +121,7 @@ import { ToastService } from '../../services/toast.service';
         </div>
 
         <!-- bottom hover tools -->
-        <div class="absolute -bottom-8 left-0 right-0 flex justify-center z-[60] opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-auto" [class.hidden]="card().isMinimized">
+        <div class="absolute -bottom-8 left-0 right-0 flex justify-center z-card-float opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-auto" [class.hidden]="card().isMinimized">
           <div class="bg-white/95 backdrop-blur px-3 py-2 rounded-full shadow-lg doodle-border flex gap-4 items-center">
             <!-- color picker -->
             <div class="relative group/colors">
@@ -229,7 +229,7 @@ import { ToastService } from '../../services/toast.service';
     .custom-scroll::-webkit-scrollbar { width: 6px; }
     .custom-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 4px; }
     .animate-scribbleOut { animation: scribbleOut 0.5s ease-in-out forwards; pointer-events: none; }
-    .animate-stamp { animation: stampIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+    .animate-stamp { animation: stampIn 0.2s var(--ease-stamp) forwards; }
     @keyframes stampIn {
       from { transform: scale(2); opacity: 0; }
       to { transform: scale(1); opacity: 0.9; }
