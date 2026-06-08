@@ -4,11 +4,12 @@ import { BoardService } from '../../services/board.service';
 import { IoService } from '../../services/io.service';
 import { ToastService } from '../../services/toast.service';
 import { Card, CARD_PALETTE } from '../../models/card.model';
+import { IconComponent } from '../icon/icon.component';
 
 @Component({
   selector: 'app-share-modal',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, IconComponent],
   template: `
     <div class="fixed inset-0 z-overlay flex items-center justify-center bg-black/50 backdrop-blur-sm" (click)="close.emit()">
       <div role="dialog" aria-modal="true" aria-labelledby="share-title" class="bg-[var(--paper-color)] p-8 rounded-lg max-w-lg w-full m-4 shadow-xl doodle-border relative text-[var(--ink-color)]" (click)="$event.stopPropagation()">
@@ -17,27 +18,27 @@ import { Card, CARD_PALETTE } from '../../models/card.model';
         <div class="text-center text-sm text-muted mb-4">Current Folder: {{ folderName() }}</div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div class="bg-green-50 p-4 rounded-lg border border-green-200 md:col-span-2">
-            <h3 class="font-bold mb-2">📄 Import Sketch</h3>
-            <p class="text-xs text-gray-700 mb-2">Upload a single <code>.md</code> file.</p>
+          <div class="bg-[var(--tint-green)] p-4 rounded-lg border border-soft md:col-span-2">
+            <h3 class="font-bold mb-2"><app-icon name="page"></app-icon> Import Sketch</h3>
+            <p class="text-xs text-muted mb-2">Upload a single <code>.md</code> file.</p>
             <input
               type="file" accept=".md,.txt"
               (change)="importSingleFile($event)"
-              class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-green-100 file:text-green-700 hover:file:bg-green-200"
+              class="block w-full text-xs text-muted file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[var(--surface-2)] file:text-[var(--ink-color)] hover:file:bg-[var(--surface-hover)]"
             />
           </div>
-          <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-            <h3 class="font-bold mb-2">📦 Export Folder</h3>
-            <p class="text-xs text-gray-600 mb-3">Download {{ folderName() }} (.zip).</p>
-            <button (click)="exportFolder()" class="doodle-btn w-full bg-yellow-200 text-black text-sm font-bold hover:bg-yellow-300">Download .zip</button>
+          <div class="bg-[var(--tint-yellow)] p-4 rounded-lg border border-soft">
+            <h3 class="font-bold mb-2"><app-icon name="package"></app-icon> Export Folder</h3>
+            <p class="text-xs text-muted mb-3">Download {{ folderName() }} (.zip).</p>
+            <button (click)="exportFolder()" class="doodle-btn w-full bg-[var(--accent)] text-[var(--paper-color)] text-sm font-bold">Download .zip</button>
           </div>
-          <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
-            <h3 class="font-bold mb-2">📂 Import to Folder</h3>
-            <p class="text-xs text-gray-600 mb-3">Add zip content to current folder.</p>
+          <div class="bg-[var(--tint-blue)] p-4 rounded-lg border border-soft">
+            <h3 class="font-bold mb-2"><app-icon name="folder-open"></app-icon> Import to Folder</h3>
+            <p class="text-xs text-muted mb-3">Add zip content to current folder.</p>
             <input
               type="file" accept=".zip"
               (change)="importZip($event)"
-              class="block w-full text-xs text-slate-500 file:mr-2 file:py-2 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200"
+              class="block w-full text-xs text-muted file:mr-2 file:py-2 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[var(--surface-2)] file:text-[var(--ink-color)] hover:file:bg-[var(--surface-hover)]"
             />
           </div>
         </div>
@@ -59,7 +60,7 @@ export class ShareModalComponent {
   async exportFolder() {
     try {
       await this.ioService.exportFolderAsZip(this.cards(), this.folderName());
-      this.toastService.show('Folder packed up! 📦', 'success');
+      this.toastService.show('Folder packed up!', 'success');
     } catch {
       this.toastService.show('Failed to pack board', 'error');
     }

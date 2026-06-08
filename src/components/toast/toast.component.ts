@@ -2,16 +2,17 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ToastService } from '../../services/toast.service';
+import { IconComponent } from '../icon/icon.component';
 
 @Component({
   selector: 'app-toast',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, IconComponent],
   template: `
     <div class="fixed bottom-6 right-6 z-toast flex flex-col gap-3 pointer-events-none">
       @for (toast of toastService.toasts(); track toast.id) {
-        <div 
-          class="pointer-events-auto bg-white min-w-[280px] max-w-sm p-4 relative shadow-lg transform transition-all duration-300 animate-slideIn doodle-border flex flex-col gap-2"
+        <div
+          class="pointer-events-auto bg-[var(--surface)] text-[var(--ink-color)] min-w-[280px] max-w-sm p-4 relative shadow-lg transform transition-all duration-300 animate-slideIn doodle-border flex flex-col gap-2"
           [class.rotate-1]="toast.id % 2 === 0"
           [class.-rotate-1]="toast.id % 2 !== 0"
         >
@@ -26,15 +27,15 @@ import { ToastService } from '../../services/toast.service';
 
           <div class="flex items-start gap-3">
             <div class="text-3xl">
-              @if (toast.type === 'success') { ✅ }
-              @if (toast.type === 'error') { ❌ }
-              @if (toast.type === 'info') { 📌 }
-              @if (toast.type === 'warning') { ⚠️ }
+              @if (toast.type === 'success') { <app-icon name="check"></app-icon> }
+              @if (toast.type === 'error') { <app-icon name="cross"></app-icon> }
+              @if (toast.type === 'info') { <app-icon name="pin"></app-icon> }
+              @if (toast.type === 'warning') { <app-icon name="warning"></app-icon> }
             </div>
-            <div class="pt-1 text-black font-hand text-xl leading-snug flex-grow">
+            <div class="pt-1 text-[var(--ink-color)] font-hand text-xl leading-snug flex-grow">
               {{ toast.message }}
             </div>
-            <button (click)="toastService.dismiss(toast.id)" class="text-gray-400 hover:text-black self-start text-xl">×</button>
+            <button (click)="toastService.dismiss(toast.id)" class="text-muted hover:text-[var(--ink-color)] self-start text-xl">×</button>
           </div>
 
           <!--action btn -->
@@ -42,7 +43,7 @@ import { ToastService } from '../../services/toast.service';
             <div class="flex justify-end mt-2">
               <button 
                 (click)="handleAction(toast)" 
-                class="bg-black text-white px-4 py-2 rounded text-base font-bold font-hand hover:scale-105 transition-transform"
+                class="bg-[var(--ink-color)] text-[var(--paper-color)] px-4 py-2 rounded text-base font-bold font-hand hover:scale-105 transition-transform"
               >
                 {{ toast.action.label }}
               </button>
@@ -54,7 +55,7 @@ import { ToastService } from '../../services/toast.service';
   `,
   styles: [`
     .font-hand {
-      font-family: 'Patrick Hand', cursive;
+      font-family: var(--font-body);
     }
     .animate-slideIn {
       animation: slideIn 0.3s var(--ease-spring) forwards;

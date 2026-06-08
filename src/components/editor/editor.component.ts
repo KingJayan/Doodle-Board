@@ -6,11 +6,12 @@ import { BoardService } from '../../services/board.service';
 import { AiService } from '../../services/ai.service';
 import { ToastService } from '../../services/toast.service';
 import { IoService } from '../../services/io.service';
+import { IconComponent } from '../icon/icon.component';
 
 @Component({
   selector: 'app-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, IconComponent],
   template: `
     <div
       class="fixed inset-0 z-overlay flex items-start justify-center p-0 md:p-8 bg-gray-900/50 backdrop-blur-sm animate-fadeIn overflow-y-auto"
@@ -57,24 +58,24 @@ import { IoService } from '../../services/io.service';
             <div class="flex gap-1 items-center">
               <button
                 (click)="polishContent('fix')"
-                class="flex items-center gap-1 px-2 py-1 rounded bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 text-xs font-bold"
+                class="flex items-center gap-1 px-2 py-1 rounded bg-[var(--tint-purple)] text-[var(--note-ink)] border border-soft hover:brightness-105 transition text-xs font-bold"
                 [disabled]="isPolishing()"
               >
-                ✨ Fix Grammar
+                <app-icon name="sparkles"></app-icon> Fix Grammar
               </button>
               <button
                 (click)="polishContent('expand')"
-                class="flex items-center gap-1 px-2 py-1 rounded bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 text-xs font-bold"
+                class="flex items-center gap-1 px-2 py-1 rounded bg-[var(--tint-blue)] text-[var(--note-ink)] border border-soft hover:brightness-105 transition text-xs font-bold"
                 [disabled]="isPolishing()"
               >
-                📝 Expand
+                <app-icon name="memo"></app-icon> Expand
               </button>
               <button
                 (click)="polishContent('tone')"
-                class="flex items-center gap-1 px-2 py-1 rounded bg-green-50 text-green-700 hover:bg-green-100 border border-green-200 text-xs font-bold"
+                class="flex items-center gap-1 px-2 py-1 rounded bg-[var(--tint-green)] text-[var(--note-ink)] border border-soft hover:brightness-105 transition text-xs font-bold"
                 [disabled]="isPolishing()"
               >
-                🎯 Tone
+                <app-icon name="target"></app-icon> Tone
               </button>
             </div>
           }
@@ -86,7 +87,7 @@ import { IoService } from '../../services/io.service';
         <div class="flex-grow p-8 md:p-16 flex flex-col gap-6 relative">
           @if (isPolishing()) {
             <div class="absolute inset-0 bg-[var(--surface)]/70 backdrop-blur-sm z-50 flex items-center justify-center flex-col">
-              <div class="text-4xl animate-bounce">✏️</div>
+              <div class="text-4xl animate-bounce"><app-icon name="pencil"></app-icon></div>
               <div class="font-bold text-muted mt-2">Genie is polishing your draft...</div>
             </div>
           }
@@ -108,7 +109,7 @@ import { IoService } from '../../services/io.service';
         <!-- tags footer -->
         <div class="p-8 border-t border-soft bg-[var(--surface-2)] text-sm text-muted">
           <div class="flex items-center gap-2">
-            <span>🏷️ Tags:</span>
+            <span><app-icon name="tag"></app-icon> Tags:</span>
             <input
               [(ngModel)]="form.tags"
               class="bg-transparent border-b border-soft focus:border-[var(--accent)] outline-none w-full max-w-sm px-2 py-1 text-[var(--ink-color)]"
@@ -120,7 +121,7 @@ import { IoService } from '../../services/io.service';
     </div>
   `,
   styles: [`
-    .font-hand { font-family: 'Patrick Hand', cursive; }
+    .font-hand { font-family: var(--font-body); }
     .animate-fadeIn { animation: fadeIn 0.2s ease-out forwards; }
     @keyframes fadeIn {
       from { opacity: 0; }
@@ -198,7 +199,7 @@ export class EditorComponent {
     this.isPolishing.set(true);
     try {
       this.form.content = await this.aiService.polishText(this.form.content, mode);
-      this.toastService.show('Pencil magic complete! ✨', 'success');
+      this.toastService.show('Pencil magic complete!', 'success');
     } catch {
       this.toastService.show('AI polish failed — check your API key', 'error');
     } finally {
