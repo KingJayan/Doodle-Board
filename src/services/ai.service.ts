@@ -9,7 +9,7 @@ export class AiService {
   readonly isAvailable: boolean;
 
   constructor() {
-    const apiKey = process.env.API_KEY;
+    const apiKey = import.meta.env['VITE_API_KEY'];
     this.isAvailable = !!apiKey;
     if (apiKey) {
       this.ai = new GoogleGenAI({ apiKey });
