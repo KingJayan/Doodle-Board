@@ -78,7 +78,7 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
           <div class="flex gap-2">
             <button (click)="helpPanelOpen.set(true)" class="doodle-btn px-3 text-lg" title="Help">❓</button>
             <button (click)="settingsPanelOpen.set(true)" class="doodle-btn px-2 text-xl" title="Settings">⚙️</button>
-            <button (click)="sharePanelOpen.set(true)" class="doodle-btn text-base" title="Backup & Share">📤 Share</button>
+            <button (click)="sharePanelOpen.set(true)" class="doodle-btn text-base" title="Backup & Export">📦 Backup</button>
             @if (aiAvailable) {
               <button (click)="aiPanelOpen.set(!aiPanelOpen())" class="doodle-btn bg-note-blue text-black text-base" title="Ask the Genie">✨ Genie</button>
             }
@@ -319,11 +319,6 @@ export class BoardComponent implements OnInit {
           card.content.toLowerCase().includes(query) ||
           card.tags.some((t: string) => t.toLowerCase().includes(query));
         return matchesSearch && (tag ? card.tags.includes(tag) : true);
-      })
-      .sort((a: Card, b: Card) => {
-        if (a.isPinned && !b.isPinned) return -1;
-        if (!a.isPinned && b.isPinned) return 1;
-        return 0;
       });
   });
 

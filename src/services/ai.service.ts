@@ -47,12 +47,7 @@ export class AiService {
       }
       throw new Error('No response text');
     } catch (error) {
-      console.error('AI Error:', error);
-      return {
-        title: 'Oops!',
-        content: 'The genie is sleeping. Try again later.',
-        tags: ['error', 'try-again']
-      };
+      throw error;
     }
   }
 

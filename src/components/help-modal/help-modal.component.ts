@@ -7,9 +7,9 @@ import { CommonModule } from '@angular/common';
   imports: [CommonModule],
   template: `
     <div class="fixed inset-0 z-overlay flex items-center justify-center bg-black/50 backdrop-blur-sm" (click)="close.emit()">
-      <div class="bg-[var(--paper-color)] p-8 rounded-lg max-w-2xl w-full m-4 shadow-xl doodle-border relative text-[var(--ink-color)] overflow-y-auto max-h-[90vh]" (click)="$event.stopPropagation()">
-        <button (click)="close.emit()" class="absolute top-4 right-4 text-2xl hover:text-red-500">×</button>
-        <h2 class="text-3xl marker-font mb-6 text-center">How to Doodle</h2>
+      <div role="dialog" aria-modal="true" aria-labelledby="help-title" class="bg-[var(--paper-color)] p-8 rounded-lg max-w-2xl w-full m-4 shadow-xl doodle-border relative text-[var(--ink-color)] overflow-y-auto max-h-[90vh]" (click)="$event.stopPropagation()">
+        <button (click)="close.emit()" class="absolute top-4 right-4 text-2xl hover:text-red-500" aria-label="Close">×</button>
+        <h2 id="help-title" class="text-3xl marker-font mb-6 text-center">How to Doodle</h2>
         <div class="space-y-6">
           <div class="flex gap-4 items-start">
             <div class="text-4xl">📝</div>

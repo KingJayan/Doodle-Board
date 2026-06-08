@@ -15,7 +15,6 @@ import { IoService } from '../../services/io.service';
     <div
       class="fixed inset-0 z-overlay flex items-start justify-center p-0 md:p-8 bg-gray-900/50 backdrop-blur-sm animate-fadeIn overflow-y-auto"
       (click)="requestClose()"
-      aria-hidden="true"
     >
       <div
         role="dialog"

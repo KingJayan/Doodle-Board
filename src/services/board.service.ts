@@ -157,9 +157,20 @@ export class BoardService {
   }
 
   togglePin(cardId: string) {
-    this.cards.update(cards =>
-      cards.map(c => c.id === cardId ? { ...c, isPinned: !c.isPinned } : c)
-    );
+    this.cards.update(cards => {
+      const idx = cards.findIndex(c => c.id === cardId);
+      if (idx === -1) return cards;
+      const updated = cards.map((c, i) => i === idx ? { ...c, isPinned: !c.isPinned } : c);
+      const card = updated[idx];
+      updated.splice(idx, 1);
+      if (card.isPinned) {
+        updated.unshift(card);
+      } else {
+        const lastPinned = updated.reduce((last, c, i) => c.isPinned ? i : last, -1);
+        updated.splice(lastPinned + 1, 0, card);
+      }
+      return updated;
+    });
     this.saveToStorage();
   }
 
