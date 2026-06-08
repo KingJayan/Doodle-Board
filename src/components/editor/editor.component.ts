@@ -1,4 +1,4 @@
-import { Component, inject, signal, Output, EventEmitter, ViewChild, ElementRef, input, OnChanges } from '@angular/core';
+import { Component, inject, signal, Output, EventEmitter, ViewChild, ElementRef, input, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Card } from '../../models/card.model';
@@ -123,7 +123,7 @@ import { IoService } from '../../services/io.service';
     }
   `]
 })
-export class EditorComponent implements OnChanges {
+export class EditorComponent {
   private boardService = inject(BoardService);
   private aiService = inject(AiService);
   aiAvailable = this.aiService.isAvailable;
@@ -138,9 +138,11 @@ export class EditorComponent implements OnChanges {
   isPolishing = signal(false);
   form = { title: '', content: '', tags: '' };
 
-  ngOnChanges() {
-    const c = this.card();
-    this.form = { title: c.title, content: c.content, tags: c.tags.join(', ') };
+  constructor() {
+    effect(() => {
+      const c = this.card();
+      this.form = { title: c.title, content: c.content, tags: c.tags.join(', ') };
+    });
   }
 
   private parseTags(): string[] {

@@ -61,8 +61,6 @@ export default defineConfig(({ mode }) => {
                 resolve: () => '',
                 dirname: () => '',
                 basename: () => '',
-                dirname: () => '',
-                basename: () => '',
                 extname: () => '',
                 normalize: () => ''
               };

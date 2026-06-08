@@ -2,9 +2,17 @@
 <h2><code>KingJayan/Doodle-Board</code></h2>
 </div> 
 
-a collaborative knowledge board built with Angular 18 and Vite.
+A collaborative visual knowledge board for brainstorming, ideas, and notes with folders, AI-assisted ideation, and offline-first storage.
 
-version: 1.13.1
+![Version](https://img.shields.io/badge/version-0.13.4-blue)
+
+>[!IMPORTANT]
+> currently in beta
+<!-->
+<p align="center">
+  <img src="./docs/demo.png" width="800">
+</p>
+-->
 
 ## features
 
@@ -15,7 +23,17 @@ version: 1.13.1
 - export/import, auto-save to localStorage
 - filtering + search
 - pin + max/minimize
- 
+
+## planned features for v1
+- supabase + dexiejs for cloud storage accross devices
+- performance optimizations on low hardware
+- language support, various browser extensions support
+- md typing support
+- more ai providers + webLLM alternative support(llama 3 8b or qwen 2.5 1.5b)
+- improved file CRUD + folder organization (boards over folders, +nested)
+- live collaboration through cf workers + partyKit (supabase/firebase realtime or pusher channels are other options)
+
+
 ## quickstart
 
 ### prereqs
