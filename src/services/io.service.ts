@@ -22,10 +22,10 @@ export class IoService {
 
   parseMarkdownContent(text: string): Partial<Card> & { content: string } {
     if (text.startsWith('---')) {
-      const end = text.indexOf('---', 3);
+      const end = text.indexOf('\n---', 3);
       if (end !== -1) {
         const yaml = text.substring(3, end);
-        const content = text.substring(end + 3).trim();
+        const content = text.substring(end + 4).trim();
         try {
           const frontmatter = yamlLoad(yaml) as Partial<Card>;
           return { ...frontmatter, content };
