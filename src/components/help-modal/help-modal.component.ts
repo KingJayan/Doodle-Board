@@ -35,7 +35,7 @@ import { CommonModule } from '@angular/common';
             } @else {
               <div>
                 <h3 class="font-bold text-xl">AI Features Disabled</h3>
-                <p>Set an <strong>API_KEY</strong> environment variable to enable Genie brainstorm and Magic Pencil polish.</p>
+                <p>Set a <strong>VITE_API_KEY</strong> environment variable to enable Genie brainstorm and Magic Pencil polish.</p>
               </div>
             }
           </div>
