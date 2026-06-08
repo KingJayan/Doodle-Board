@@ -16,7 +16,7 @@ import { ToastService } from '../../services/toast.service';
       class="transition-transform duration-300 relative select-none"
       [style.transform]="rotationStyle()"
       [style.width.px]="card().isMinimized ? D.minimizedWidth : (card().width || D.width)"
-      [style.z-index]="isResizing() ? 100 : 'auto'"
+      [class.z-overlay]="isResizing()"
     >
 
       <!-- resize preview -->
@@ -36,7 +36,7 @@ import { ToastService } from '../../services/toast.service';
       <div
         class="group relative p-4 flex flex-col gap-2 h-full min-h-[100px] transition-all duration-300 card-shadow bg-card rounded-sm"
         [class.hover:scale-[1.02]]="!isEditing() && !isResizing()"
-        [class.hover:z-50]="!isEditing() && !isResizing()"
+        [class.hover:z-card-float]="!isEditing() && !isResizing()"
         [class.animate-scribbleOut]="isDeleting()"
         [style.background-color]="card().color"
         [style.height.px]="card().isMinimized ? null : (card().height || D.height)"
@@ -200,7 +200,7 @@ import { ToastService } from '../../services/toast.service';
         <!-- resize handle -->
         @if (!card().isMinimized && !isEditing()) {
           <div
-            class="absolute -bottom-3 -right-3 w-12 h-12 cursor-se-resize z-50 flex items-center justify-center group/resize"
+            class="absolute -bottom-3 -right-3 w-12 h-12 cursor-se-resize z-card-float flex items-center justify-center group/resize"
             (mousedown)="startResize($event)"
           >
             <svg viewBox="0 0 10 10" class="w-5 h-5 fill-black/20 group-hover/resize:fill-black/80 transition-colors transform -translate-x-2 -translate-y-2">

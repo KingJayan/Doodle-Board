@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { ThemeService } from '../../services/theme.service';
 
 @Component({
   selector: 'app-landing',
@@ -9,11 +10,11 @@ import { Router } from '@angular/router';
   template: `
     <div
       class="min-h-screen flex flex-col md:flex-row items-center justify-center p-8 gap-12 bg-pattern overflow-hidden"
-      [class.animate-fallOff]="isExiting()"
+      [class.animate-fallOff]="isExiting() && !themeService.reduceMotion()"
     >
 
       <div class="flex-1 max-w-md text-center md:text-left">
-        <h1 class="text-6xl md:text-8xl mb-4 text-brand drop-shadow-sm rotate-[-2deg] animate-wiggle">
+        <h1 class="text-6xl md:text-8xl mb-4 text-brand drop-shadow-sm rotate-[-2deg]" [class.animate-wiggle]="!themeService.reduceMotion()">
           Doodle<br>Board
         </h1>
         <p class="text-2xl mb-8 font-light text-gray-700 leading-relaxed">
@@ -31,9 +32,7 @@ import { Router } from '@angular/router';
           </button>
 
           <div class="text-sm text-gray-400 mt-8 max-w-xs border-l-2 border-gray-300 pl-4 italic">
-            "It's like sticky notes, but online."
-            <br>
-            "A place where my ideas never get lost"
+            Local-only · No account · No sync
           </div>
         </div>
       </div>
@@ -77,9 +76,14 @@ import { Router } from '@angular/router';
 })
 export class LandingComponent {
   private router = inject(Router);
+  themeService = inject(ThemeService);
   isExiting = signal(false);
 
   startExit() {
+    if (this.themeService.reduceMotion()) {
+      this.router.navigate(['/board']);
+      return;
+    }
     this.isExiting.set(true);
     setTimeout(() => this.router.navigate(['/board']), 700);
   }

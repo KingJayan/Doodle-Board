@@ -15,15 +15,20 @@ export class ThemeService {
     if (savedTheme) this.currentTheme.set(savedTheme);
     
     const savedMotion = localStorage.getItem('doodle_motion');
-    if (savedMotion) this.reduceMotion.set(JSON.parse(savedMotion));
+    this.reduceMotion.set(savedMotion !== null
+      ? JSON.parse(savedMotion)
+      : window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    );
 
     effect(() => {
       this.applyTheme(this.currentTheme());
       localStorage.setItem('doodle_theme', this.currentTheme());
     });
-    
+
     effect(() => {
-       localStorage.setItem('doodle_motion', JSON.stringify(this.reduceMotion()));
+      const rm = this.reduceMotion();
+      localStorage.setItem('doodle_motion', JSON.stringify(rm));
+      document.body.classList.toggle('reduce-motion', rm);
     });
   }
 

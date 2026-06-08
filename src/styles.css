@@ -88,3 +88,11 @@ h1, h2, h3, .marker-font {
   border-radius: 10px;
   border: 2px solid var(--paper-color);
 }
+
+@media (prefers-reduced-motion: reduce), body.reduce-motion {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

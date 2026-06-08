@@ -38,7 +38,7 @@ export class BoardService {
           isPinned: c.isPinned ?? false
         })));
       } catch {
-        this.seedData();
+        this.cards.set([]);
       }
     } else {
       this.seedData();

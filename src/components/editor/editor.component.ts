@@ -101,9 +101,8 @@ import { IoService } from '../../services/io.service';
           <textarea
             #editorTextarea
             [(ngModel)]="form.content"
-            class="w-full flex-grow bg-transparent resize-none outline-none text-lg md:text-xl leading-relaxed font-hand text-gray-800"
+            class="w-full flex-grow bg-transparent resize-none outline-none text-lg md:text-xl leading-relaxed font-hand text-gray-800 min-h-[400px]"
             placeholder="Start writing..."
-            class="min-h-[400px]"
           ></textarea>
         </div>
 
@@ -184,10 +183,11 @@ export class EditorComponent {
   }
 
   requestClose() {
-    if (this.hasUnsavedChanges()) {
-      if (!confirm('Wait! You have unsaved scribbles. Close anyway?')) return;
-    }
-    this.close.emit();
+    if (!this.hasUnsavedChanges()) { this.close.emit(); return; }
+    this.toastService.show('Unsaved changes — close anyway?', 'warning', {
+      label: 'Close',
+      callback: () => this.close.emit()
+    });
   }
 
   async polishContent(mode: 'fix' | 'expand' | 'tone') {

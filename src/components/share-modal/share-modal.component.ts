@@ -10,7 +10,7 @@ import { Card, CARD_PALETTE } from '../../models/card.model';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" (click)="close.emit()">
+    <div class="fixed inset-0 z-overlay flex items-center justify-center bg-black/50 backdrop-blur-sm" (click)="close.emit()">
       <div class="bg-[var(--paper-color)] p-8 rounded-lg max-w-lg w-full m-4 shadow-xl doodle-border relative text-[var(--ink-color)]" (click)="$event.stopPropagation()">
         <button (click)="close.emit()" class="absolute top-4 right-4 text-2xl hover:text-red-500">×</button>
         <h2 class="text-3xl marker-font mb-6 text-center">Share & Backup</h2>
