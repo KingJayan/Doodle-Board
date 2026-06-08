@@ -1,12 +1,13 @@
 import { Component, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ThemeService, ThemeDef } from '../../services/theme.service';
-const version = '0.15.0';
+import { IconComponent } from '../icon/icon.component';
+const version = '0.16.0';
 
 @Component({
   selector: 'app-settings-modal',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, IconComponent],
   template: `
     <div class="fixed inset-0 z-overlay flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" (click)="close.emit()">
       <div role="dialog" aria-modal="true" aria-labelledby="settings-title" class="bg-[var(--paper-color)] p-6 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-xl doodle-border relative text-[var(--ink-color)]" (click)="$event.stopPropagation()">
@@ -37,7 +38,7 @@ const version = '0.15.0';
                 <div class="font-bold">System</div>
                 <div class="text-muted text-xs">Follows your OS light / dark setting</div>
               </div>
-              @if (isSelected('system')) { <span class="text-xl">✅</span> }
+              @if (isSelected('system')) { <span class="text-xl"><app-icon name="check"></app-icon></span> }
             </button>
 
             @for (group of groups; track group.label) {
@@ -73,7 +74,8 @@ const version = '0.15.0';
                         <!-- sample note -->
                         <div class="mini-note"
                           [style.background-color]="t.vars['--surface']"
-                          [style.border-color]="t.vars['--accent']">
+                          [style.border-color]="t.vars['--accent']"
+                          [style.transform]="'rotate(' + (-4 * t.tilt) + 'deg)'">
                           <span class="mini-line" [style.background-color]="t.vars['--ink-color']"></span>
                           <span class="mini-line short" [style.background-color]="t.vars['--ink-color']"></span>
                         </div>
@@ -83,8 +85,8 @@ const version = '0.15.0';
                       </div>
                       <!-- meta -->
                       <div class="flex items-center gap-2 px-2 py-1.5 bg-surface">
-                        <span>{{ t.emoji }}</span>
-                        <span class="text-sm font-bold truncate text-[var(--ink-color)]">{{ t.label }}</span>
+                        <span class="text-[var(--ink-color)]"><app-icon [name]="t.icon"></app-icon></span>
+                        <span class="text-sm font-bold truncate text-[var(--ink-color)]" [style.font-family]="t.vars['--font-display']">{{ t.label }}</span>
                       </div>
                     </button>
                   }
@@ -111,8 +113,8 @@ const version = '0.15.0';
             <span>DoodleBoard v{{ version }}</span>
             <div class="flex items-center justify-center gap-2">
               <span>By Jayan Patel</span>
-              <a href="https://jayanpatel.vercel.app" target="_blank" class="text-sm hover:scale-110 transition-transform no-underline" title="Portfolio">🌐</a>
-              <a href="https://github.com/KingJayan" target="_blank" class="text-sm hover:scale-110 transition-transform no-underline" title="GitHub">🐙</a>
+              <a href="https://jayanpatel.vercel.app" target="_blank" class="text-sm hover:scale-110 transition-transform no-underline" title="Portfolio"><app-icon name="globe"></app-icon></a>
+              <a href="https://github.com/KingJayan" target="_blank" class="text-sm hover:scale-110 transition-transform no-underline" title="GitHub"><app-icon name="octopus"></app-icon></a>
             </div>
           </div>
         </div>

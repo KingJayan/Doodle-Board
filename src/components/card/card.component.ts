@@ -4,12 +4,14 @@ import { FormsModule } from '@angular/forms';
 import { Card, CARD_PALETTE, CARD_DEFAULTS } from '../../models/card.model';
 import { BoardService } from '../../services/board.service';
 import { ToastService } from '../../services/toast.service';
+import { ThemeService } from '../../services/theme.service';
+import { IconComponent, iconFor } from '../icon/icon.component';
 
 @Component({
   selector: 'app-card',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, IconComponent],
   template: `
     <!-- rotation wrapper -->
     <div
@@ -38,7 +40,7 @@ import { ToastService } from '../../services/toast.service';
         [class.hover:scale-[1.02]]="!isEditing() && !isResizing()"
         [class.hover:z-card-float]="!isEditing() && !isResizing()"
         [class.animate-scribbleOut]="isDeleting()"
-        [style.background-color]="card().color"
+        [style.background-color]="noteBg(card().color)"
         [style.height.px]="card().isMinimized ? null : (card().height || D.height)"
       >
         <!-- drag handle -->
@@ -51,9 +53,9 @@ import { ToastService } from '../../services/toast.service';
 
         <!-- pin / tape visual -->
         @if (card().isPinned) {
-          <div class="absolute -top-5 left-1/2 -translate-x-1/2 text-4xl drop-shadow-md z-30 pointer-events-none">📌</div>
+          <div class="absolute -top-5 left-1/2 -translate-x-1/2 text-4xl drop-shadow-md z-30 pointer-events-none"><app-icon name="pin"></app-icon></div>
         } @else {
-          <div class="absolute -top-3 left-1/2 -translate-x-1/2 w-28 h-8 bg-white/40 rotate-1 backdrop-blur-sm shadow-sm pointer-events-none" style="clip-path: polygon(2% 0%, 98% 0%, 100% 100%, 0% 100%)"></div>
+          <div class="absolute -top-3 left-1/2 -translate-x-1/2 w-28 h-8 rotate-1 backdrop-blur-sm shadow-sm pointer-events-none" style="clip-path: polygon(2% 0%, 98% 0%, 100% 100%, 0% 100%); background-color: var(--tape-color)"></div>
         }
 
         <!-- stickers -->
@@ -64,7 +66,7 @@ import { ToastService } from '../../services/toast.service';
               [style.top.px]="stickerTop($index)"
               [style.right.px]="stickerRight($index)"
               [style.transform]="'rotate(' + (($index * 45) - 20) + 'deg)'"
-            >{{ sticker }}</div>
+            ><app-icon [name]="iconFor(sticker)"></app-icon></div>
           }
         </div>
 
@@ -73,32 +75,32 @@ import { ToastService } from '../../services/toast.service';
           <div class="flex gap-2">
             <button
               (click)="handlePin($event)"
-              class="w-9 h-9 bg-white text-black rounded-full flex items-center justify-center shadow-md hover:bg-yellow-50 hover:scale-110 transition-transform doodle-border text-sm cursor-pointer"
+              class="w-9 h-9 bg-[var(--surface)] text-[var(--ink-color)] rounded-full flex items-center justify-center shadow-md hover-surface hover:scale-110 transition-transform doodle-border text-sm cursor-pointer"
               [attr.aria-label]="card().isPinned ? 'Unpin' : 'Pin'"
-            >{{ card().isPinned ? '📍' : '📌' }}</button>
+            ><app-icon [name]="card().isPinned ? 'pin-active' : 'pin'"></app-icon></button>
 
             <button
               (click)="toggleMinimize($event)"
-              class="w-9 h-9 bg-white text-black rounded-full flex items-center justify-center shadow-md hover:bg-gray-50 hover:scale-110 transition-transform doodle-border text-sm cursor-pointer font-bold"
+              class="w-9 h-9 bg-[var(--surface)] text-[var(--ink-color)] rounded-full flex items-center justify-center shadow-md hover-surface hover:scale-110 transition-transform doodle-border text-sm cursor-pointer font-bold"
               [attr.aria-label]="card().isMinimized ? 'Expand' : 'Minimize'"
-            >{{ card().isMinimized ? '⬜' : '_' }}</button>
+            >@if (card().isMinimized) {<app-icon name="maximize"></app-icon>} @else {<span>_</span>}</button>
 
             <div class="relative">
               <button
                 (click)="toggleMoveMenu($event)"
-                class="w-9 h-9 bg-white text-black rounded-full flex items-center justify-center shadow-md hover:bg-blue-50 hover:scale-110 transition-transform doodle-border text-sm cursor-pointer"
+                class="w-9 h-9 bg-[var(--surface)] text-[var(--ink-color)] rounded-full flex items-center justify-center shadow-md hover-surface hover:scale-110 transition-transform doodle-border text-sm cursor-pointer"
                 aria-label="Move to folder"
-              >📂</button>
+              ><app-icon name="folder-open"></app-icon></button>
 
               @if (showMoveMenu()) {
-                <div class="absolute top-full right-0 mt-2 bg-white border-2 border-black rounded-lg shadow-xl p-2 w-48 z-overlay flex flex-col gap-1" (click)="$event.stopPropagation()">
-                  <div class="text-xs text-gray-500 font-bold px-2 uppercase tracking-wide mb-1">Move to...</div>
+                <div class="absolute top-full right-0 mt-2 bg-[var(--surface)] text-[var(--ink-color)] border-2 border-[var(--ink-color)] rounded-lg shadow-xl p-2 w-48 z-overlay flex flex-col gap-1" (click)="$event.stopPropagation()">
+                  <div class="text-xs text-muted font-bold px-2 uppercase tracking-wide mb-1">Move to...</div>
                   @for (folder of boardService.folders(); track folder.id) {
                     <button
-                      class="text-left text-sm px-3 py-2 hover:bg-gray-100 rounded-md truncate font-hand font-bold transition-colors"
+                      class="text-left text-sm px-3 py-2 hover-surface rounded-md truncate font-hand font-bold transition-colors"
                       (click)="moveToFolder(folder.id)"
-                      [class.bg-blue-50]="folder.id === card().folderId"
-                      [class.text-blue-700]="folder.id === card().folderId"
+                      [style.background-color]="folder.id === card().folderId ? 'var(--surface-hover)' : null"
+                      [style.color]="folder.id === card().folderId ? 'var(--accent)' : null"
                     >{{ folder.name }}</button>
                   }
                 </div>
@@ -109,12 +111,12 @@ import { ToastService } from '../../services/toast.service';
           <div class="flex gap-2 justify-end">
             <button
               (click)="handleExpand($event)"
-              class="w-9 h-9 bg-white text-black rounded-full flex items-center justify-center shadow-md hover:bg-blue-50 hover:scale-110 transition-transform doodle-border text-sm cursor-pointer"
+              class="w-9 h-9 bg-[var(--surface)] text-[var(--ink-color)] rounded-full flex items-center justify-center shadow-md hover-surface hover:scale-110 transition-transform doodle-border text-sm cursor-pointer"
               aria-label="Open editor"
             >↗</button>
             <button
               (click)="handleDelete($event)"
-              class="w-9 h-9 bg-white text-red-500 rounded-full flex items-center justify-center shadow-md hover:bg-red-50 hover:scale-110 transition-transform doodle-border cursor-pointer font-bold text-sm"
+              class="w-9 h-9 bg-[var(--surface)] text-red-500 rounded-full flex items-center justify-center shadow-md hover-surface hover:scale-110 transition-transform doodle-border cursor-pointer font-bold text-sm"
               aria-label="Delete note"
             >✕</button>
           </div>
@@ -122,26 +124,26 @@ import { ToastService } from '../../services/toast.service';
 
         <!-- bottom hover tools -->
         <div class="absolute -bottom-8 left-0 right-0 flex justify-center z-card-float opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-auto" [class.hidden]="card().isMinimized">
-          <div class="bg-white/95 backdrop-blur px-3 py-2 rounded-full shadow-lg doodle-border flex gap-4 items-center">
+          <div class="bg-[var(--surface)]/95 text-[var(--ink-color)] backdrop-blur px-3 py-2 rounded-full shadow-lg doodle-border flex gap-4 items-center">
             <!-- color picker -->
             <div class="relative group/colors">
-              <button class="w-8 h-8 rounded-full border-2 border-gray-400 shadow-inner hover:scale-110 transition-transform" [style.background-color]="card().color" aria-label="Change color"></button>
-              <div class="absolute bottom-full left-0 mb-3 p-3 bg-white rounded-xl shadow-xl border-2 border-gray-200 hidden group-hover/colors:flex gap-2 animate-slideUp">
+              <button class="w-8 h-8 rounded-full border-2 border-[var(--border-soft)] shadow-inner hover:scale-110 transition-transform" [style.background-color]="noteBg(card().color)" aria-label="Change color"></button>
+              <div class="absolute bottom-full left-0 mb-3 p-3 bg-[var(--surface)] rounded-xl shadow-xl border-2 border-soft hidden group-hover/colors:flex gap-2 animate-slideUp">
                 @for (c of palette; track c) {
                   <button
                     (click)="changeColor(c, $event)"
-                    class="w-8 h-8 rounded-full border border-gray-300 hover:scale-125 transition-transform"
-                    [style.background-color]="c"
+                    class="w-8 h-8 rounded-full border border-soft hover:scale-125 transition-transform"
+                    [style.background-color]="noteBg(c)"
                   ></button>
                 }
               </div>
             </div>
-            <div class="w-px h-6 bg-gray-300"></div>
+            <div class="w-px h-6 bg-[var(--border-soft)]"></div>
             <div class="flex gap-2 text-xl">
-              <button (click)="toggleSticker('⭐', $event)" class="hover:scale-125 transition-transform" aria-label="Toggle star sticker">⭐</button>
-              <button (click)="toggleSticker('✅', $event)" class="hover:scale-125 transition-transform" aria-label="Toggle check sticker">✅</button>
-              <button (click)="toggleSticker('🔥', $event)" class="hover:scale-125 transition-transform" aria-label="Toggle fire sticker">🔥</button>
-              <button (click)="toggleSticker('❓', $event)" class="hover:scale-125 transition-transform" aria-label="Toggle question sticker">❓</button>
+              <button (click)="toggleSticker('⭐', $event)" class="hover:scale-125 transition-transform" aria-label="Toggle star sticker"><app-icon name="star"></app-icon></button>
+              <button (click)="toggleSticker('✅', $event)" class="hover:scale-125 transition-transform" aria-label="Toggle check sticker"><app-icon name="check"></app-icon></button>
+              <button (click)="toggleSticker('🔥', $event)" class="hover:scale-125 transition-transform" aria-label="Toggle fire sticker"><app-icon name="fire"></app-icon></button>
+              <button (click)="toggleSticker('❓', $event)" class="hover:scale-125 transition-transform" aria-label="Toggle question sticker"><app-icon name="question"></app-icon></button>
             </div>
           </div>
         </div>
@@ -163,7 +165,7 @@ import { ToastService } from '../../services/toast.service';
             ></textarea>
             <div class="flex justify-end gap-2 mt-2">
               <button (click)="cancelEdit()" class="text-base underline opacity-70 hover:opacity-100 p-2">Cancel</button>
-              <button (click)="saveEdit()" class="doodle-btn text-base py-1 px-4 bg-white/50">Done</button>
+              <button (click)="saveEdit()" class="doodle-btn text-base py-1 px-4 bg-[var(--surface)]/70">Done</button>
             </div>
           </div>
         } @else {
@@ -188,7 +190,7 @@ import { ToastService } from '../../services/toast.service';
               <div class="mt-auto pt-3 flex flex-wrap gap-2">
                 @for (tag of card().tags; track tag) {
                   <span
-                    class="text-xs font-bold px-2 py-1 border border-black/20 rounded-full bg-white/30 hover:bg-white/50 transition-colors"
+                    class="text-xs font-bold px-2 py-1 border border-[var(--note-ink)]/20 rounded-full bg-[var(--note-ink)]/5 hover:bg-[var(--note-ink)]/15 transition-colors"
                     (click)="handleTagClick(tag, $event)"
                   >#{{ tag }}</span>
                 }
@@ -213,7 +215,7 @@ import { ToastService } from '../../services/toast.service';
     </div>
   `,
   styles: [`
-    .card-shadow { box-shadow: 2px 4px 6px rgba(0,0,0,0.15); }
+    .card-shadow { box-shadow: var(--card-shadow); }
     :host { display: block; }
     :host ::ng-deep .markdown-content strong { font-weight: 800; }
     :host ::ng-deep .markdown-content em { font-style: italic; }
@@ -255,8 +257,13 @@ import { ToastService } from '../../services/toast.service';
 })
 export class CardComponent implements OnDestroy {
   protected D = CARD_DEFAULTS;
+  protected iconFor = iconFor;
   boardService = inject(BoardService);
   private toastService = inject(ToastService);
+  private themeService = inject(ThemeService);
+
+  /** Theme-aware sticky-note background (darkened on dark themes). */
+  noteBg = (hex: string) => this.themeService.noteBg(hex);
 
   card = input.required<Card>();
   searchQuery = input<string>('');
@@ -276,7 +283,9 @@ export class CardComponent implements OnDestroy {
 
   previewWidth = signal(0);
   previewHeight = signal(0);
-  rotationStyle = computed(() => `rotate(${this.card().rotation}deg)`);
+  // Themes that lay notes on a grid (Blueprint, Terminal) zero out the tilt;
+  // breezy themes (Sakura) amplify it. See ThemeService.tilt.
+  rotationStyle = computed(() => `rotate(${this.card().rotation * this.themeService.tilt()}deg)`);
 
   readonly palette = CARD_PALETTE;
 

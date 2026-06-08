@@ -62,7 +62,7 @@ export class BoardService {
       {
         id: '2',
         folderId: 'default',
-        title: 'Ideas 💡',
+        title: 'Ideas',
         content: 'Use the expand button (↗) to open the full editor!',
         tags: ['ideas'],
         color: CARD_PALETTE[2],

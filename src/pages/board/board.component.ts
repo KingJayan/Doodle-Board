@@ -8,6 +8,7 @@ import { EditorComponent } from '../../components/editor/editor.component';
 import { SettingsModalComponent } from '../../components/settings-modal/settings-modal.component';
 import { HelpModalComponent } from '../../components/help-modal/help-modal.component';
 import { ShareModalComponent } from '../../components/share-modal/share-modal.component';
+import { IconComponent } from '../../components/icon/icon.component';
 import { AiService } from '../../services/ai.service';
 import { ToastService } from '../../services/toast.service';
 import { ThemeService } from '../../services/theme.service';
@@ -16,7 +17,7 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
 @Component({
   selector: 'app-board',
   standalone: true,
-  imports: [CommonModule, FormsModule, CardComponent, EditorComponent, SettingsModalComponent, HelpModalComponent, ShareModalComponent],
+  imports: [CommonModule, FormsModule, CardComponent, EditorComponent, SettingsModalComponent, HelpModalComponent, ShareModalComponent, IconComponent],
   template: `
     <div class="h-screen flex flex-col overflow-hidden">
 
@@ -45,7 +46,7 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
           <div class="flex items-center gap-2 cursor-pointer group" (click)="router.navigate(['/'])">
             <button class="md:hidden text-2xl mr-2" (click)="sidebarOpen.set(!sidebarOpen()); $event.stopPropagation()">☰</button>
             <span class="text-3xl marker-font text-brand -rotate-2 group-hover:rotate-0 transition-transform">DoodleBoard</span>
-            <span class="text-sm bg-black text-white px-2 rounded-full transform rotate-3">Beta</span>
+            <span class="text-sm bg-[var(--accent)] text-[var(--paper-color)] px-2 rounded-full transform rotate-3">Beta</span>
           </div>
 
           <div class="flex flex-wrap gap-4 items-center justify-center">
@@ -58,7 +59,7 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
                 placeholder="Search scribbles..."
                 class="doodle-input bg-[var(--surface)]/60 rounded-full px-4 py-1 w-48 focus:w-64 transition-all"
               />
-              <span class="absolute right-3 top-2 opacity-50">🔍</span>
+              <span class="absolute right-3 top-2 opacity-50"><app-icon name="search"></app-icon></span>
             </div>
 
             <div class="text-xs font-mono opacity-60 w-16 text-center hidden md:block">
@@ -67,23 +68,23 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
 
             @if (activeTag()) {
               <div
-                class="bg-note-yellow px-3 py-1 rounded-full border border-black flex items-center gap-2 cursor-pointer hover:bg-red-200 transition-colors"
+                class="bg-[var(--tint-yellow)] text-[var(--ink-color)] px-3 py-1 rounded-full border border-soft flex items-center gap-2 cursor-pointer hover:bg-[var(--tint-pink)] transition-colors"
                 (click)="activeTag.set(null)"
               >
-                <span class="text-black">#{{ activeTag() }}</span>
-                <span class="font-bold text-black">×</span>
+                <span>#{{ activeTag() }}</span>
+                <span class="font-bold">×</span>
               </div>
             }
           </div>
 
           <div class="flex gap-2">
-            <button (click)="helpPanelOpen.set(true)" class="doodle-btn px-3 text-lg" title="Help">❓</button>
-            <button (click)="settingsPanelOpen.set(true)" class="doodle-btn px-2 text-xl" title="Settings">⚙️</button>
-            <button (click)="sharePanelOpen.set(true)" class="doodle-btn text-base" title="Backup & Export">📦 Backup</button>
+            <button (click)="helpPanelOpen.set(true)" class="doodle-btn px-3 text-lg" title="Help"><app-icon name="question"></app-icon></button>
+            <button (click)="settingsPanelOpen.set(true)" class="doodle-btn px-2 text-xl" title="Settings"><app-icon name="gear"></app-icon></button>
+            <button (click)="sharePanelOpen.set(true)" class="doodle-btn text-base" title="Backup & Export"><app-icon name="package"></app-icon> Backup</button>
             @if (aiAvailable) {
-              <button (click)="aiPanelOpen.set(!aiPanelOpen())" class="doodle-btn bg-note-blue text-black text-base" title="Ask the Genie">✨ Genie</button>
+              <button (click)="aiPanelOpen.set(!aiPanelOpen())" class="doodle-btn bg-[var(--tint-blue)] text-[var(--ink-color)] text-base" title="Ask the Genie"><app-icon name="sparkles"></app-icon> Genie</button>
             }
-            <button (click)="createNewCard()" class="doodle-btn bg-note-green text-black font-bold text-base">+ New Note</button>
+            <button (click)="createNewCard()" class="doodle-btn bg-[var(--tint-green)] text-[var(--ink-color)] font-bold text-base">+ New Note</button>
           </div>
         </div>
       </header>
@@ -95,7 +96,7 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
           class="absolute md:static top-0 left-0 bottom-0 z-30 w-64 bg-[var(--paper-color)] border-r-2 border-[var(--ink-color)] transform transition-transform duration-300 md:translate-x-0 p-4 flex flex-col gap-4 shadow-xl md:shadow-none h-full"
           [class.-translate-x-full]="!sidebarOpen()"
         >
-          <h3 class="marker-font text-xl border-b-2 border-dashed border-soft pb-2 mb-2">📂 Folders</h3>
+          <h3 class="marker-font text-xl border-b-2 border-dashed border-soft pb-2 mb-2"><app-icon name="folder-open"></app-icon> Folders</h3>
 
           <div class="flex-grow overflow-y-auto flex flex-col gap-2">
             @for (folder of folders(); track folder.id) {
@@ -104,7 +105,7 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
                 [class.active]="activeFolderId() === folder.id"
                 (click)="activeFolderId.set(folder.id); sidebarOpen.set(false)"
               >
-                <span class="text-xl">📁</span>
+                <span class="text-xl"><app-icon name="folder"></app-icon></span>
                 @if (renamingFolderId() === folder.id) {
                   <input
                     class="doodle-input text-sm flex-grow"
@@ -139,7 +140,7 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
               >
               <button
                 (click)="createFolder(newFolderInput.value); newFolderInput.value = ''"
-                class="doodle-btn px-2 py-0 text-lg bg-green-100"
+                class="doodle-btn px-2 py-0 text-lg bg-[var(--tint-green)] text-[var(--ink-color)]"
               >+</button>
             </div>
           </div>
@@ -153,20 +154,20 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
         <!-- ai genie panel -->
         @if (aiPanelOpen()) {
           <div class="absolute top-4 left-4 right-4 md:left-auto md:right-auto md:w-96 z-30">
-            <div class="p-4 border-2 border-dashed border-blue-300 rounded-lg bg-blue-50 relative animate-slideDown shadow-xl">
-              <button (click)="aiPanelOpen.set(false)" class="absolute top-2 right-2 text-xl hover:text-red-500 text-black">×</button>
-              <h3 class="font-bold text-lg mb-2 text-black">✨ Brainstorm with Genie</h3>
+            <div class="p-4 border-2 border-dashed border-[var(--accent-2)] rounded-lg bg-[var(--tint-blue)] text-[var(--ink-color)] relative animate-slideDown shadow-xl">
+              <button (click)="aiPanelOpen.set(false)" class="absolute top-2 right-2 text-xl hover:text-red-500 text-[var(--ink-color)]">×</button>
+              <h3 class="font-bold text-lg mb-2 text-[var(--ink-color)]"><app-icon name="sparkles"></app-icon> Brainstorm with Genie</h3>
               <div class="flex gap-2">
                 <input
                   #topicInput
                   type="text"
-                  class="doodle-input bg-white text-black"
+                  class="doodle-input bg-[var(--surface)] text-[var(--ink-color)]"
                   placeholder="e.g. Pizza toppings..."
                   (keyup.enter)="generateCard(topicInput.value); topicInput.value = ''"
                 >
                 <button
                   (click)="generateCard(topicInput.value); topicInput.value = ''"
-                  class="doodle-btn bg-white text-black py-1 text-sm"
+                  class="doodle-btn bg-[var(--surface)] text-[var(--ink-color)] py-1 text-sm"
                   [disabled]="isGenerating()"
                 >{{ isGenerating() ? '...' : 'Go!' }}</button>
               </div>
@@ -178,7 +179,7 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
         <main class="p-4 md:p-8 flex-grow w-full z-10 overflow-y-auto h-full" (dragover)="handleDragOver($event)">
           @if (filteredCards().length === 0) {
             <div class="text-center py-20 opacity-50">
-              <div class="text-6xl mb-4">🍃</div>
+              <div class="text-6xl mb-4"><app-icon name="leaf"></app-icon></div>
               <p class="text-2xl marker-font">Empty Folder...</p>
               <p>Drag notes here or create new ones!</p>
             </div>
@@ -364,7 +365,7 @@ export class BoardComponent implements OnInit {
       const color = CARD_COLORS_AI[Math.floor(Math.random() * CARD_COLORS_AI.length)];
       this.boardService.addCard({ ...result, color, folderId: this.activeFolderId() });
       this.aiPanelOpen.set(false);
-      this.toastService.show('Genie granted your wish! ✨', 'success');
+      this.toastService.show('Genie granted your wish!', 'success');
     } catch {
       this.toastService.show('AI brainstorm failed — check your API key', 'error');
     } finally {
