@@ -1,14 +1,25 @@
 <div align="center">
 <h2><code>KingJayan/Doodle-Board</code></h2>
-</div> 
+<p>A visual knowledge board for brainstorming, ideas, and notes with folders, AI-assisted ideation, and offline-first storage.</p>
 
-A collaborative visual knowledge board for brainstorming, ideas, and notes with folders, AI-assisted ideation, and offline-first storage.
-
-![Version](https://img.shields.io/badge/version-0.13.4-blue)
+<img src="https://img.shields.io/badge/angular-%23DD0031.svg?style=for-the-badge&logo=angular&logoColor=white" alt="angular" />
+<img src="https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white" alt="typescript" />
+<img src="https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="tailwindcss" />
+<img src="https://img.shields.io/badge/vite-%23646CFF.svg?style=for-the-badge&logo=vite&logoColor=white" alt="vite" />
+<img src="https://img.shields.io/badge/bun-%23000000.svg?style=for-the-badge&logo=bun&logoColor=white" alt="bun" />
+<img src="https://img.shields.io/badge/google%20gemini-%238E75B2.svg?style=for-the-badge&logo=googlegemini&logoColor=white" alt="gemini" />
+</div>
+<p align="center">
+  <img src="https://img.shields.io/badge/version-0.13.4-blue">
+</p>
 
 >[!IMPORTANT]
-> currently in beta
-<!-->
+> currently in beta, actively developed(kinda)
+
+> note: uses [husky](https://github.com/KingJayan/Doodle-Board/blob/main/.husky/commit-msg) for inline commit versioning. 
+> just append 'major', 'minor', or 'patch' to the end of a commit message to bump the version
+
+<!--
 <p align="center">
   <img src="./docs/demo.png" width="800">
 </p>
@@ -25,13 +36,14 @@ A collaborative visual knowledge board for brainstorming, ideas, and notes with 
 - pin + max/minimize
 
 ## planned features for v1
-- supabase + dexiejs for cloud storage accross devices
-- performance optimizations on low hardware
-- language support, various browser extensions support
-- md typing support
+- cloud sync across devices(supabase + dexiejs)
+- improved themes with full customization/personalization
+- performance optimizations for low hardware
+- language support, browser extension integrations
+- full markdown editing, rendering, import, and export support
 - more ai providers + webLLM alternative support(llama 3 8b or qwen 2.5 1.5b)
 - improved file CRUD + folder organization (boards over folders, +nested)
-- live collaboration through cf workers + partyKit (supabase/firebase realtime or pusher channels are other options)
+- live collaboration through cf workers + partykit
 
 
 ## quickstart
@@ -75,16 +87,6 @@ bun dev # http://localhost:5173
 bun run build # outputs to dist
 ```
 
-> [!NOTE]
-> uses [husky](https://github.com/KingJayan/Doodle-Board/blob/main/.husky/commit-msg) for inline commit versioning. just append 'major', 'minor', or 'patch' to the end of a commit message to bump the version
-
-## stack
-
-- **framework**: Angular 18
-- **build tool**: Vite 6
-- **styling**: Tailwind CSS 3
-- **ai features**: Google Gemini API
-- **storage**: localStorage (browser-based)
 
 ## license
 
