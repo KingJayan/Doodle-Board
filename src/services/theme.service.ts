@@ -1,17 +1,11 @@
 
 import { Injectable, signal, computed, effect } from '@angular/core';
+import type { IconName } from '../components/icon/icon.component';
 
-/* ------------------------------------------------------------------ *
- *  Theme system
- *
- *  Adding a theme is intentionally cheap: append one `ThemeSpec` to
- *  the SPECS array below. You only supply the four core colours
- *  (paper / ink / accent / grid), a background style, and the motif
- *  glyphs. Every semantic surface token (--surface, --surface-2,
- *  --surface-hover, --muted, --border-soft, --scroll-thumb, …) is
- *  derived from those via `defineTheme`, so themes stay internally
- *  consistent and you never hand-tune a dozen near-identical hexes.
- * ------------------------------------------------------------------ */
+/*
+ theme system
+ append to ThemeSpec in the specs array to add a new one
+*/
 
 export type ThemeName = string;
 export type ThemeMode = 'system' | ThemeName;
@@ -21,20 +15,22 @@ export interface ThemeDef {
   name: ThemeName;
   label: string;
   emoji: string;
+  icon: IconName;
   dark: boolean;
   category: ThemeCategory;
-  /** [paper, surface, accent, ink] — used by the settings previewer. */
   palette: string[];
   vars: Record<string, string>;
   motifs: string[];
+  tilt: number;
 }
 
 interface ThemeSpec {
   name: string;
   label: string;
   emoji: string;
+  icon: IconName;
   dark: boolean;
-  /** Core palette — everything else is derived from these. */
+
   paper: string;
   ink: string;
   accent: string;
@@ -43,7 +39,26 @@ interface ThemeSpec {
   bgSize?: string;
   motifOpacity?: number;
   motifs: string[];
-  /** Optional fine-tuning that overrides any derived token. */
+
+  /* ---- uniqueness (all optional; sensible defaults derived) ---- *
+
+  /** heading/marker typeface */
+  fontDisplay?: string;
+  /** body */
+  fontBody?: string;
+  /** border-rad */
+  radius?: string;
+  /** note rot factor*/
+  tilt?: number;
+  /** color of the tape thingy */
+  tape?: string;
+  /** secondary */
+  accent2?: string;
+  /**  */
+  displayShadow?: string;
+  /**  */
+  cardShadow?: string;
+  /**  */
   vars?: Record<string, string>;
 }
 
@@ -51,7 +66,6 @@ const DOTS = 'radial-gradient(var(--grid-color) 1px, transparent 1px)';
 const GRID =
   'linear-gradient(var(--grid-color) 1px, transparent 1px), linear-gradient(90deg, var(--grid-color) 1px, transparent 1px)';
 
-/* ---------- tiny colour maths (no deps) ---------- */
 const WHITE = '#ffffff';
 const BLACK = '#000000';
 
@@ -66,7 +80,7 @@ function hexToRgb(hex: string): [number, number, number] {
 function rgbToHex(r: number, g: number, b: number): string {
   return '#' + [r, g, b].map((x) => clamp(x).toString(16).padStart(2, '0')).join('');
 }
-/** Blend `t` (0..1) of `b` into `a`. */
+/** blend `t` (0..1) of `b` into `a`. */
 function mix(a: string, b: string, t: number): string {
   const [r1, g1, b1] = hexToRgb(a);
   const [r2, g2, b2] = hexToRgb(b);
@@ -76,8 +90,6 @@ function mix(a: string, b: string, t: number): string {
 function defineTheme(s: ThemeSpec): ThemeDef {
   const { paper, ink, accent, grid, dark } = s;
 
-  // Dark themes "lift" surfaces toward the (light) ink; light themes
-  // lift toward white and recede toward black — keeps contrast natural.
   const surface = dark ? mix(paper, ink, 0.07) : mix(paper, WHITE, 0.55);
   const surface2 = dark ? mix(paper, BLACK, 0.18) : mix(paper, BLACK, 0.05);
   const surfaceHover = dark ? mix(paper, ink, 0.15) : mix(paper, BLACK, 0.08);
@@ -85,6 +97,27 @@ function defineTheme(s: ThemeSpec): ThemeDef {
   const borderSoft = dark ? mix(paper, ink, 0.22) : mix(paper, BLACK, 0.14);
   const scrollThumb = dark ? mix(paper, ink, 0.25) : mix(paper, BLACK, 0.18);
   const bgImage = { dots: DOTS, grid: GRID, none: 'none' }[s.bg ?? 'dots'];
+
+  const tint = (light: string, hue: string) => (dark ? mix(hue, paper, 0.66) : light);
+  const tints = {
+    '--tint-yellow': tint('#fff1c2', '#f2c233'),
+    '--tint-green': tint('#d8efd9', '#4f9a55'),
+    '--tint-blue': tint('#d7ecfb', '#4f8fe0'),
+    '--tint-pink': tint('#fbdbe8', '#ec6fa0'),
+    '--tint-purple': tint('#ebdcf7', '#9a63d4'),
+    '--note-ink': dark ? ink : '#2d2d2d',
+  };
+
+  const uniqueness = {
+    '--font-display': s.fontDisplay ?? "'Permanent Marker', cursive",
+    '--font-body': s.fontBody ?? "'Patrick Hand', cursive",
+    '--doodle-radius': s.radius ?? '255px 15px 225px 15px / 15px 225px 15px 255px',
+    '--tape-color': s.tape ?? (dark ? 'rgba(255,255,255,0.13)' : 'rgba(255,255,255,0.45)'),
+    '--accent-2': s.accent2 ?? accent,
+    '--display-shadow': s.displayShadow ?? 'none',
+    '--card-shadow':
+      s.cardShadow ?? (dark ? '2px 4px 12px rgba(0,0,0,0.5)' : '2px 4px 6px rgba(0,0,0,0.15)'),
+  };
 
   const vars: Record<string, string> = {
     '--paper-color': paper,
@@ -101,6 +134,8 @@ function defineTheme(s: ThemeSpec): ThemeDef {
     '--bg-image': bgImage,
     '--bg-size': s.bgSize ?? '22px 22px',
     '--motif-opacity': String(s.motifOpacity ?? 0.12),
+    ...tints,
+    ...uniqueness,
     ...s.vars,
   };
 
@@ -108,22 +143,23 @@ function defineTheme(s: ThemeSpec): ThemeDef {
     name: s.name,
     label: s.label,
     emoji: s.emoji,
+    icon: s.icon,
     dark: s.dark,
     category: s.dark ? 'dark' : 'light',
     palette: [paper, surface, accent, ink],
     vars,
     motifs: s.motifs,
+    tilt: s.tilt ?? 1,
   };
 }
 
-/* ------------------------------------------------------------------ *
- *  Theme catalogue — append here to add a theme.
- * ------------------------------------------------------------------ */
+// THEME CATELOG
 const SPECS: ThemeSpec[] = [
   {
     name: 'paper',
     label: 'Classic Paper',
     emoji: '📝',
+    icon: 'memo',
     dark: false,
     paper: '#fdfbf7',
     ink: '#2d2d2d',
@@ -148,6 +184,7 @@ const SPECS: ThemeSpec[] = [
     name: 'coffee',
     label: 'Café Kraft',
     emoji: '☕',
+    icon: 'coffee',
     dark: false,
     paper: '#ece0c8',
     ink: '#433422',
@@ -156,6 +193,12 @@ const SPECS: ThemeSpec[] = [
     bg: 'dots',
     bgSize: '22px 22px',
     motifOpacity: 0.12,
+
+    fontDisplay: "'Special Elite', 'Permanent Marker', cursive",
+    radius: '6px',
+    tape: 'rgba(120,72,32,0.2)',
+    accent2: '#6f4a25',
+    tilt: 0.85,
     motifs: [
       'M28 38 H 66 V 60 A 11 11 0 0 1 55 71 H 39 A 11 11 0 0 1 28 60 Z M 66 43 A 9 9 0 0 1 66 63',
       'M50 26 a 17 22 0 1 0 0.1 0 M 50 26 Q 40 50 50 70',
@@ -172,6 +215,7 @@ const SPECS: ThemeSpec[] = [
     name: 'sakura',
     label: 'Sakura',
     emoji: '🌸',
+    icon: 'blossom',
     dark: false,
     paper: '#ffeef3',
     ink: '#6a2f44',
@@ -180,6 +224,11 @@ const SPECS: ThemeSpec[] = [
     bg: 'dots',
     bgSize: '22px 22px',
     motifOpacity: 0.13,
+    fontDisplay: "'Caveat', 'Permanent Marker', cursive",
+    radius: '22px',
+    tape: 'rgba(255,126,179,0.24)',
+    accent2: '#c45b8c',
+    tilt: 1.35,
     motifs: [
       // single petal
       'M50 26 C 38 40 38 58 50 74 C 62 58 62 40 50 26 Z',
@@ -204,6 +253,7 @@ const SPECS: ThemeSpec[] = [
     name: 'forest',
     label: 'Forest Sage',
     emoji: '🌿',
+    icon: 'herb',
     dark: false,
     paper: '#e7efe0',
     ink: '#2f3d2a',
@@ -212,6 +262,10 @@ const SPECS: ThemeSpec[] = [
     bg: 'dots',
     bgSize: '22px 22px',
     motifOpacity: 0.12,
+    radius: '16px',
+    tape: 'rgba(74,143,79,0.2)',
+    accent2: '#7a5a32',
+    tilt: 1.1,
     motifs: [
       // pine tree
       'M50 22 L 38 46 H 46 L 34 66 H 66 L 54 46 H 62 Z M 50 66 V 80',
@@ -236,14 +290,20 @@ const SPECS: ThemeSpec[] = [
     name: 'chalkboard',
     label: 'Chalkboard',
     emoji: '🧮',
+    icon: 'abacus',
     dark: true,
-    paper: '#2b3833',
+    paper: '#16181a',
     ink: '#eef3ee',
     accent: '#ffd93d',
-    grid: '#3c4d46',
+    grid: '#262a2d',
     bg: 'dots',
     bgSize: '26px 26px',
     motifOpacity: 0.14,
+
+    tape: 'rgba(255,255,255,0.16)',
+    accent2: '#ff8fa3',
+    displayShadow: '0 0 1px rgba(255,255,255,0.55), 0 1px 2px rgba(0,0,0,0.35)',
+    tilt: 1.1,
     motifs: [
       'M28 36 H 74 M 44 36 V 72 M 64 36 V 72',
       'M66 30 H 30 L 50 50 L 30 72 H 66',
@@ -260,6 +320,7 @@ const SPECS: ThemeSpec[] = [
     name: 'midnight',
     label: 'Midnight Neon',
     emoji: '🌌',
+    icon: 'galaxy',
     dark: true,
     paper: '#0e1020',
     ink: '#eef0ff',
@@ -268,6 +329,11 @@ const SPECS: ThemeSpec[] = [
     bg: 'grid',
     bgSize: '34px 34px',
     motifOpacity: 0.16,
+
+    accent2: '#5fe0ff',
+    tape: 'rgba(255,95,174,0.26)',
+    displayShadow: '0 0 14px rgba(255,95,174,0.6), 0 0 4px rgba(95,224,255,0.5)',
+    cardShadow: '0 0 0 1px rgba(255,95,174,0.12), 2px 6px 18px rgba(255,95,174,0.22)',
     motifs: [
       'M25 62 A 25 25 0 0 1 75 62 M 30 52 H 70 M 27 57 H 73 M 25 62 H 75',
       'M50 24 L 76 72 L 24 72 Z',
@@ -284,6 +350,7 @@ const SPECS: ThemeSpec[] = [
     name: 'terminal',
     label: 'Terminal',
     emoji: '💻',
+    icon: 'laptop',
     dark: true,
     paper: '#0b130e',
     ink: '#9ff7c0',
@@ -292,6 +359,15 @@ const SPECS: ThemeSpec[] = [
     bg: 'grid',
     bgSize: '30px 30px',
     motifOpacity: 0.15,
+
+    fontDisplay: "'Space Mono', ui-monospace, monospace",
+    fontBody: "'Space Mono', ui-monospace, monospace",
+    radius: '3px',
+    tilt: 0,
+    tape: 'rgba(86,227,159,0.18)',
+    accent2: '#9ff7c0',
+    displayShadow: '0 0 8px rgba(86,227,159,0.45)',
+    cardShadow: '2px 3px 0 rgba(86,227,159,0.18), 2px 5px 12px rgba(0,0,0,0.5)',
     motifs: [
       // curly braces { }
       'M44 28 Q 34 28 34 38 Q 34 46 26 50 Q 34 54 34 62 Q 34 72 44 72 M 56 28 Q 66 28 66 38 Q 66 46 74 50 Q 66 54 66 62 Q 66 72 56 72',
@@ -316,6 +392,7 @@ const SPECS: ThemeSpec[] = [
     name: 'blueprint',
     label: 'Blueprint',
     emoji: '📐',
+    icon: 'ruler',
     dark: true,
     paper: '#10336b',
     ink: '#eaf2ff',
@@ -324,6 +401,13 @@ const SPECS: ThemeSpec[] = [
     bg: 'grid',
     bgSize: '28px 28px',
     motifOpacity: 0.18,
+
+    fontDisplay: "'Space Mono', 'Permanent Marker', cursive",
+    radius: '3px',
+    tilt: 0,
+    tape: 'rgba(127,176,255,0.22)',
+    accent2: '#7fb0ff',
+    cardShadow: '2px 3px 0 rgba(127,176,255,0.2), 2px 5px 12px rgba(0,0,0,0.45)',
     motifs: [
       'M10 50 H 90 M 20 45 V 55 M 30 47 V 53 M 40 47 V 53 M 50 44 V 56 M 60 47 V 53 M 70 47 V 53 M 80 45 V 55',
       'M50 50 m -26 0 a 26 26 0 1 0 52 0 a 26 26 0 1 0 -52 0 M 50 18 V 82 M 18 50 H 82',
@@ -360,6 +444,8 @@ export class ThemeService {
   motifs = computed(() => THEMES[this.resolvedTheme()].motifs);
   isDark = computed(() => THEMES[this.resolvedTheme()].dark);
 
+  tilt = computed(() => THEMES[this.resolvedTheme()].tilt);
+
   readonly themes = THEMES;
   readonly themeList: ThemeDef[] = Object.values(THEMES);
   readonly lightThemes: ThemeDef[] = this.themeList.filter((t) => !t.dark);
@@ -393,6 +479,12 @@ export class ThemeService {
 
   setTheme(mode: ThemeMode) {
     this.mode.set(mode);
+  }
+
+
+  noteBg(hex: string): string {
+    const t = THEMES[this.resolvedTheme()];
+    return t.dark ? mix(hex, t.vars['--paper-color'], 0.72) : hex;
   }
 
   toggleMotion() {

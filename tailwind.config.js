@@ -16,7 +16,7 @@ module.exports = {
         'toast': '150',
       },
       colors: {
-        brand: '#ff6b6b',
+        brand: 'var(--accent)',
         'theme-paper': '#fdfbf7',
         'theme-dark': '#2b3035',
         'theme-blueprint': '#1e408a',

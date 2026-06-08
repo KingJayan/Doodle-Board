@@ -2,11 +2,12 @@ import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ThemeService } from '../../services/theme.service';
+import { IconComponent } from '../../components/icon/icon.component';
 
 @Component({
   selector: 'app-landing',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, IconComponent],
   template: `
     <div
       class="min-h-screen flex flex-col md:flex-row items-center justify-center p-8 gap-12 bg-pattern overflow-hidden"
@@ -21,13 +22,13 @@ import { ThemeService } from '../../services/theme.service';
           A messy place for your ideas. <br>
           <span class="text-sm opacity-60 flex items-center justify-center md:justify-start gap-2 mt-2">
             Created by Jayan Patel
-            <a href="https://jayanpatel.vercel.app" target="_blank" class="text-lg hover:scale-125 transition-transform no-underline" title="Portfolio">🌐</a>
-            <a href="https://github.com/KingJayan" target="_blank" class="text-lg hover:scale-125 transition-transform no-underline" title="GitHub">🐙</a>
+            <a href="https://jayanpatel.vercel.app" target="_blank" class="text-lg hover:scale-125 transition-transform no-underline" title="Portfolio"><app-icon name="globe"></app-icon></a>
+            <a href="https://github.com/KingJayan" target="_blank" class="text-lg hover:scale-125 transition-transform no-underline" title="GitHub"><app-icon name="octopus"></app-icon></a>
           </span>
         </p>
 
         <div class="flex flex-col gap-4 items-center md:items-start">
-          <button (click)="startExit()" class="doodle-btn bg-accent-yellow text-2xl px-8 py-3 transform rotate-1 hover:rotate-2 hover:scale-105 transition-all">
+          <button (click)="startExit()" class="doodle-btn bg-[var(--accent)] text-[var(--paper-color)] text-2xl px-8 py-3 transform rotate-1 hover:rotate-2 hover:scale-105 transition-all">
             Start Brainstorming ->
           </button>
 

@@ -1,16 +1,15 @@
+@import './assets/fonts/fonts.css';
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  /* Core ink/paper (overridden per-theme by ThemeService) */
   --paper-color: #fdfbf7;
   --ink-color: #2d2d2d;
   --pencil-gray: #555;
   --grid-color: #e3ddd0;
 
-  /* Semantic surface/text tokens (overridden per-theme) */
   --surface: #fffdf8;
   --surface-2: #f4f0e6;
   --surface-hover: #eee8d9;
@@ -18,9 +17,24 @@
   --border-soft: #ddd6c6;
   --accent: #ff6b6b;
   --scroll-thumb: #cfc8b8;
+
+  --tint-yellow: #fff1c2;
+  --tint-green: #d8efd9;
+  --tint-blue: #d7ecfb;
+  --tint-pink: #fbdbe8;
+  --tint-purple: #ebdcf7;
+  --note-ink: #2d2d2d;
   --bg-image: radial-gradient(var(--grid-color) 1px, transparent 1px);
   --bg-size: 20px 20px;
   --motif-opacity: 0.1;
+
+  --font-display: 'Permanent Marker', cursive;
+  --font-body: 'Patrick Hand', cursive;
+  --doodle-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  --tape-color: rgba(255,255,255,0.45);
+  --accent-2: #ff6b6b;
+  --display-shadow: none;
+  --card-shadow: 2px 4px 6px rgba(0,0,0,0.15);
 
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-stamp: cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -28,7 +42,7 @@
 }
 
 body {
-  font-family: 'Patrick Hand', cursive;
+  font-family: var(--font-body);
   background-color: var(--paper-color);
   color: var(--ink-color);
   background-image: var(--bg-image);
@@ -38,7 +52,11 @@ body {
   margin: 0;
 }
 
-/* Semantic theme helpers */
+::selection {
+  background: var(--accent);
+  color: var(--paper-color);
+}
+
 .text-muted { color: var(--muted); }
 .bg-surface { background-color: var(--surface); }
 .bg-surface-2 { background-color: var(--surface-2); }
@@ -46,9 +64,7 @@ body {
 .hover-surface { transition: background-color 0.15s ease; }
 .hover-surface:hover { background-color: var(--surface-hover); }
 
-/* Cards keep their bright sticky-note colors in every theme,
-   so their text must stay dark to remain legible. */
-.card-ink { color: #2d2d2d; }
+.card-ink { color: var(--note-ink); }
 
 app-root {
   display: block;
@@ -57,52 +73,53 @@ app-root {
 }
 
 h1, h2, h3, .marker-font {
-  font-family: 'Permanent Marker', cursive;
+  font-family: var(--font-display);
+  text-shadow: var(--display-shadow);
 }
 
-/* Doodle Utility Classes */
-.doodle-border {
-  border: 2px solid var(--ink-color);
-  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
-  transition: all 0.2s ease-in-out;
+@layer components {
+  .doodle-border {
+    border: 2px solid var(--ink-color);
+    border-radius: var(--doodle-radius);
+    transition: all 0.2s ease-in-out;
+  }
+
+  .doodle-btn {
+    background-color: var(--paper-color);
+    color: var(--ink-color);
+    border: 2px solid var(--ink-color);
+    border-radius: var(--doodle-radius);
+    padding: 0.5rem 1.5rem;
+    font-size: 1.25rem;
+    cursor: pointer;
+    box-shadow: 2px 2px 0px rgba(0,0,0,0.1);
+    transition: transform 0.1s;
+    font-family: var(--font-body);
+  }
+  .doodle-btn:hover {
+    transform: scale(1.05) rotate(-1deg);
+    box-shadow: 3px 3px 0px rgba(0,0,0,0.2);
+  }
+  .doodle-btn:active {
+    transform: scale(0.95);
+  }
+
+  .doodle-input {
+    background: transparent;
+    border: none;
+    border-bottom: 2px dashed var(--pencil-gray);
+    font-family: var(--font-body);
+    font-size: 1.2rem;
+    color: var(--ink-color);
+    outline: none;
+    padding: 4px;
+    width: 100%;
+  }
+  .doodle-input:focus {
+    border-bottom: 2px solid var(--ink-color);
+  }
 }
 
-.doodle-btn {
-  background: var(--paper-color);
-  color: var(--ink-color);
-  border: 2px solid var(--ink-color);
-  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
-  padding: 0.5rem 1.5rem;
-  font-size: 1.25rem;
-  cursor: pointer;
-  box-shadow: 2px 2px 0px rgba(0,0,0,0.1);
-  transition: transform 0.1s;
-  font-family: 'Patrick Hand', cursive;
-}
-.doodle-btn:hover {
-  transform: scale(1.05) rotate(-1deg);
-  box-shadow: 3px 3px 0px rgba(0,0,0,0.2);
-}
-.doodle-btn:active {
-  transform: scale(0.95);
-}
-
-.doodle-input {
-  background: transparent;
-  border: none;
-  border-bottom: 2px dashed var(--pencil-gray);
-  font-family: 'Patrick Hand', cursive;
-  font-size: 1.2rem;
-  color: var(--ink-color);
-  outline: none;
-  padding: 4px;
-  width: 100%;
-}
-.doodle-input:focus {
-  border-bottom: 2px solid var(--ink-color);
-}
-
-/* Scrollbar */
 ::-webkit-scrollbar {
   width: 10px;
 }
