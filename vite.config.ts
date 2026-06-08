@@ -39,6 +39,7 @@ export default defineConfig(({ mode }) => {
           if (NODE_BUILTINS.has(id)) return `\0stub:${id}`;
           if (id.includes('@angular/compiler-cli')) return { id: '\0stub:compiler-cli', external: false };
           if (id.includes('vite/dist/node/')) return '\0stub:vite-internal';
+          return undefined;
         },
         load(id) {
           if (!id.startsWith('\0stub:')) return;

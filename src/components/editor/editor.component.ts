@@ -21,7 +21,7 @@ import { IoService } from '../../services/io.service';
         role="dialog"
         aria-modal="true"
         aria-labelledby="editor-title"
-        class="bg-white w-full md:max-w-4xl min-h-[90vh] md:min-h-[1100px] shadow-2xl flex flex-col relative animate-slideUp border border-gray-300 mt-0 md:mt-4 mb-20"
+        class="bg-white w-full md:max-w-4xl min-h-[90vh] shadow-2xl flex flex-col relative animate-slideUp border border-gray-300 mt-0 md:mt-4 mb-20"
         (click)="$event.stopPropagation()"
       >
         <!-- file menu bar -->
@@ -70,6 +70,13 @@ import { IoService } from '../../services/io.service';
               >
                 📝 Expand
               </button>
+              <button
+                (click)="polishContent('tone')"
+                class="flex items-center gap-1 px-2 py-1 rounded bg-green-50 text-green-700 hover:bg-green-100 border border-green-200 text-xs font-bold"
+                [disabled]="isPolishing()"
+              >
+                🎯 Tone
+              </button>
             </div>
           }
 
@@ -96,7 +103,7 @@ import { IoService } from '../../services/io.service';
             [(ngModel)]="form.content"
             class="w-full flex-grow bg-transparent resize-none outline-none text-lg md:text-xl leading-relaxed font-hand text-gray-800"
             placeholder="Start writing..."
-            style="min-height: 600px;"
+            class="min-h-[400px]"
           ></textarea>
         </div>
 
