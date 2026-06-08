@@ -368,7 +368,7 @@ export class BoardComponent implements OnInit {
       this.aiPanelOpen.set(false);
       this.toastService.show('Genie granted your wish! ✨', 'success');
     } catch {
-      this.toastService.show('Genie is confused...', 'error');
+      this.toastService.show('AI brainstorm failed — check your API key', 'error');
     } finally {
       this.isGenerating.set(false);
     }
@@ -381,7 +381,12 @@ export class BoardComponent implements OnInit {
 
   handleDragStart(cardId: string, event: DragEvent) {
     const isHandle = event.composedPath().some((el: any) => el.classList?.contains('drag-handle'));
-    if (!isHandle) { event.preventDefault(); return; }
+    if (!isHandle) {
+      const ghost = new Image(); ghost.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+      event.dataTransfer?.setDragImage(ghost, 0, 0);
+      event.preventDefault();
+      return;
+    }
     this.draggedCardId = cardId;
     if (event.dataTransfer) {
       event.dataTransfer.effectAllowed = 'move';

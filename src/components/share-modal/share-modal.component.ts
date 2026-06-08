@@ -11,14 +11,14 @@ import { Card } from '../../models/card.model';
   imports: [CommonModule],
   template: `
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" (click)="close.emit()">
-      <div class="bg-white p-8 rounded-lg max-w-lg w-full m-4 shadow-xl doodle-border relative text-gray-900" (click)="$event.stopPropagation()">
+      <div class="bg-[var(--paper-color)] p-8 rounded-lg max-w-lg w-full m-4 shadow-xl doodle-border relative text-[var(--ink-color)]" (click)="$event.stopPropagation()">
         <button (click)="close.emit()" class="absolute top-4 right-4 text-2xl hover:text-red-500">×</button>
-        <h2 class="text-3xl marker-font mb-6 text-center text-black">Share & Backup</h2>
+        <h2 class="text-3xl marker-font mb-6 text-center">Share & Backup</h2>
         <div class="text-center text-sm text-gray-500 mb-4">Current Folder: {{ folderName() }}</div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div class="bg-green-50 p-4 rounded-lg border border-green-200 md:col-span-2">
-            <h3 class="font-bold mb-2 text-black">📄 Import Sketch</h3>
+            <h3 class="font-bold mb-2">📄 Import Sketch</h3>
             <p class="text-xs text-gray-600 mb-2">Upload a single <code>.md</code> file.</p>
             <input
               type="file" accept=".md,.txt"
@@ -27,12 +27,12 @@ import { Card } from '../../models/card.model';
             />
           </div>
           <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-            <h3 class="font-bold mb-2 text-black">📦 Export Folder</h3>
+            <h3 class="font-bold mb-2">📦 Export Folder</h3>
             <p class="text-xs text-gray-600 mb-3">Download {{ folderName() }} (.zip).</p>
             <button (click)="exportFolder()" class="doodle-btn w-full bg-yellow-200 text-black text-sm font-bold hover:bg-yellow-300">Download .zip</button>
           </div>
           <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
-            <h3 class="font-bold mb-2 text-black">📂 Import to Folder</h3>
+            <h3 class="font-bold mb-2">📂 Import to Folder</h3>
             <p class="text-xs text-gray-600 mb-3">Add zip content to current folder.</p>
             <input
               type="file" accept=".zip"
@@ -86,7 +86,7 @@ export class ShareModalComponent {
       this.close.emit();
       this.toastService.show(`${newCards.length} notes added to folder!`, 'success');
     } catch {
-      this.toastService.show('That ZIP looks torn...', 'error');
+      this.toastService.show('Failed to import ZIP — file may be invalid', 'error');
     }
   }
 

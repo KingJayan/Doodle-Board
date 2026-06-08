@@ -51,11 +51,14 @@ VITE_API_KEY=your_google_ai_api_key_here
 bun dev # http://localhost:5173
 ```
 
-### building for prod
+5. building for prod:
 
 ```bash
 bun run build # outputs to dist
 ```
+
+> [!NOTE]
+> uses [husky](https://github.com/KingJayan/Doodle-Board/blob/main/.husky/commit-msg) for inline commit versioning, just append 'major', 'minor', or 'patch' to the end of a commit message to bump the version
 
 ## stack
 
@@ -65,6 +68,6 @@ bun run build # outputs to dist
 - **ai features**: Google Gemini API
 - **storage**: localStorage (browser-based)
 
-## License
+## license
 
 + GNU GPL-3.0
