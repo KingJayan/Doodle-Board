@@ -15,8 +15,12 @@ import { IoService } from '../../services/io.service';
     <div
       class="fixed inset-0 z-overlay flex items-start justify-center p-0 md:p-8 bg-gray-900/50 backdrop-blur-sm animate-fadeIn overflow-y-auto"
       (click)="requestClose()"
+      aria-hidden="true"
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="editor-title"
         class="bg-white w-full md:max-w-4xl min-h-[90vh] md:min-h-[1100px] shadow-2xl flex flex-col relative animate-slideUp border border-gray-300 mt-0 md:mt-4 mb-20"
         (click)="$event.stopPropagation()"
       >
@@ -25,7 +29,7 @@ import { IoService } from '../../services/io.service';
           <span class="font-bold text-gray-900 px-2">File</span>
           <button (click)="save()" class="hover:bg-gray-200 px-2 rounded">Save</button>
           <button (click)="downloadMd()" class="hover:bg-gray-200 px-2 rounded">Download .md</button>
-          <button (click)="requestClose()" class="hover:bg-red-100 text-red-600 px-2 rounded ml-auto">Close ✕</button>
+          <button (click)="requestClose()" class="hover:bg-red-100 text-red-600 px-2 rounded ml-auto" aria-label="Close editor">Close ✕</button>
         </div>
 
         <!-- toolbar -->
@@ -82,6 +86,7 @@ import { IoService } from '../../services/io.service';
           }
 
           <input
+            id="editor-title"
             [(ngModel)]="form.title"
             class="text-4xl md:text-5xl font-bold bg-transparent outline-none w-full marker-font placeholder-gray-300 border-none p-0 text-gray-900"
             placeholder="Untitled Scribble"

@@ -1,7 +1,7 @@
 import { Component, input, Output, EventEmitter, computed, signal, ChangeDetectionStrategy, inject, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Card, CARD_PALETTE } from '../../models/card.model';
+import { Card, CARD_PALETTE, CARD_DEFAULTS } from '../../models/card.model';
 import { BoardService } from '../../services/board.service';
 import { ToastService } from '../../services/toast.service';
 
@@ -15,7 +15,7 @@ import { ToastService } from '../../services/toast.service';
     <div
       class="transition-transform duration-300 relative select-none"
       [style.transform]="rotationStyle()"
-      [style.width.px]="card().isMinimized ? 260 : (card().width || 280)"
+      [style.width.px]="card().isMinimized ? D.minimizedWidth : (card().width || D.width)"
       [style.z-index]="isResizing() ? 100 : 'auto'"
     >
 
@@ -34,15 +34,15 @@ import { ToastService } from '../../services/toast.service';
 
       <!-- card inner -->
       <div
-        class="group relative p-5 flex flex-col gap-2 h-full min-h-[100px] transition-all duration-300 card-shadow bg-card rounded-sm"
+        class="group relative p-4 flex flex-col gap-2 h-full min-h-[100px] transition-all duration-300 card-shadow bg-card rounded-sm"
         [class.hover:scale-[1.02]]="!isEditing() && !isResizing()"
         [class.hover:z-50]="!isEditing() && !isResizing()"
         [class.animate-scribbleOut]="isDeleting()"
         [style.background-color]="card().color"
-        [style.height.px]="card().isMinimized ? null : (card().height || 320)"
+        [style.height.px]="card().isMinimized ? null : (card().height || D.height)"
       >
         <!-- drag handle -->
-        <div class="drag-handle absolute top-2 left-2 cursor-grab active:cursor-grabbing z-40 opacity-30 group-hover:opacity-100 transition-opacity p-2 hover:bg-black/5 rounded-full" title="Drag to reorder">
+        <div class="drag-handle absolute top-2 left-2 cursor-grab active:cursor-grabbing z-40 opacity-30 group-hover:opacity-100 transition-opacity p-2 hover:bg-black/5 rounded-full" aria-label="Drag to reorder" role="button">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="pointer-events-none">
             <circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle>
             <circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle>
@@ -61,8 +61,8 @@ import { ToastService } from '../../services/toast.service';
           @for (sticker of card().stickers; track $index) {
             <div
               class="absolute text-5xl opacity-90 drop-shadow-md animate-stamp"
-              [style.top.px]="($index % 3) * 40 + 8"
-              [style.right.px]="Math.floor($index / 3) * 45 + 8"
+              [style.top.px]="stickerTop($index)"
+              [style.right.px]="stickerRight($index)"
               [style.transform]="'rotate(' + (($index * 45) - 20) + 'deg)'"
             >{{ sticker }}</div>
           }
@@ -74,20 +74,20 @@ import { ToastService } from '../../services/toast.service';
             <button
               (click)="handlePin($event)"
               class="w-9 h-9 bg-white text-black rounded-full flex items-center justify-center shadow-md hover:bg-yellow-50 hover:scale-110 transition-transform doodle-border text-sm cursor-pointer"
-              [title]="card().isPinned ? 'Unpin' : 'Pin'"
+              [attr.aria-label]="card().isPinned ? 'Unpin' : 'Pin'"
             >{{ card().isPinned ? '📍' : '📌' }}</button>
 
             <button
               (click)="toggleMinimize($event)"
               class="w-9 h-9 bg-white text-black rounded-full flex items-center justify-center shadow-md hover:bg-gray-50 hover:scale-110 transition-transform doodle-border text-sm cursor-pointer font-bold"
-              [title]="card().isMinimized ? 'Expand' : 'Minimize'"
+              [attr.aria-label]="card().isMinimized ? 'Expand' : 'Minimize'"
             >{{ card().isMinimized ? '⬜' : '_' }}</button>
 
             <div class="relative">
               <button
                 (click)="toggleMoveMenu($event)"
                 class="w-9 h-9 bg-white text-black rounded-full flex items-center justify-center shadow-md hover:bg-blue-50 hover:scale-110 transition-transform doodle-border text-sm cursor-pointer"
-                title="Move Folder"
+                aria-label="Move to folder"
               >📂</button>
 
               @if (showMoveMenu()) {
@@ -110,12 +110,12 @@ import { ToastService } from '../../services/toast.service';
             <button
               (click)="handleExpand($event)"
               class="w-9 h-9 bg-white text-black rounded-full flex items-center justify-center shadow-md hover:bg-blue-50 hover:scale-110 transition-transform doodle-border text-sm cursor-pointer"
-              title="Open Editor"
+              aria-label="Open editor"
             >↗</button>
             <button
               (click)="handleDelete($event)"
               class="w-9 h-9 bg-white text-red-500 rounded-full flex items-center justify-center shadow-md hover:bg-red-50 hover:scale-110 transition-transform doodle-border cursor-pointer font-bold text-sm"
-              title="Delete Note"
+              aria-label="Delete note"
             >✕</button>
           </div>
         </div>
@@ -125,7 +125,7 @@ import { ToastService } from '../../services/toast.service';
           <div class="bg-white/95 backdrop-blur px-3 py-2 rounded-full shadow-lg doodle-border flex gap-4 items-center">
             <!-- color picker -->
             <div class="relative group/colors">
-              <button class="w-8 h-8 rounded-full border-2 border-gray-400 shadow-inner hover:scale-110 transition-transform" [style.background-color]="card().color" title="Change Color"></button>
+              <button class="w-8 h-8 rounded-full border-2 border-gray-400 shadow-inner hover:scale-110 transition-transform" [style.background-color]="card().color" aria-label="Change color"></button>
               <div class="absolute bottom-full left-0 mb-3 p-3 bg-white rounded-xl shadow-xl border-2 border-gray-200 hidden group-hover/colors:flex gap-2 animate-slideUp">
                 @for (c of palette; track c) {
                   <button
@@ -138,10 +138,10 @@ import { ToastService } from '../../services/toast.service';
             </div>
             <div class="w-px h-6 bg-gray-300"></div>
             <div class="flex gap-2 text-xl">
-              <button (click)="toggleSticker('⭐', $event)" class="hover:scale-125 transition-transform" title="Star">⭐</button>
-              <button (click)="toggleSticker('✅', $event)" class="hover:scale-125 transition-transform" title="Check">✅</button>
-              <button (click)="toggleSticker('🔥', $event)" class="hover:scale-125 transition-transform" title="Fire">🔥</button>
-              <button (click)="toggleSticker('❓', $event)" class="hover:scale-125 transition-transform" title="Question">❓</button>
+              <button (click)="toggleSticker('⭐', $event)" class="hover:scale-125 transition-transform" aria-label="Toggle star sticker">⭐</button>
+              <button (click)="toggleSticker('✅', $event)" class="hover:scale-125 transition-transform" aria-label="Toggle check sticker">✅</button>
+              <button (click)="toggleSticker('🔥', $event)" class="hover:scale-125 transition-transform" aria-label="Toggle fire sticker">🔥</button>
+              <button (click)="toggleSticker('❓', $event)" class="hover:scale-125 transition-transform" aria-label="Toggle question sticker">❓</button>
             </div>
           </div>
         </div>
@@ -250,7 +250,7 @@ import { ToastService } from '../../services/toast.service';
   `]
 })
 export class CardComponent implements OnDestroy {
-  protected Math = Math;
+  protected D = CARD_DEFAULTS;
   boardService = inject(BoardService);
   private toastService = inject(ToastService);
 
@@ -275,6 +275,9 @@ export class CardComponent implements OnDestroy {
   rotationStyle = computed(() => `rotate(${this.card().rotation}deg)`);
 
   readonly palette = CARD_PALETTE;
+
+  stickerTop(i: number) { return (i % 3) * CARD_DEFAULTS.stickerColStep + CARD_DEFAULTS.stickerOffset; }
+  stickerRight(i: number) { return Math.floor(i / 3) * CARD_DEFAULTS.stickerRowStep + CARD_DEFAULTS.stickerOffset; }
 
   private startX = 0;
   private startY = 0;
@@ -412,8 +415,8 @@ export class CardComponent implements OnDestroy {
     this.isResizing.set(true);
     this.startX = event.clientX;
     this.startY = event.clientY;
-    this.startWidth = this.card().width || 280;
-    this.startHeight = this.card().height || 320;
+    this.startWidth = this.card().width || CARD_DEFAULTS.width;
+    this.startHeight = this.card().height || CARD_DEFAULTS.height;
     this.previewWidth.set(this.startWidth);
     this.previewHeight.set(this.startHeight);
 
@@ -425,8 +428,8 @@ export class CardComponent implements OnDestroy {
 
   private onResize(event: MouseEvent) {
     if (!this.isResizing()) return;
-    this.previewWidth.set(Math.max(200, this.startWidth + event.clientX - this.startX));
-    this.previewHeight.set(Math.max(150, this.startHeight + event.clientY - this.startY));
+    this.previewWidth.set(Math.max(CARD_DEFAULTS.minWidth, this.startWidth + event.clientX - this.startX));
+    this.previewHeight.set(Math.max(CARD_DEFAULTS.minHeight, this.startHeight + event.clientY - this.startY));
   }
 
   private stopResize() {
