@@ -52,7 +52,7 @@
 
 ### prereqs
 
-- node 18+ and bun
+- node 20+ and bun
 - a google ai api key (for ai features)
 
 ### installation
