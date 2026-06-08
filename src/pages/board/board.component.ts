@@ -47,7 +47,7 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
             <span class="text-sm bg-black text-white px-2 rounded-full transform rotate-3">Beta</span>
           </div>
 
-          <div class="flex flex-wrap gap-3 items-center justify-center">
+          <div class="flex flex-wrap gap-4 items-center justify-center">
             <!-- search -->
             <div class="relative group">
               <input
