@@ -18,7 +18,7 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
   standalone: true,
   imports: [CommonModule, FormsModule, CardComponent, EditorComponent, SettingsModalComponent, HelpModalComponent, ShareModalComponent],
   template: `
-    <div class="min-h-screen flex flex-col relative overflow-hidden">
+    <div class="h-screen flex flex-col overflow-hidden">
 
       <!-- bg doodles -->
       <div class="absolute inset-0 pointer-events-none z-0 overflow-hidden">
@@ -87,7 +87,7 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
         </div>
       </header>
 
-      <div class="flex flex-grow relative max-w-7xl mx-auto w-full">
+      <div class="flex flex-grow relative max-w-7xl mx-auto w-full min-h-0 overflow-hidden">
 
         <!-- sidebar -->
         <aside
@@ -176,7 +176,7 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
         }
 
         <!-- main card grid -->
-        <main class="p-4 md:p-8 flex-grow w-full z-10 overflow-y-auto h-[calc(100vh-80px)]" (dragover)="handleDragOver($event)">
+        <main class="p-4 md:p-8 flex-grow w-full z-10 overflow-y-auto h-full" (dragover)="handleDragOver($event)">
           @if (filteredCards().length === 0) {
             <div class="text-center py-20 opacity-50">
               <div class="text-6xl mb-4">🍃</div>
@@ -345,11 +345,14 @@ export class BoardComponent implements OnInit {
 
   deleteFolder(id: string, event: Event) {
     event.stopPropagation();
-    if (confirm('Delete folder? Notes will move to General.')) {
-      this.boardService.deleteFolder(id);
-      if (this.activeFolderId() === id) this.activeFolderId.set('default');
-      this.toastService.show('Folder deleted', 'info');
-    }
+    this.toastService.show('Delete folder? Notes will move to General.', 'warning', {
+      label: 'Yes, Delete',
+      callback: () => {
+        this.boardService.deleteFolder(id);
+        if (this.activeFolderId() === id) this.activeFolderId.set('default');
+        this.toastService.show('Folder deleted', 'info');
+      }
+    });
   }
 
   createNewCard() {

@@ -8,7 +8,7 @@ import { version } from '../../../package.json';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" (click)="close.emit()" aria-hidden="true">
+    <div class="fixed inset-0 z-overlay flex items-center justify-center bg-black/50 backdrop-blur-sm" (click)="close.emit()" aria-hidden="true">
       <div role="dialog" aria-modal="true" aria-labelledby="settings-title" class="bg-[var(--paper-color)] p-6 rounded-lg max-w-md w-full m-4 shadow-xl doodle-border relative text-[var(--ink-color)]" (click)="$event.stopPropagation()">
         <button (click)="close.emit()" class="absolute top-4 right-4 text-2xl hover:text-red-500" aria-label="Close settings">×</button>
         <h2 id="settings-title" class="text-3xl marker-font mb-6 text-center">Settings</h2>
