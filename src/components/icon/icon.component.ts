@@ -32,6 +32,7 @@ import warning from '../../assets/icons/warning.svg?raw';
 import globe from '../../assets/icons/globe.svg?raw';
 import octopus from '../../assets/icons/octopus.svg?raw';
 import target from '../../assets/icons/target.svg?raw';
+import trash from '../../assets/icons/trash.svg?raw';
 
 const ICONS = {
   pin,
@@ -65,6 +66,7 @@ const ICONS = {
   globe,
   octopus,
   target,
+  trash,
 } satisfies Record<string, string>;
 
 export type IconName = keyof typeof ICONS;
