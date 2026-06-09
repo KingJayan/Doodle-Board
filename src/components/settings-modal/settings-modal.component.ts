@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ThemeService, ThemeDef } from '../../services/theme.service';
 import { AuthService } from '../../services/auth.service';
 import { IconComponent } from '../icon/icon.component';
-const version = '0.17.1';
+const version = '0.17.2';
 
 @Component({
   selector: 'app-settings-modal',

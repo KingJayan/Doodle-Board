@@ -1,8 +1,8 @@
 import { Injectable, signal } from '@angular/core';
+import { generateKeyBetween, generateNKeysBetween } from 'fractional-indexing';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function isUUID(s: string) { return UUID_RE.test(s); }
-import { generateKeyBetween, generateNKeysBetween } from 'fractional-indexing';
 import { Card, Board, CARD_COLORS, CARD_DEFAULTS, CARD_PALETTE } from '../models/card.model';
 import { db, DbBoard, DbCard } from '../db/local-db';
 import { AuthService } from './auth.service';

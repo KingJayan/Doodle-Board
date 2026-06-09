@@ -56,7 +56,7 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mode
                 type="text"
                 [ngModel]="searchQuery()"
                 (ngModelChange)="searchQuery.set($event)"
-                placeholder="Search scribbles..."
+                placeholder="Search notes..."
                 class="doodle-input bg-[var(--surface)]/60 rounded-full px-4 py-1 w-48 focus:w-64 transition-all"
               />
               <span class="absolute right-3 top-2 opacity-50"><app-icon name="search"></app-icon></span>
@@ -89,9 +89,9 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mode
           <div class="flex gap-2">
             <button (click)="helpPanelOpen.set(true)" class="doodle-btn px-3 text-lg" title="Help"><app-icon name="question"></app-icon></button>
             <button (click)="settingsPanelOpen.set(true)" class="doodle-btn px-2 text-xl" title="Settings"><app-icon name="gear"></app-icon></button>
-            <button (click)="sharePanelOpen.set(true)" class="doodle-btn text-base" title="Backup & Export"><app-icon name="package"></app-icon> Backup</button>
+            <button (click)="sharePanelOpen.set(true)" class="doodle-btn text-base" title="Share & Export"><app-icon name="package"></app-icon> Share</button>
             @if (aiAvailable) {
-              <button (click)="aiPanelOpen.set(!aiPanelOpen())" class="doodle-btn bg-[var(--tint-blue)] text-[var(--ink-color)] text-base" title="Ask the Genie"><app-icon name="sparkles"></app-icon> Genie</button>
+              <button (click)="aiPanelOpen.set(!aiPanelOpen())" class="doodle-btn bg-[var(--tint-blue)] text-[var(--ink-color)] text-base" title="Brainstorm with AI"><app-icon name="sparkles"></app-icon> AI</button>
             }
             <button (click)="createNewCard()" class="doodle-btn bg-[var(--tint-green)] text-[var(--ink-color)] font-bold text-base">+ New Note</button>
           </div>
@@ -127,7 +127,7 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mode
                 } @else {
                   <span class="truncate flex-grow" (dblclick)="renamingBoardId.set(board.id); $event.stopPropagation()">{{ board.name }}</span>
                 }
-                @if (board.id !== 'default') {
+                @if (boards().length > 1) {
                   <button
                     class="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 px-1"
                     (click)="deleteBoard(board.id, $event)"
@@ -165,7 +165,7 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mode
           <div class="absolute top-4 left-4 right-4 md:left-auto md:right-auto md:w-96 z-30">
             <div class="p-4 border-2 border-dashed border-[var(--accent-2)] rounded-lg bg-[var(--tint-blue)] text-[var(--ink-color)] relative animate-slideDown shadow-xl">
               <button (click)="aiPanelOpen.set(false)" class="absolute top-2 right-2 text-xl hover:text-red-500 text-[var(--ink-color)]">×</button>
-              <h3 class="font-bold text-lg mb-2 text-[var(--ink-color)]"><app-icon name="sparkles"></app-icon> Brainstorm with Genie</h3>
+              <h3 class="font-bold text-lg mb-2 text-[var(--ink-color)]"><app-icon name="sparkles"></app-icon> Brainstorm with AI</h3>
               <div class="flex gap-2">
                 <input
                   #topicInput
@@ -376,7 +376,7 @@ export class BoardComponent implements OnInit {
   createNewCard() {
     const color = CARD_COLORS[Math.floor(Math.random() * CARD_COLORS.length)];
     this.boardService.addCard({ title: '', content: '', tags: [], color, boardId: this.activeBoardId() });
-    this.toastService.show('Fresh paper extracted!', 'success');
+    this.toastService.show('Note created', 'success');
   }
 
   async generateCard(topic: string) {
@@ -387,7 +387,7 @@ export class BoardComponent implements OnInit {
       const color = CARD_COLORS_AI[Math.floor(Math.random() * CARD_COLORS_AI.length)];
       this.boardService.addCard({ ...result, color, boardId: this.activeBoardId() });
       this.aiPanelOpen.set(false);
-      this.toastService.show('Genie granted your wish!', 'success');
+      this.toastService.show('Note generated', 'success');
     } catch {
       this.toastService.show('AI brainstorm failed — check your API key', 'error');
     } finally {
@@ -397,17 +397,12 @@ export class BoardComponent implements OnInit {
 
   handleDeleteCard(id: string) {
     this.boardService.deleteCard(id);
-    this.toastService.show('Crumpled and tossed!', 'info');
+    this.toastService.show('Note deleted', 'info');
   }
 
   handleDragStart(cardId: string, event: DragEvent) {
     const isHandle = event.composedPath().some((el: any) => el.classList?.contains('drag-handle'));
-    if (!isHandle) {
-      const ghost = new Image(); ghost.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-      event.dataTransfer?.setDragImage(ghost, 0, 0);
-      event.preventDefault();
-      return;
-    }
+    if (!isHandle) { event.preventDefault(); return; }
     this.draggedCardId = cardId;
     if (event.dataTransfer) {
       event.dataTransfer.effectAllowed = 'move';

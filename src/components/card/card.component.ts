@@ -83,7 +83,7 @@ import { IconComponent, iconFor } from '../icon/icon.component';
               (click)="toggleMinimize($event)"
               class="w-9 h-9 bg-[var(--surface)] text-[var(--ink-color)] rounded-full flex items-center justify-center shadow-md hover-surface hover:scale-110 transition-transform doodle-border text-sm cursor-pointer font-bold"
               [attr.aria-label]="card().isMinimized ? 'Expand' : 'Minimize'"
-            >@if (card().isMinimized) {<app-icon name="maximize"></app-icon>} @else {<span>_</span>}</button>
+            >@if (card().isMinimized) {<app-icon name="maximize"></app-icon>} @else {<app-icon name="minimize"></app-icon>}</button>
 
             <div class="relative">
               <button
@@ -377,11 +377,15 @@ export class CardComponent implements OnDestroy {
 
   handleDelete(event: Event) {
     event.stopPropagation();
-    this.toastService.show('Are you sure you want to delete this note?', 'warning', {
+    this.toastService.show('Delete this note?', 'warning', {
       label: 'Yes, Delete',
       callback: () => {
-        this.isDeleting.set(true);
-        setTimeout(() => this.delete.emit(this.card().id), 500);
+        if (this.themeService.reduceMotion()) {
+          this.delete.emit(this.card().id);
+        } else {
+          this.isDeleting.set(true);
+          setTimeout(() => this.delete.emit(this.card().id), 500);
+        }
       }
     });
   }

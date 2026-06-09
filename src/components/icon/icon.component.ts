@@ -4,6 +4,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import pin from '../../assets/icons/pin.svg?raw';
 import pinActive from '../../assets/icons/pin-active.svg?raw';
 import maximize from '../../assets/icons/maximize.svg?raw';
+import minimize from '../../assets/icons/minimize.svg?raw';
 import folder from '../../assets/icons/folder.svg?raw';
 import folderOpen from '../../assets/icons/folder-open.svg?raw';
 import page from '../../assets/icons/page.svg?raw';
@@ -36,6 +37,7 @@ const ICONS = {
   pin,
   'pin-active': pinActive,
   maximize,
+  minimize,
   folder,
   'folder-open': folderOpen,
   page,
