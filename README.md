@@ -10,7 +10,7 @@
 <img src="https://img.shields.io/badge/google%20gemini-%238E75B2.svg?style=for-the-badge&logo=googlegemini&logoColor=white" alt="gemini" />
 </div>
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.17.0-blue">
+  <img src="https://img.shields.io/badge/version-0.17.1-blue">
 </p>
 
 >[!IMPORTANT]

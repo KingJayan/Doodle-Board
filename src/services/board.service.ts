@@ -220,11 +220,12 @@ export class BoardService {
   }
 
   deleteBoard(boardId: string) {
-    if (boardId === 'default') return;
+    const fallback = this.boards().find(b => b.id !== boardId);
+    if (!fallback) return;
     const now = Date.now();
-    const toMove = this.cards().filter(c => c.boardId === boardId).map(c => ({ ...c, boardId: 'default', updatedAt: now }));
+    const toMove = this.cards().filter(c => c.boardId === boardId).map(c => ({ ...c, boardId: fallback.id, updatedAt: now }));
     this.cards.update(cards =>
-      cards.map(c => c.boardId === boardId ? { ...c, boardId: 'default', updatedAt: now } : c)
+      cards.map(c => c.boardId === boardId ? { ...c, boardId: fallback.id, updatedAt: now } : c)
     );
     this.boards.update(b => b.filter(x => x.id !== boardId));
     toMove.forEach(c => this.writeCard(c));

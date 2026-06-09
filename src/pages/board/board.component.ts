@@ -360,11 +360,14 @@ export class BoardComponent implements OnInit {
 
   deleteBoard(id: string, event: Event) {
     event.stopPropagation();
-    this.toastService.show('Delete board? Notes will move to General.', 'warning', {
+    const fallbackName = this.boardService.boards().find(b => b.id !== id)?.name ?? 'another board';
+    this.toastService.show(`Delete board? Notes will move to "${fallbackName}".`, 'warning', {
       label: 'Yes, Delete',
       callback: () => {
         this.boardService.deleteBoard(id);
-        if (this.activeBoardId() === id) this.activeBoardId.set('default');
+        if (this.activeBoardId() === id) {
+          this.activeBoardId.set(this.boardService.boards()[0]?.id ?? '');
+        }
         this.toastService.show('Board deleted', 'info');
       }
     });
