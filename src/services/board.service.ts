@@ -234,12 +234,12 @@ export class BoardService {
     );
     this.boards.update(b => b.filter(x => x.id !== boardId));
     toMove.forEach(c => this.writeCard(c));
-    db.boards.get(boardId).then(existing => {
-      if (existing) {
-        const rev = existing._rev + 1;
-        db.boards.put({ ...existing, _deleted: 1, _dirty: 1, _rev: rev, updatedAt: now });
-        db.outbox.add({ entity: 'board', entityId: boardId, op: 'delete', payloadRev: rev, enqueuedAt: now, attempts: 0, nextAttemptAt: now, lastError: null });
-      }
+    db.transaction('rw', db.boards, db.outbox, async () => {
+      const existing = await db.boards.get(boardId);
+      if (!existing) return;
+      const rev = existing._rev + 1;
+      await db.boards.put({ ...existing, _deleted: 1, _dirty: 1, _rev: rev, updatedAt: now });
+      await db.outbox.add({ entity: 'board', entityId: boardId, op: 'delete', payloadRev: rev, enqueuedAt: now, attempts: 0, nextAttemptAt: now, lastError: null });
     });
   }
 
@@ -285,11 +285,12 @@ export class BoardService {
     const now = Date.now();
     this.cards.update(cards => cards.filter(c => c.id !== id));
     this.trashedCards.update(t => [{ ...card, updatedAt: now }, ...t]);
-    db.cards.get(id).then(existing => {
+    db.transaction('rw', db.cards, db.outbox, async () => {
+      const existing = await db.cards.get(id);
       if (!existing) return;
       const rev = existing._rev + 1;
-      db.cards.put({ ...existing, _deleted: 1, _dirty: 1, _rev: rev, updatedAt: now });
-      db.outbox.add({ entity: 'card', entityId: id, op: 'delete', payloadRev: rev, enqueuedAt: now, attempts: 0, nextAttemptAt: now, lastError: null });
+      await db.cards.put({ ...existing, _deleted: 1, _dirty: 1, _rev: rev, updatedAt: now });
+      await db.outbox.add({ entity: 'card', entityId: id, op: 'delete', payloadRev: rev, enqueuedAt: now, attempts: 0, nextAttemptAt: now, lastError: null });
     });
   }
 
