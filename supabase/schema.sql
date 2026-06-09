@@ -49,6 +49,31 @@ alter table cards  enable row level security;
 create policy boards_owner on boards using (owner_id = auth.uid());
 create policy cards_owner  on cards  using (owner_id = auth.uid());
 
+create or replace function enforce_user_quota()
+returns trigger language plpgsql as $$
+declare
+  board_limit constant int := 100;
+  card_limit  constant int := 2000;
+begin
+  if TG_TABLE_NAME = 'boards' then
+    if (select count(*) from boards where owner_id = new.owner_id and not deleted) >= board_limit then
+      raise exception 'quota exceeded: max % boards per user', board_limit;
+    end if;
+  elsif TG_TABLE_NAME = 'cards' then
+    if (select count(*) from cards where owner_id = new.owner_id and not deleted) >= card_limit then
+      raise exception 'quota exceeded: max % cards per user', card_limit;
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+create trigger boards_quota before insert on boards
+  for each row execute function enforce_user_quota();
+
+create trigger cards_quota before insert on cards
+  for each row execute function enforce_user_quota();
+
 -- M6: sharing
 
 create table board_snapshots (

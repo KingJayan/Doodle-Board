@@ -36,7 +36,7 @@ import { IconComponent } from '../icon/icon.component';
             } @else {
               <div>
                 <h3 class="font-bold text-xl">AI Features Disabled</h3>
-                <p>Set a <strong>VITE_API_KEY</strong> environment variable to enable Genie brainstorm and Magic Pencil polish.</p>
+                <p>Set the <strong>GEMINI_API_KEY</strong> Supabase secret to enable Genie brainstorm and Magic Pencil polish.</p>
               </div>
             }
           </div>

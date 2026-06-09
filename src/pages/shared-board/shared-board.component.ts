@@ -1,6 +1,7 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Meta } from '@angular/platform-browser';
 import { ShareService, SharedPayload } from '../../services/share.service';
 import { AuthService } from '../../services/auth.service';
 import { BoardService } from '../../services/board.service';
@@ -89,12 +90,13 @@ import { Card } from '../../models/card.model';
     </div>
   `
 })
-export class SharedBoardComponent implements OnInit {
+export class SharedBoardComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private shareService = inject(ShareService);
   private authService = inject(AuthService);
   private boardService = inject(BoardService);
   private toastService = inject(ToastService);
+  private meta = inject(Meta);
   router = inject(Router);
 
   loading = signal(true);
@@ -102,11 +104,16 @@ export class SharedBoardComponent implements OnInit {
   duplicating = signal(false);
 
   ngOnInit() {
+    this.meta.addTag({ name: 'referrer', content: 'no-referrer' });
     const token = this.route.snapshot.paramMap.get('token') ?? '';
     this.shareService.getSharedBoard(token).then(data => {
       this.payload.set(data);
       this.loading.set(false);
     });
+  }
+
+  ngOnDestroy() {
+    this.meta.removeTag('name="referrer"');
   }
 
   async duplicate() {
