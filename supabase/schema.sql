@@ -48,3 +48,58 @@ alter table cards  enable row level security;
 
 create policy boards_owner on boards using (owner_id = auth.uid());
 create policy cards_owner  on cards  using (owner_id = auth.uid());
+
+-- M6: sharing
+
+create table board_snapshots (
+  id         uuid primary key default gen_random_uuid(),
+  board_id   uuid not null,
+  owner_id   uuid not null references auth.users(id) on delete cascade,
+  payload    jsonb not null,
+  created_at timestamptz not null default now()
+);
+
+create table shares (
+  id          uuid primary key default gen_random_uuid(),
+  board_id    uuid not null,
+  owner_id    uuid not null references auth.users(id) on delete cascade,
+  token       text not null unique default encode(gen_random_bytes(24), 'base64url'),
+  snapshot_id uuid references board_snapshots(id) on delete cascade,
+  created_at  timestamptz not null default now(),
+  revoked_at  timestamptz,
+  expires_at  timestamptz
+);
+
+create index shares_token on shares(token);
+create index shares_owner_board on shares(owner_id, board_id);
+
+alter table board_snapshots enable row level security;
+alter table shares           enable row level security;
+
+create policy snapshots_owner on board_snapshots using (owner_id = auth.uid());
+create policy shares_owner    on shares          using (owner_id = auth.uid());
+
+create or replace function get_shared_board(p_token text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_share shares%rowtype;
+  v_payload jsonb;
+begin
+  select * into v_share
+  from shares
+  where token = p_token
+    and revoked_at is null
+    and (expires_at is null or expires_at > now());
+  if not found then return null; end if;
+
+  select payload into v_payload
+  from board_snapshots
+  where id = v_share.snapshot_id;
+
+  return v_payload;
+end;
+$$;

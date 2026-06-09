@@ -86,19 +86,21 @@ export class SyncEngineService {
       if (entry.entity === 'board') {
         const row = await db.boards.get(entry.entityId);
         if (!row) { await db.outbox.where('entityId').equals(entry.entityId).delete(); return; }
-        const { error } = await supabase!.from('boards').upsert(toSbBoard(row, userId));
+        const { data: upserted, error } = await supabase!.from('boards').upsert(toSbBoard(row, userId)).select('updated_at').single();
         if (error) throw error;
+        const serverTs = upserted?.updated_at ? +new Date(upserted.updated_at) : now;
         await db.transaction('rw', db.boards, db.outbox, async () => {
-          await db.boards.update(entry.entityId, { _dirty: 0, _serverUpdatedAt: now });
+          await db.boards.update(entry.entityId, { _dirty: 0, _serverUpdatedAt: serverTs });
           await db.outbox.where('entityId').equals(entry.entityId).delete();
         });
       } else {
         const row = await db.cards.get(entry.entityId);
         if (!row) { await db.outbox.where('entityId').equals(entry.entityId).delete(); return; }
-        const { error } = await supabase!.from('cards').upsert(toSbCard(row, userId));
+        const { data: upserted, error } = await supabase!.from('cards').upsert(toSbCard(row, userId)).select('updated_at').single();
         if (error) throw error;
+        const serverTs = upserted?.updated_at ? +new Date(upserted.updated_at) : now;
         await db.transaction('rw', db.cards, db.outbox, async () => {
-          await db.cards.update(entry.entityId, { _dirty: 0, _serverUpdatedAt: now });
+          await db.cards.update(entry.entityId, { _dirty: 0, _serverUpdatedAt: serverTs });
           await db.outbox.where('entityId').equals(entry.entityId).delete();
         });
       }
@@ -130,7 +132,7 @@ export class SyncEngineService {
       if (!local) {
         if (!sb['deleted']) { await db.boards.put(fromSbBoard(sb)); changed = true; }
       } else if (local._dirty === 0 || st > local.updatedAt) {
-        await db.boards.put({ ...fromSbBoard(sb), _rev: local._rev });
+        await db.boards.put({ ...fromSbBoard(sb), _rev: local._rev, _dirty: 0 });
         changed = true;
       }
       newCursor = Math.max(newCursor, st);
@@ -142,7 +144,7 @@ export class SyncEngineService {
       if (!local) {
         if (!sc['deleted']) { await db.cards.put(fromSbCard(sc)); changed = true; }
       } else if (local._dirty === 0 || st > local.updatedAt) {
-        await db.cards.put({ ...fromSbCard(sc), _rev: local._rev });
+        await db.cards.put({ ...fromSbCard(sc), _rev: local._rev, _dirty: 0 });
         changed = true;
       }
       newCursor = Math.max(newCursor, st);

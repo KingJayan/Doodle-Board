@@ -1,13 +1,15 @@
-import { Component, Output, EventEmitter, inject } from '@angular/core';
+import { Component, Output, EventEmitter, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ThemeService, ThemeDef } from '../../services/theme.service';
+import { AuthService } from '../../services/auth.service';
 import { IconComponent } from '../icon/icon.component';
-const version = '0.16.0';
+const version = '0.17.0';
 
 @Component({
   selector: 'app-settings-modal',
   standalone: true,
-  imports: [CommonModule, IconComponent],
+  imports: [CommonModule, FormsModule, IconComponent],
   template: `
     <div class="fixed inset-0 z-overlay flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" (click)="close.emit()">
       <div role="dialog" aria-modal="true" aria-labelledby="settings-title" class="bg-[var(--paper-color)] p-6 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-xl doodle-border relative text-[var(--ink-color)]" (click)="$event.stopPropagation()">
@@ -15,6 +17,54 @@ const version = '0.16.0';
         <h2 id="settings-title" class="text-3xl marker-font mb-6 text-center">Settings</h2>
 
         <div class="flex flex-col gap-6">
+
+          <!-- ACCOUNT (M5) -->
+          @if (authService.supabaseAvailable) {
+            <div>
+              <h3 class="font-bold text-lg border-b border-[var(--ink-color)] pb-1 mb-3">Account</h3>
+
+              @if (authService.authState().mode === 'linked') {
+                <div class="bg-[var(--tint-green)] p-3 rounded-lg text-sm flex items-center gap-2">
+                  <app-icon name="check"></app-icon>
+                  <div>
+                    <p class="font-bold">Permanent account linked</p>
+                    <p class="text-muted text-xs">Your boards sync across all your devices.</p>
+                  </div>
+                </div>
+              } @else if (authService.authState().mode === 'anonymous') {
+                <div class="bg-[var(--tint-yellow)] p-3 rounded-lg text-sm">
+                  <p class="font-bold mb-1">Anonymous cloud account</p>
+                  <p class="text-muted text-xs mb-3">Link a permanent account to sign in from any device without losing your boards.</p>
+
+                  @if (linkError()) {
+                    <p class="text-red-500 text-xs mb-2 p-2 bg-red-500/10 rounded">{{ linkError() }}</p>
+                  }
+                  @if (linkEmailSent()) {
+                    <p class="text-green-700 text-xs mb-2 p-2 bg-green-500/10 rounded">Check your email for a verification link!</p>
+                  }
+
+                  <div class="flex flex-col gap-2">
+                    <button (click)="linkProvider('github')" [disabled]="linking()" class="doodle-btn text-sm w-full">
+                      <app-icon name="octopus"></app-icon> Link GitHub
+                    </button>
+                    <button (click)="linkProvider('google')" [disabled]="linking()" class="doodle-btn text-sm w-full">
+                      <app-icon name="globe"></app-icon> Link Google
+                    </button>
+                    <div class="flex gap-2 mt-1">
+                      <input #emailInput type="email" [(ngModel)]="emailInput" class="doodle-input text-sm flex-1" placeholder="your@email.com">
+                      <button (click)="linkEmail()" [disabled]="linking()" class="doodle-btn text-sm">Link Email</button>
+                    </div>
+                  </div>
+                </div>
+              } @else {
+                <div class="bg-[var(--tint-blue)] p-3 rounded-lg text-sm">
+                  <p class="text-muted text-xs mb-2">Cloud sync activates automatically when you create your first note.</p>
+                  <button (click)="activateSync()" [disabled]="linking()" class="doodle-btn text-sm">Activate Cloud Sync Now</button>
+                </div>
+              }
+            </div>
+          }
+
           <!-- THEME LIBRARY -->
           <div>
             <div class="flex items-baseline justify-between mb-3 border-b border-[var(--ink-color)] pb-1">
@@ -173,8 +223,14 @@ const version = '0.16.0';
 })
 export class SettingsModalComponent {
   themeService = inject(ThemeService);
+  authService = inject(AuthService);
   @Output() close = new EventEmitter<void>();
   protected readonly version = version;
+
+  linking = signal(false);
+  linkError = signal<string | null>(null);
+  linkEmailSent = signal(false);
+  emailInput = '';
 
   readonly groups = [
     { label: 'Light', themes: this.themeService.lightThemes },
@@ -185,8 +241,35 @@ export class SettingsModalComponent {
     return this.themeService.mode() === name;
   }
 
-  /** Lift the preview opacity a touch so glyphs read at thumbnail size. */
   motifPreviewOpacity(t: ThemeDef): number {
     return Math.min(0.5, parseFloat(t.vars['--motif-opacity']) + 0.18);
+  }
+
+  async activateSync() {
+    this.linking.set(true);
+    await this.authService.triggerAnonymousSignIn();
+    this.linking.set(false);
+  }
+
+  async linkProvider(provider: 'github' | 'google') {
+    this.linking.set(true);
+    this.linkError.set(null);
+    const err = await this.authService.linkWithProvider(provider);
+    if (err) { this.linkError.set(err); this.linking.set(false); }
+  }
+
+  async linkEmail() {
+    if (!this.emailInput.trim()) return;
+    this.linking.set(true);
+    this.linkError.set(null);
+    this.linkEmailSent.set(false);
+    const err = await this.authService.linkWithEmail(this.emailInput.trim());
+    if (err) {
+      this.linkError.set(err);
+    } else {
+      this.linkEmailSent.set(true);
+      this.emailInput = '';
+    }
+    this.linking.set(false);
   }
 }
