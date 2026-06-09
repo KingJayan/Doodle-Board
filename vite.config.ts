@@ -52,7 +52,14 @@ export default defineConfig({
       minify: 'esbuild',
       sourcemap: false,
       rollupOptions: {
-        external: (id) => id.includes('vite/dist/node/chunks/')
+        external: (id) => id.includes('vite/dist/node/chunks/'),
+        output: {
+          manualChunks: {
+            'vendor-angular': ['@angular/core', '@angular/common', '@angular/forms', '@angular/router', '@angular/platform-browser', '@angular/animations', 'rxjs', 'zone.js', 'tslib'],
+            'vendor-data':    ['@supabase/supabase-js', 'dexie'],
+            'vendor-util':    ['@google/genai', 'jszip', 'js-yaml', 'fractional-indexing'],
+          }
+        }
       },
       commonjsOptions: {
         exclude: [/vite\/dist\/node\/chunks/, /vite\/dist\/node\/index\.js/, /@angular\/compiler-cli/],
