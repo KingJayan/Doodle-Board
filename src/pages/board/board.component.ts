@@ -8,6 +8,7 @@ import { EditorComponent } from '../../components/editor/editor.component';
 import { SettingsModalComponent } from '../../components/settings-modal/settings-modal.component';
 import { HelpModalComponent } from '../../components/help-modal/help-modal.component';
 import { ShareModalComponent } from '../../components/share-modal/share-modal.component';
+import { TrashModalComponent } from '../../components/trash-modal/trash-modal.component';
 import { IconComponent } from '../../components/icon/icon.component';
 import { AiService } from '../../services/ai.service';
 import { ToastService } from '../../services/toast.service';
@@ -17,7 +18,7 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mode
 @Component({
   selector: 'app-board',
   standalone: true,
-  imports: [CommonModule, FormsModule, CardComponent, EditorComponent, SettingsModalComponent, HelpModalComponent, ShareModalComponent, IconComponent],
+  imports: [CommonModule, FormsModule, CardComponent, EditorComponent, SettingsModalComponent, HelpModalComponent, ShareModalComponent, TrashModalComponent, IconComponent],
   template: `
     <div class="h-screen flex flex-col overflow-hidden">
 
@@ -138,7 +139,17 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mode
             }
           </div>
 
-          <div class="pt-2 border-t-2 border-dashed border-soft">
+          <div class="pt-2 border-t-2 border-dashed border-soft flex flex-col gap-2">
+            <button
+              (click)="trashPanelOpen.set(true)"
+              class="flex items-center gap-2 p-2 rounded hover-surface text-[var(--ink-color)] opacity-60 hover:opacity-100 transition-opacity text-sm w-full"
+            >
+              <app-icon name="trash"></app-icon>
+              <span>Trash</span>
+              @if (trashedCards().length) {
+                <span class="ml-auto text-xs bg-[var(--tint-pink)] px-2 rounded-full">{{ trashedCards().length }}</span>
+              }
+            </button>
             <div class="flex gap-2">
               <input
                 #newBoardInput
@@ -240,6 +251,9 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mode
           (close)="sharePanelOpen.set(false)"
         ></app-share-modal>
       }
+      @if (trashPanelOpen()) {
+        <app-trash-modal (close)="trashPanelOpen.set(false)"></app-trash-modal>
+      }
     </div>
   `,
   styles: [`
@@ -297,7 +311,9 @@ export class BoardComponent implements OnInit {
   sharePanelOpen = signal(false);
   settingsPanelOpen = signal(false);
   helpPanelOpen = signal(false);
+  trashPanelOpen = signal(false);
   sidebarOpen = signal(true);
+  trashedCards = this.boardService.trashedCards;
   isGenerating = signal(false);
 
   editingCard = signal<Card | null>(null);
@@ -397,7 +413,10 @@ export class BoardComponent implements OnInit {
 
   handleDeleteCard(id: string) {
     this.boardService.deleteCard(id);
-    this.toastService.show('Note deleted', 'info');
+    this.toastService.show('Moved to trash', 'info', {
+      label: 'Undo',
+      callback: () => this.boardService.restoreCard(id)
+    });
   }
 
   handleDragStart(cardId: string, event: DragEvent) {

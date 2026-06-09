@@ -34,6 +34,7 @@ function dbToBoard(b: DbBoard): Board {
 export class BoardService {
   readonly cards = signal<Card[]>([]);
   readonly boards = signal<Board[]>([]);
+  readonly trashedCards = signal<Card[]>([]);
   readonly syncStatus = signal<string>('Saved locally');
 
   constructor(private auth: AuthService) {
@@ -41,24 +42,28 @@ export class BoardService {
   }
 
   async rehydrate() {
-    const [dbBoards, dbCards] = await Promise.all([
+    const [dbBoards, dbCards, dbTrashed] = await Promise.all([
       db.boards.where('_deleted').equals(0).toArray(),
-      db.cards.where('_deleted').equals(0).toArray()
+      db.cards.where('_deleted').equals(0).toArray(),
+      db.cards.where('_deleted').equals(1).toArray()
     ]);
     this.boards.set(dbBoards.sort((a, b) => a.position.localeCompare(b.position)).map(dbToBoard));
     this.cards.set(dbCards.sort((a, b) => a.position.localeCompare(b.position)).map(dbToCard));
+    this.trashedCards.set(dbTrashed.sort((a, b) => b.updatedAt - a.updatedAt).map(dbToCard));
   }
 
   private async init() {
     const migrated = await db.meta.get('migratedFromLocalStorage');
     if (!migrated?.value) await this.migrateFromLocalStorage();
     await this.migrateDefaultBoardId();
-    const [dbBoards, dbCards] = await Promise.all([
+    const [dbBoards, dbCards, dbTrashed] = await Promise.all([
       db.boards.where('_deleted').equals(0).toArray(),
-      db.cards.where('_deleted').equals(0).toArray()
+      db.cards.where('_deleted').equals(0).toArray(),
+      db.cards.where('_deleted').equals(1).toArray()
     ]);
     this.boards.set(dbBoards.sort((a, b) => a.position.localeCompare(b.position)).map(dbToBoard));
     this.cards.set(dbCards.sort((a, b) => a.position.localeCompare(b.position)).map(dbToCard));
+    this.trashedCards.set(dbTrashed.sort((a, b) => b.updatedAt - a.updatedAt).map(dbToCard));
   }
 
   private async migrateDefaultBoardId() {
@@ -275,14 +280,41 @@ export class BoardService {
   }
 
   deleteCard(id: string) {
+    const card = this.cards().find(c => c.id === id);
+    if (!card) return;
     const now = Date.now();
     this.cards.update(cards => cards.filter(c => c.id !== id));
+    this.trashedCards.update(t => [{ ...card, updatedAt: now }, ...t]);
     db.cards.get(id).then(existing => {
       if (!existing) return;
       const rev = existing._rev + 1;
       db.cards.put({ ...existing, _deleted: 1, _dirty: 1, _rev: rev, updatedAt: now });
       db.outbox.add({ entity: 'card', entityId: id, op: 'delete', payloadRev: rev, enqueuedAt: now, attempts: 0, nextAttemptAt: now, lastError: null });
     });
+  }
+
+  restoreCard(id: string) {
+    const card = this.trashedCards().find(c => c.id === id);
+    if (!card) return;
+    const boards = this.boards();
+    const targetBoardId = boards.find(b => b.id === card.boardId)?.id ?? boards[0]?.id;
+    if (!targetBoardId) return;
+    const now = Date.now();
+    const restored = { ...card, boardId: targetBoardId, updatedAt: now };
+    this.trashedCards.update(t => t.filter(c => c.id !== id));
+    this.cards.update(cards => [restored, ...cards]);
+    this.writeCard(restored);
+  }
+
+  permanentlyDeleteCard(id: string) {
+    this.trashedCards.update(t => t.filter(c => c.id !== id));
+    db.cards.delete(id);
+  }
+
+  emptyTrash() {
+    const ids = this.trashedCards().map(c => c.id);
+    this.trashedCards.set([]);
+    if (ids.length) db.cards.bulkDelete(ids);
   }
 
   toggleSticker(cardId: string, sticker: string) {

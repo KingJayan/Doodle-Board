@@ -377,17 +377,12 @@ export class CardComponent implements OnDestroy {
 
   handleDelete(event: Event) {
     event.stopPropagation();
-    this.toastService.show('Delete this note?', 'warning', {
-      label: 'Yes, Delete',
-      callback: () => {
-        if (this.themeService.reduceMotion()) {
-          this.delete.emit(this.card().id);
-        } else {
-          this.isDeleting.set(true);
-          setTimeout(() => this.delete.emit(this.card().id), 500);
-        }
-      }
-    });
+    if (this.themeService.reduceMotion()) {
+      this.delete.emit(this.card().id);
+    } else {
+      this.isDeleting.set(true);
+      setTimeout(() => this.delete.emit(this.card().id), 500);
+    }
   }
 
   handleExpand(event: Event) {

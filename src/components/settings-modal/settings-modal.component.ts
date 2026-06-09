@@ -18,52 +18,55 @@ const version = '0.17.2';
 
         <div class="flex flex-col gap-6">
 
-          <!-- ACCOUNT (M5) -->
-          @if (authService.supabaseAvailable) {
-            <div>
-              <h3 class="font-bold text-lg border-b border-[var(--ink-color)] pb-1 mb-3">Account</h3>
+          <!-- ACCOUNT -->
+          <div>
+            <h3 class="font-bold text-lg border-b border-[var(--ink-color)] pb-1 mb-3">Account & Sync</h3>
 
-              @if (authService.authState().mode === 'linked') {
-                <div class="bg-[var(--tint-green)] p-3 rounded-lg text-sm flex items-center gap-2">
-                  <app-icon name="check"></app-icon>
-                  <div>
-                    <p class="font-bold">Permanent account linked</p>
-                    <p class="text-muted text-xs">Your boards sync across all your devices.</p>
+            @if (!authService.supabaseAvailable) {
+              <div class="bg-[var(--surface)] p-3 rounded-lg text-sm flex flex-col gap-1 border border-[var(--border-soft)]">
+                <p class="font-bold flex items-center gap-2"><app-icon name="check"></app-icon> Saved locally</p>
+                <p class="opacity-60 text-xs leading-relaxed">Cloud sync is not configured. Add <code class="font-mono bg-[var(--surface-hover)] px-1 rounded">VITE_SUPABASE_URL</code> and <code class="font-mono bg-[var(--surface-hover)] px-1 rounded">VITE_SUPABASE_ANON_KEY</code> to your <code class="font-mono bg-[var(--surface-hover)] px-1 rounded">.env</code> to enable syncing across devices.</p>
+              </div>
+            } @else if (authService.authState().mode === 'linked') {
+              <div class="bg-[var(--tint-green)] p-3 rounded-lg text-sm flex items-center gap-2">
+                <app-icon name="check"></app-icon>
+                <div>
+                  <p class="font-bold">Permanent account linked</p>
+                  <p class="text-muted text-xs">Your boards sync across all your devices.</p>
+                </div>
+              </div>
+            } @else if (authService.authState().mode === 'anonymous') {
+              <div class="bg-[var(--tint-yellow)] p-3 rounded-lg text-sm">
+                <p class="font-bold mb-1">Anonymous cloud account</p>
+                <p class="text-muted text-xs mb-3">Link a permanent account to sign in from any device without losing your boards.</p>
+
+                @if (linkError()) {
+                  <p class="text-[var(--ink-color)] text-xs mb-2 p-2 bg-[var(--tint-pink)] rounded flex items-center gap-1"><app-icon name="warning"></app-icon> {{ linkError() }}</p>
+                }
+                @if (linkEmailSent()) {
+                  <p class="text-[var(--ink-color)] text-xs mb-2 p-2 bg-[var(--tint-green)] rounded flex items-center gap-1"><app-icon name="check"></app-icon> Check your email for a verification link!</p>
+                }
+
+                <div class="flex flex-col gap-2">
+                  <button (click)="linkProvider('github')" [disabled]="linking()" class="doodle-btn text-sm w-full">
+                    <app-icon name="octopus"></app-icon> Link GitHub
+                  </button>
+                  <button (click)="linkProvider('google')" [disabled]="linking()" class="doodle-btn text-sm w-full">
+                    <app-icon name="globe"></app-icon> Link Google
+                  </button>
+                  <div class="flex gap-2 mt-1">
+                    <input type="email" [(ngModel)]="emailInput" class="doodle-input text-sm flex-1" placeholder="your@email.com">
+                    <button (click)="linkEmail()" [disabled]="linking()" class="doodle-btn text-sm"><app-icon name="memo"></app-icon> Link Email</button>
                   </div>
                 </div>
-              } @else if (authService.authState().mode === 'anonymous') {
-                <div class="bg-[var(--tint-yellow)] p-3 rounded-lg text-sm">
-                  <p class="font-bold mb-1">Anonymous cloud account</p>
-                  <p class="text-muted text-xs mb-3">Link a permanent account to sign in from any device without losing your boards.</p>
-
-                  @if (linkError()) {
-                    <p class="text-[var(--ink-color)] text-xs mb-2 p-2 bg-[var(--tint-pink)] rounded flex items-center gap-1"><app-icon name="warning"></app-icon> {{ linkError() }}</p>
-                  }
-                  @if (linkEmailSent()) {
-                    <p class="text-[var(--ink-color)] text-xs mb-2 p-2 bg-[var(--tint-green)] rounded flex items-center gap-1"><app-icon name="check"></app-icon> Check your email for a verification link!</p>
-                  }
-
-                  <div class="flex flex-col gap-2">
-                    <button (click)="linkProvider('github')" [disabled]="linking()" class="doodle-btn text-sm w-full">
-                      <app-icon name="octopus"></app-icon> Link GitHub
-                    </button>
-                    <button (click)="linkProvider('google')" [disabled]="linking()" class="doodle-btn text-sm w-full">
-                      <app-icon name="globe"></app-icon> Link Google
-                    </button>
-                    <div class="flex gap-2 mt-1">
-                      <input type="email" [(ngModel)]="emailInput" class="doodle-input text-sm flex-1" placeholder="your@email.com">
-                      <button (click)="linkEmail()" [disabled]="linking()" class="doodle-btn text-sm"><app-icon name="memo"></app-icon> Link Email</button>
-                    </div>
-                  </div>
-                </div>
-              } @else {
-                <div class="bg-[var(--tint-blue)] p-3 rounded-lg text-sm flex flex-col gap-2">
-                  <p class="text-muted text-xs flex items-center gap-1"><app-icon name="globe"></app-icon> Cloud sync activates automatically when you create your first note.</p>
-                  <button (click)="activateSync()" [disabled]="linking()" class="doodle-btn text-sm self-start"><app-icon name="sparkles"></app-icon> Activate Cloud Sync Now</button>
-                </div>
-              }
-            </div>
-          }
+              </div>
+            } @else {
+              <div class="bg-[var(--tint-blue)] p-3 rounded-lg text-sm flex flex-col gap-2">
+                <p class="text-muted text-xs flex items-center gap-1"><app-icon name="globe"></app-icon> Cloud sync activates automatically when you create your first note.</p>
+                <button (click)="activateSync()" [disabled]="linking()" class="doodle-btn text-sm self-start"><app-icon name="sparkles"></app-icon> Activate Cloud Sync Now</button>
+              </div>
+            }
+          </div>
 
           <!-- THEME LIBRARY -->
           <div>
