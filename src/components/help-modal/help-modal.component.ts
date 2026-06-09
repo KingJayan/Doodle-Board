@@ -1,4 +1,4 @@
-import { Component, Output, EventEmitter, input, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Output, EventEmitter, input, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IconComponent } from '../icon/icon.component';
 
@@ -8,9 +8,9 @@ import { IconComponent } from '../icon/icon.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, IconComponent],
   template: `
-    <div class="fixed inset-0 z-overlay flex items-center justify-center bg-black/50 backdrop-blur-sm" (click)="close.emit()">
+    <div class="fixed inset-0 z-overlay flex items-center justify-center bg-black/50 backdrop-blur-sm" [class.animate-modalOut]="isClosing()" (click)="startClose()">
       <div role="dialog" aria-modal="true" aria-labelledby="help-title" class="bg-[var(--paper-color)] p-8 rounded-lg max-w-2xl w-full m-4 shadow-xl doodle-border relative text-[var(--ink-color)] overflow-y-auto max-h-[90vh]" (click)="$event.stopPropagation()">
-        <button (click)="close.emit()" class="absolute top-4 right-4 text-2xl hover:text-red-500" aria-label="Close">×</button>
+        <button (click)="startClose()" class="absolute top-4 right-4 text-2xl hover:text-red-500" aria-label="Close">×</button>
         <h2 id="help-title" class="text-3xl marker-font mb-6 text-center">How to Doodle</h2>
         <div class="space-y-6">
           <div class="flex gap-4 items-start">
@@ -43,7 +43,7 @@ import { IconComponent } from '../icon/icon.component';
           </div>
         </div>
         <div class="mt-8 text-center">
-          <button (click)="close.emit()" class="doodle-btn bg-[var(--accent)] text-[var(--paper-color)] font-bold">Got it!</button>
+          <button (click)="startClose()" class="doodle-btn bg-[var(--accent)] text-[var(--paper-color)] font-bold">Got it!</button>
         </div>
       </div>
     </div>
@@ -52,4 +52,10 @@ import { IconComponent } from '../icon/icon.component';
 export class HelpModalComponent {
   aiAvailable = input.required<boolean>();
   @Output() close = new EventEmitter<void>();
+  isClosing = signal(false);
+
+  startClose() {
+    this.isClosing.set(true);
+    setTimeout(() => this.close.emit(), 150);
+  }
 }

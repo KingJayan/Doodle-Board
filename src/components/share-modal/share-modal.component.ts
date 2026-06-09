@@ -14,9 +14,9 @@ import { IconComponent } from '../icon/icon.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, IconComponent],
   template: `
-    <div class="fixed inset-0 z-overlay flex items-center justify-center bg-black/50 backdrop-blur-sm" (click)="close.emit()">
+    <div class="fixed inset-0 z-overlay flex items-center justify-center bg-black/50 backdrop-blur-sm" [class.animate-modalOut]="isClosing()" (click)="startClose()">
       <div role="dialog" aria-modal="true" aria-labelledby="share-title" class="bg-[var(--paper-color)] p-8 rounded-lg max-w-lg w-full m-4 shadow-xl doodle-border relative text-[var(--ink-color)] max-h-[90vh] overflow-y-auto" (click)="$event.stopPropagation()">
-        <button (click)="close.emit()" class="absolute top-4 right-4 text-2xl hover:text-red-500" aria-label="Close">×</button>
+        <button (click)="startClose()" class="absolute top-4 right-4 text-2xl hover:text-red-500" aria-label="Close">×</button>
         <h2 id="share-title" class="text-3xl marker-font mb-6 text-center">Backup & Share</h2>
         <div class="text-center text-sm text-muted mb-4">Current Board: {{ boardName() }}</div>
 
@@ -103,9 +103,15 @@ export class ShareModalComponent implements OnInit {
 
   @Output() close = new EventEmitter<void>();
 
+  isClosing = signal(false);
   creatingShare = signal(false);
   newShareUrl = signal<string | null>(null);
   activeShares = signal<ShareInfo[]>([]);
+
+  startClose() {
+    this.isClosing.set(true);
+    setTimeout(() => this.close.emit(), 150);
+  }
 
   ngOnInit() {
     if (this.authService.authState().mode !== 'none' && this.authService.supabaseAvailable) {
@@ -174,7 +180,7 @@ export class ShareModalComponent implements OnInit {
         updatedAt: p.updatedAt || Date.now()
       }));
       this.boardService.importCardsIntoBoard(newCards, this.boardId());
-      this.close.emit();
+      this.startClose();
       this.toastService.show(`${newCards.length} notes added to board!`, 'success');
     } catch {
       this.toastService.show('Failed to import ZIP — file may be invalid', 'error');
@@ -200,7 +206,7 @@ export class ShareModalComponent implements OnInit {
         isPinned: parsed.isPinned,
         boardId: this.boardId()
       });
-      this.close.emit();
+      this.startClose();
       this.toastService.show('Sketch added to the pile', 'success');
     } catch {
       this.toastService.show("Couldn't read that file", 'error');

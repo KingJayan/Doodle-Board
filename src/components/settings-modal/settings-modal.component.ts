@@ -12,9 +12,9 @@ const version = '0.17.2';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule, IconComponent],
   template: `
-    <div class="fixed inset-0 z-overlay flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" (click)="close.emit()">
+    <div class="fixed inset-0 z-overlay flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" [class.animate-modalOut]="isClosing()" (click)="startClose()">
       <div role="dialog" aria-modal="true" aria-labelledby="settings-title" class="bg-[var(--paper-color)] p-6 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-xl doodle-border relative text-[var(--ink-color)]" (click)="$event.stopPropagation()">
-        <button (click)="close.emit()" class="absolute top-4 right-4 text-2xl hover:text-red-500" aria-label="Close settings">×</button>
+        <button (click)="startClose()" class="absolute top-4 right-4 text-2xl hover:text-red-500" aria-label="Close settings">×</button>
         <h2 id="settings-title" class="text-3xl marker-font mb-6 text-center">Settings</h2>
 
         <div class="flex flex-col gap-6">
@@ -231,6 +231,7 @@ export class SettingsModalComponent {
   @Output() close = new EventEmitter<void>();
   protected readonly version = version;
 
+  isClosing = signal(false);
   linking = signal(false);
   linkError = signal<string | null>(null);
   linkEmailSent = signal(false);
@@ -240,6 +241,11 @@ export class SettingsModalComponent {
     { label: 'Light', themes: this.themeService.lightThemes },
     { label: 'Dark', themes: this.themeService.darkThemes },
   ];
+
+  startClose() {
+    this.isClosing.set(true);
+    setTimeout(() => this.close.emit(), 150);
+  }
 
   isSelected(name: string): boolean {
     return this.themeService.mode() === name;

@@ -16,6 +16,7 @@ import { IconComponent } from '../icon/icon.component';
   template: `
     <div
       class="fixed inset-0 z-overlay flex items-start justify-center p-0 md:p-8 bg-gray-900/50 backdrop-blur-sm animate-fadeIn overflow-y-auto"
+      [class.animate-modalOut]="isClosing()"
       (click)="requestClose()"
     >
       <div
@@ -148,6 +149,7 @@ export class EditorComponent {
   @ViewChild('editorTextarea') editorTextarea!: ElementRef<HTMLTextAreaElement>;
 
   isPolishing = signal(false);
+  isClosing = signal(false);
   form = { title: '', content: '', tags: '' };
 
   constructor() {
@@ -181,11 +183,16 @@ export class EditorComponent {
     this.toastService.show('Saved successfully', 'success');
   }
 
+  startClose() {
+    this.isClosing.set(true);
+    setTimeout(() => this.close.emit(), 150);
+  }
+
   requestClose() {
-    if (!this.hasUnsavedChanges()) { this.close.emit(); return; }
+    if (!this.hasUnsavedChanges()) { this.startClose(); return; }
     this.toastService.show('Unsaved changes — close anyway?', 'warning', {
       label: 'Close',
-      callback: () => this.close.emit()
+      callback: () => this.startClose()
     });
   }
 

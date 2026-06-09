@@ -67,6 +67,16 @@ body {
 .card-ink { color: var(--note-ink); }
 .card-animated { will-change: transform; }
 
+.animate-modalOut { animation: modalOut 0.15s ease-in forwards; }
+@keyframes modalOut { to { opacity: 0; transform: scale(0.97); } }
+
+.card-selected {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  animation: selectPulse 0.2s var(--ease-stamp);
+}
+@keyframes selectPulse { 50% { outline-offset: 6px; } }
+
 app-root {
   display: block;
   width: 100%;
@@ -102,7 +112,8 @@ h1, h2, h3, .marker-font {
     box-shadow: 3px 3px 0px rgba(0,0,0,0.2);
   }
   .doodle-btn:active {
-    transform: scale(0.95);
+    transform: scale(0.94);
+    transition: transform 0.1s ease;
   }
 
   .doodle-input {

@@ -114,7 +114,13 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mode
               <div
                 class="board-item flex items-center gap-2 p-2 rounded cursor-pointer transition-colors group relative"
                 [class.active]="activeBoardId() === board.id"
+                [class.drag-over]="dragTargetBoardId() === board.id"
+                [class.animate-sidebarItemIn]="newBoardId() === board.id && !themeService.reduceMotion()"
                 (click)="activeBoardId.set(board.id); sidebarOpen.set(false)"
+                (dragover)="handleDragOver($event)"
+                (dragenter)="handleDragEnterBoard(board.id)"
+                (dragleave)="handleDragLeaveBoard()"
+                (drop)="handleDropOnBoard(board.id, $event)"
               >
                 <span class="text-xl"><app-icon name="folder"></app-icon></span>
                 @if (renamingBoardId() === board.id) {
@@ -216,10 +222,13 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mode
               @for (card of filteredCards(); track card.id) {
                 <div
                   class="relative flex-none"
-                  [class.animate-popIn]="!themeService.reduceMotion()"
+                  [class.animate-popIn]="!justSwitchedBoard() && !themeService.reduceMotion()"
+                  [class.animate-cardEnter]="justSwitchedBoard() && !themeService.reduceMotion()"
+                  [class.is-dragging]="draggingCardId() === card.id"
                   [style.animation-delay]="($index * 50) + 'ms'"
                   draggable="true"
                   (dragstart)="handleDragStart(card.id, $event)"
+                  (dragend)="handleDragEnd()"
                   (drop)="handleDrop(card.id, $event)"
                   (dragover)="handleDragOver($event)"
                 >
@@ -298,6 +307,30 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mode
       from { opacity: 0; transform: scale(0.8) translateY(10px); }
       to { opacity: 1; transform: scale(1) translateY(0); }
     }
+    .animate-cardEnter {
+      animation: cardEnter 0.25s var(--ease-spring) both;
+    }
+    @keyframes cardEnter {
+      from { opacity: 0; transform: translateY(12px) scale(0.97); }
+      to { opacity: 1; transform: none; }
+    }
+    .is-dragging {
+      opacity: 0.6;
+      transform: scale(1.03) rotate(2deg);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.25);
+      z-index: 50;
+    }
+    .board-item.drag-over {
+      border: 2px dashed var(--accent);
+      background-color: var(--surface-hover);
+    }
+    @keyframes sidebarItemIn {
+      from { opacity: 0; transform: translateX(-8px); }
+      to { opacity: 1; transform: none; }
+    }
+    .animate-sidebarItemIn {
+      animation: sidebarItemIn 0.3s var(--ease-spring) forwards;
+    }
   `]
 })
 export class BoardComponent implements OnInit {
@@ -325,6 +358,18 @@ export class BoardComponent implements OnInit {
         untracked(() => this.activeBoardId.set(boards[0].id));
       }
     });
+
+    let prevBoardId = '';
+    effect(() => {
+      const id = this.activeBoardId();
+      untracked(() => {
+        if (prevBoardId && prevBoardId !== id && !this.themeService.reduceMotion()) {
+          this.justSwitchedBoard.set(true);
+          setTimeout(() => this.justSwitchedBoard.set(false), 350);
+        }
+        prevBoardId = id;
+      });
+    });
   }
 
   aiPanelOpen = signal(false);
@@ -337,6 +382,10 @@ export class BoardComponent implements OnInit {
   isHydrating = this.boardService.isHydrating;
   readonly skeletonCards = [0, 1, 2, 3, 4];
   isGenerating = signal(false);
+  justSwitchedBoard = signal(false);
+  newBoardId = signal<string | null>(null);
+  draggingCardId = signal<string | null>(null);
+  dragTargetBoardId = signal<string | null>(null);
 
   editingCard = signal<Card | null>(null);
   renamingBoardId = signal<string | null>(null);
@@ -388,6 +437,8 @@ export class BoardComponent implements OnInit {
     if (!name.trim()) return;
     const id = this.boardService.addBoard(name);
     this.activeBoardId.set(id);
+    this.newBoardId.set(id);
+    setTimeout(() => this.newBoardId.set(null), 400);
     this.toastService.show(`Created board "${name}"`, 'success');
   }
 
@@ -445,10 +496,38 @@ export class BoardComponent implements OnInit {
     const isHandle = event.composedPath().some((el: any) => el.classList?.contains('drag-handle'));
     if (!isHandle) { event.preventDefault(); return; }
     this.draggedCardId = cardId;
+    this.draggingCardId.set(cardId);
     if (event.dataTransfer) {
       event.dataTransfer.effectAllowed = 'move';
       event.dataTransfer.setData('text/plain', cardId);
     }
+  }
+
+  handleDragEnd() {
+    this.draggingCardId.set(null);
+    this.dragTargetBoardId.set(null);
+  }
+
+  handleDragEnterBoard(boardId: string) {
+    if (this.draggedCardId) this.dragTargetBoardId.set(boardId);
+  }
+
+  handleDragLeaveBoard() {
+    this.dragTargetBoardId.set(null);
+  }
+
+  handleDropOnBoard(boardId: string, event: DragEvent) {
+    event.preventDefault();
+    if (this.draggedCardId && boardId !== this.activeBoardId()) {
+      const card = this.boardService.cards().find(c => c.id === this.draggedCardId);
+      if (card) {
+        this.boardService.updateCard({ ...card, boardId });
+        this.toastService.show('Moved note to board', 'success');
+      }
+    }
+    this.dragTargetBoardId.set(null);
+    this.draggedCardId = null;
+    this.draggingCardId.set(null);
   }
 
   handleDragOver(event: DragEvent) {

@@ -1,4 +1,4 @@
-import { Component, Output, EventEmitter, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Output, EventEmitter, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BoardService } from '../../services/board.service';
 import { ThemeService } from '../../services/theme.service';
@@ -10,7 +10,7 @@ import { IconComponent } from '../icon/icon.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, IconComponent],
   template: `
-    <div class="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4" (click)="close.emit()">
+    <div class="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4" [class.animate-modalOut]="isClosing()" (click)="startClose()">
       <div
         class="bg-[var(--paper-color)] border-2 border-[var(--ink-color)] rounded-lg shadow-2xl w-full max-w-lg flex flex-col max-h-[80vh]"
         (click)="$event.stopPropagation()"
@@ -29,7 +29,7 @@ import { IconComponent } from '../icon/icon.component';
                 class="doodle-btn text-sm border-red-300 text-red-500 px-3 py-1"
               >Empty Trash</button>
             }
-            <button (click)="close.emit()" class="text-2xl hover:text-red-500 transition-colors leading-none px-1 text-[var(--ink-color)]">×</button>
+            <button (click)="startClose()" class="text-2xl hover:text-red-500 transition-colors leading-none px-1 text-[var(--ink-color)]">×</button>
           </div>
         </div>
 
@@ -77,6 +77,12 @@ export class TrashModalComponent {
   @Output() close = new EventEmitter<void>();
   boardService = inject(BoardService);
   themeService = inject(ThemeService);
+  isClosing = signal(false);
+
+  startClose() {
+    this.isClosing.set(true);
+    setTimeout(() => this.close.emit(), 150);
+  }
 
   boardName(boardId: string) {
     return this.boardService.boards().find(b => b.id === boardId)?.name ?? 'Deleted Board';

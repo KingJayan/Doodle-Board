@@ -41,6 +41,8 @@ import { IconComponent, iconFor } from '../icon/icon.component';
         [class.hover:z-card-float]="!isEditing() && !isResizing()"
         [class.animate-scribbleOut]="isDeleting()"
         [class.card-animated]="isDeleting()"
+        [class.animate-pinPulse]="isPinning()"
+        [class.card-minimizing]="isMinimizing()"
         [style.background-color]="noteBg(card().color)"
         [style.height.px]="card().isMinimized ? null : (card().height || D.height)"
       >
@@ -235,6 +237,10 @@ import { IconComponent, iconFor } from '../icon/icon.component';
     :host ::ng-deep mark { background-color: #fef08a; padding: 0 2px; border-radius: 2px; }
     .custom-scroll::-webkit-scrollbar { width: 6px; }
     .custom-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 4px; }
+    .animate-pinPulse { animation: pinPulse 0.2s var(--ease-stamp); }
+    @keyframes pinPulse { 0% { transform: scale(1); } 50% { transform: scale(1.06); } 100% { transform: scale(1); } }
+    .card-minimizing { animation: minimizeCard 0.2s var(--ease-spring) forwards; overflow: hidden; }
+    @keyframes minimizeCard { to { max-height: 48px; } }
     .animate-scribbleOut { animation: scribbleOut 0.5s ease-in-out forwards; pointer-events: none; }
     .animate-stamp { animation: stampIn 0.2s var(--ease-stamp) forwards; }
     @keyframes stampIn {
@@ -279,6 +285,8 @@ export class CardComponent implements OnDestroy {
   isDeleting = signal(false);
   isEditing = signal(false);
   isResizing = signal(false);
+  isPinning = signal(false);
+  isMinimizing = signal(false);
   showMoveMenu = signal(false);
   editForm = { title: '', content: '' };
 
@@ -408,12 +416,22 @@ export class CardComponent implements OnDestroy {
 
   handlePin(event: Event) {
     event.stopPropagation();
+    this.isPinning.set(true);
+    setTimeout(() => this.isPinning.set(false), 200);
     this.pinToggle.emit();
   }
 
   toggleMinimize(event: Event) {
     event.stopPropagation();
-    this.update.emit({ ...this.card(), isMinimized: !this.card().isMinimized });
+    if (!this.card().isMinimized) {
+      this.isMinimizing.set(true);
+      setTimeout(() => {
+        this.isMinimizing.set(false);
+        this.update.emit({ ...this.card(), isMinimized: true });
+      }, 200);
+    } else {
+      this.update.emit({ ...this.card(), isMinimized: false });
+    }
   }
 
   toggleMoveMenu(event: Event) {
