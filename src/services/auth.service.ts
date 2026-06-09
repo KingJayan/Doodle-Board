@@ -67,19 +67,18 @@ export class AuthService {
 
   private async backfillOwnerId(userId: string) {
     const now = Date.now();
+    const [boards, cards] = await Promise.all([
+      db.boards.filter(b => b.ownerId == null).toArray(),
+      db.cards.filter(c => c.ownerId == null).toArray()
+    ]);
+    if (!boards.length && !cards.length) return;
+    const updatedBoards = boards.map(b => ({ ...b, ownerId: userId, _dirty: 1 as const, _rev: b._rev + 1 }));
+    const updatedCards  = cards.map(c => ({ ...c, ownerId: userId, _dirty: 1 as const, _rev: c._rev + 1 }));
     await db.transaction('rw', db.boards, db.cards, db.outbox, async () => {
-      const boards = await db.boards.filter(b => b.ownerId == null).toArray();
-      const cards = await db.cards.filter(c => c.ownerId == null).toArray();
-      for (const b of boards) {
-        const rev = b._rev + 1;
-        await db.boards.put({ ...b, ownerId: userId, _dirty: 1, _rev: rev });
-        await db.outbox.add({ entity: 'board', entityId: b.id, op: 'upsert', payloadRev: rev, enqueuedAt: now, attempts: 0, nextAttemptAt: now, lastError: null });
-      }
-      for (const c of cards) {
-        const rev = c._rev + 1;
-        await db.cards.put({ ...c, ownerId: userId, _dirty: 1, _rev: rev });
-        await db.outbox.add({ entity: 'card', entityId: c.id, op: 'upsert', payloadRev: rev, enqueuedAt: now, attempts: 0, nextAttemptAt: now, lastError: null });
-      }
+      await db.boards.bulkPut(updatedBoards);
+      await db.outbox.bulkAdd(updatedBoards.map(b => ({ entity: 'board' as const, entityId: b.id, op: 'upsert' as const, payloadRev: b._rev, enqueuedAt: now, attempts: 0, nextAttemptAt: now, lastError: null })));
+      await db.cards.bulkPut(updatedCards);
+      await db.outbox.bulkAdd(updatedCards.map(c => ({ entity: 'card' as const, entityId: c.id, op: 'upsert' as const, payloadRev: c._rev, enqueuedAt: now, attempts: 0, nextAttemptAt: now, lastError: null })));
     });
   }
 }

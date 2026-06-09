@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, effect, untracked, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -274,6 +274,15 @@ export class BoardComponent implements OnInit {
   searchQuery = signal('');
   activeTag = signal<string | null>(null);
   activeBoardId = signal<string>('default');
+
+  constructor() {
+    effect(() => {
+      const boards = this.boardService.boards();
+      if (boards.length > 0 && !boards.find(b => b.id === this.activeBoardId())) {
+        untracked(() => this.activeBoardId.set(boards[0].id));
+      }
+    });
+  }
 
   aiPanelOpen = signal(false);
   sharePanelOpen = signal(false);

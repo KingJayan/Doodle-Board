@@ -1,4 +1,7 @@
 import { Injectable, signal } from '@angular/core';
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function isUUID(s: string) { return UUID_RE.test(s); }
 import { generateKeyBetween, generateNKeysBetween } from 'fractional-indexing';
 import { Card, Board, CARD_COLORS, CARD_DEFAULTS, CARD_PALETTE } from '../models/card.model';
 import { db, DbBoard, DbCard } from '../db/local-db';
@@ -49,12 +52,35 @@ export class BoardService {
   private async init() {
     const migrated = await db.meta.get('migratedFromLocalStorage');
     if (!migrated?.value) await this.migrateFromLocalStorage();
+    await this.migrateDefaultBoardId();
     const [dbBoards, dbCards] = await Promise.all([
       db.boards.where('_deleted').equals(0).toArray(),
       db.cards.where('_deleted').equals(0).toArray()
     ]);
     this.boards.set(dbBoards.sort((a, b) => a.position.localeCompare(b.position)).map(dbToBoard));
     this.cards.set(dbCards.sort((a, b) => a.position.localeCompare(b.position)).map(dbToCard));
+  }
+
+  private async migrateDefaultBoardId() {
+    const already = await db.meta.get('migratedDefaultBoardId');
+    if (already?.value) return;
+    const defaultBoard = await db.boards.get('default');
+    if (!defaultBoard) {
+      await db.meta.put({ key: 'migratedDefaultBoardId', value: true });
+      return;
+    }
+    const newId = crypto.randomUUID();
+    const [cardsToUpdate, boardOutbox] = await Promise.all([
+      db.cards.where('boardId').equals('default').toArray(),
+      db.outbox.where('[entity+entityId]').equals(['board', 'default']).toArray()
+    ]);
+    await db.transaction('rw', db.boards, db.cards, db.outbox, db.meta, async () => {
+      await db.boards.delete('default');
+      await db.boards.put({ ...defaultBoard, id: newId });
+      await db.cards.bulkPut(cardsToUpdate.map(c => ({ ...c, boardId: newId })));
+      for (const e of boardOutbox) await db.outbox.update(e.seq!, { entityId: newId });
+      await db.meta.put({ key: 'migratedDefaultBoardId', value: true });
+    });
   }
 
   private async migrateFromLocalStorage() {
@@ -73,9 +99,10 @@ export class BoardService {
       oldCards = [];
     }
 
+    const idMap = new Map(oldBoards.map(b => [b.id, isUUID(b.id) ? b.id : crypto.randomUUID()]));
     const boardPositions = generateNKeysBetween(null, null, oldBoards.length || 1);
     const dbBoards: DbBoard[] = oldBoards.map((f, i) => ({
-      id: f.id,
+      id: idMap.get(f.id)!,
       name: f.name,
       position: boardPositions[i],
       createdAt: now,
@@ -96,8 +123,8 @@ export class BoardService {
 
     const cardPositions = generateNKeysBetween(null, null, oldCards.length);
     const dbCards: DbCard[] = oldCards.map((c: any, i: number) => ({
-      id: (c.id === '1' || c.id === '2') ? crypto.randomUUID() : c.id,
-      boardId: c.boardId ?? c.folderId ?? 'default',
+      id: (c.id === '1' || c.id === '2' || !isUUID(c.id)) ? crypto.randomUUID() : c.id,
+      boardId: idMap.get(c.boardId ?? c.folderId ?? 'default') ?? idMap.values().next().value!,
       title: c.title ?? '',
       content: c.content ?? '',
       tags: c.tags ?? [],
