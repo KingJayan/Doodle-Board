@@ -34,8 +34,8 @@ export class AuthService {
     if (!this.signInPromise) {
       this.signInPromise = supabase.auth.signInAnonymously().then(async ({ data, error }) => {
         if (error || !data.user) return;
-        this.applyUser(data.user);
         await this.backfillOwnerId(data.user.id);
+        this.applyUser(data.user);
       }).finally(() => { this.signInPromise = null; });
     }
     return this.signInPromise;
