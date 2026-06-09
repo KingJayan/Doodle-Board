@@ -45,7 +45,7 @@
 ## v1+
 - live collaboration through cf workers + partykit (leads to team features--paid)
 - language support, browser extension integrations
-- more ai providers + webLLM alternative support(llama 3 8b or qwen 2.5 1.5b)
+- more ai providers + webLLM support(llama 3 8b + qwen 2.5 1.5b dep on hardware -- chunk context, run on sw, few-shot)
 - full markdown editing, rendering, import, and export support
 
 

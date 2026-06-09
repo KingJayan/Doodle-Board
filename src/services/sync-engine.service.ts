@@ -1,4 +1,4 @@
-import { Injectable, effect } from '@angular/core';
+import { Injectable, effect, untracked } from '@angular/core';
 import { db, DbBoard, DbCard, DbOutboxEntry } from '../db/local-db';
 import { supabase } from './supabase.provider';
 import { AuthService } from './auth.service';
@@ -47,7 +47,7 @@ export class SyncEngineService {
 
   constructor(private auth: AuthService, private boardService: BoardService) {
     if (!supabase) return;
-    effect(() => { if (this.auth.authState().userId) this.runCycle(); });
+    effect(() => { if (this.auth.authState().userId) untracked(() => this.runCycle()); });
     window.addEventListener('online', () => this.runCycle());
     document.addEventListener('visibilitychange', () => { if (!document.hidden) this.runCycle(); });
     setInterval(() => this.runCycle(), 60_000);
