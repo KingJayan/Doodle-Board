@@ -1,4 +1,3 @@
-
 import { Injectable, signal } from '@angular/core';
 
 export interface ToastAction {
@@ -13,25 +12,15 @@ export interface Toast {
   action?: ToastAction;
 }
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class ToastService {
   readonly toasts = signal<Toast[]>([]);
   private counter = 0;
 
   show(message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info', action?: ToastAction) {
     const id = this.counter++;
-    const toast: Toast = { id, message, type, action };
-    
-    this.toasts.update(current => [...current, toast]);
-
-    //autodismiss if no action 
-    const duration = action ? 8000 : 3000;
-    
-    setTimeout(() => {
-      this.dismiss(id);
-    }, duration);
+    this.toasts.update(current => [...current, { id, message, type, action }]);
+    if (!action) setTimeout(() => this.dismiss(id), 3000);
   }
 
   dismiss(id: number) {

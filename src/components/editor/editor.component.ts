@@ -177,9 +177,7 @@ export class EditorComponent {
       tags: this.parseTags()
     };
     this.boardService.updateCard(updated);
-    this.boardService.saveStatus.set('Saved!');
     this.toastService.show('Saved successfully', 'success');
-    setTimeout(() => this.boardService.saveStatus.set('Saved'), 2000);
   }
 
   requestClose() {

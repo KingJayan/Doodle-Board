@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, effect, untracked, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -12,7 +12,7 @@ import { IconComponent } from '../../components/icon/icon.component';
 import { AiService } from '../../services/ai.service';
 import { ToastService } from '../../services/toast.service';
 import { ThemeService } from '../../services/theme.service';
-import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.model';
+import { Card, Board, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.model';
 
 @Component({
   selector: 'app-board',
@@ -56,14 +56,23 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
                 type="text"
                 [ngModel]="searchQuery()"
                 (ngModelChange)="searchQuery.set($event)"
-                placeholder="Search scribbles..."
+                placeholder="Search notes..."
                 class="doodle-input bg-[var(--surface)]/60 rounded-full px-4 py-1 w-48 focus:w-64 transition-all"
               />
               <span class="absolute right-3 top-2 opacity-50"><app-icon name="search"></app-icon></span>
             </div>
 
-            <div class="text-xs font-mono opacity-60 w-16 text-center hidden md:block">
-              {{ saveStatus() }}
+            <div class="hidden md:flex items-center gap-1 text-xs font-mono px-2 py-1 rounded-full border border-[var(--ink-color)]/20 bg-[var(--surface)]/60 text-[var(--ink-color)] opacity-70">
+              @if (saveStatus() === 'Syncing…') {
+                <app-icon name="sparkles"></app-icon>
+              } @else if (saveStatus() === 'Backed up') {
+                <app-icon name="globe"></app-icon>
+              } @else if (saveStatus() === 'Offline') {
+                <app-icon name="warning"></app-icon>
+              } @else {
+                <app-icon name="check"></app-icon>
+              }
+              <span>{{ saveStatus() }}</span>
             </div>
 
             @if (activeTag()) {
@@ -80,9 +89,9 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
           <div class="flex gap-2">
             <button (click)="helpPanelOpen.set(true)" class="doodle-btn px-3 text-lg" title="Help"><app-icon name="question"></app-icon></button>
             <button (click)="settingsPanelOpen.set(true)" class="doodle-btn px-2 text-xl" title="Settings"><app-icon name="gear"></app-icon></button>
-            <button (click)="sharePanelOpen.set(true)" class="doodle-btn text-base" title="Backup & Export"><app-icon name="package"></app-icon> Backup</button>
+            <button (click)="sharePanelOpen.set(true)" class="doodle-btn text-base" title="Share & Export"><app-icon name="package"></app-icon> Share</button>
             @if (aiAvailable) {
-              <button (click)="aiPanelOpen.set(!aiPanelOpen())" class="doodle-btn bg-[var(--tint-blue)] text-[var(--ink-color)] text-base" title="Ask the Genie"><app-icon name="sparkles"></app-icon> Genie</button>
+              <button (click)="aiPanelOpen.set(!aiPanelOpen())" class="doodle-btn bg-[var(--tint-blue)] text-[var(--ink-color)] text-base" title="Brainstorm with AI"><app-icon name="sparkles"></app-icon> AI</button>
             }
             <button (click)="createNewCard()" class="doodle-btn bg-[var(--tint-green)] text-[var(--ink-color)] font-bold text-base">+ New Note</button>
           </div>
@@ -96,33 +105,33 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
           class="absolute md:static top-0 left-0 bottom-0 z-30 w-64 bg-[var(--paper-color)] border-r-2 border-[var(--ink-color)] transform transition-transform duration-300 md:translate-x-0 p-4 flex flex-col gap-4 shadow-xl md:shadow-none h-full"
           [class.-translate-x-full]="!sidebarOpen()"
         >
-          <h3 class="marker-font text-xl border-b-2 border-dashed border-soft pb-2 mb-2"><app-icon name="folder-open"></app-icon> Folders</h3>
+          <h3 class="marker-font text-xl border-b-2 border-dashed border-soft pb-2 mb-2"><app-icon name="folder-open"></app-icon> Boards</h3>
 
           <div class="flex-grow overflow-y-auto flex flex-col gap-2">
-            @for (folder of folders(); track folder.id) {
+            @for (board of boards(); track board.id) {
               <div
-                class="folder-item flex items-center gap-2 p-2 rounded cursor-pointer transition-colors group relative"
-                [class.active]="activeFolderId() === folder.id"
-                (click)="activeFolderId.set(folder.id); sidebarOpen.set(false)"
+                class="board-item flex items-center gap-2 p-2 rounded cursor-pointer transition-colors group relative"
+                [class.active]="activeBoardId() === board.id"
+                (click)="activeBoardId.set(board.id); sidebarOpen.set(false)"
               >
                 <span class="text-xl"><app-icon name="folder"></app-icon></span>
-                @if (renamingFolderId() === folder.id) {
+                @if (renamingBoardId() === board.id) {
                   <input
                     class="doodle-input text-sm flex-grow"
-                    [value]="folder.name"
-                    (keyup.enter)="commitRename($any($event.target).value, folder.id)"
-                    (keyup.escape)="renamingFolderId.set(null)"
-                    (blur)="commitRename($any($event.target).value, folder.id)"
+                    [value]="board.name"
+                    (keyup.enter)="commitRename($any($event.target).value, board.id)"
+                    (keyup.escape)="renamingBoardId.set(null)"
+                    (blur)="commitRename($any($event.target).value, board.id)"
                     (click)="$event.stopPropagation()"
                   >
                 } @else {
-                  <span class="truncate flex-grow" (dblclick)="renamingFolderId.set(folder.id); $event.stopPropagation()">{{ folder.name }}</span>
+                  <span class="truncate flex-grow" (dblclick)="renamingBoardId.set(board.id); $event.stopPropagation()">{{ board.name }}</span>
                 }
-                @if (folder.id !== 'default') {
+                @if (boards().length > 1) {
                   <button
                     class="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 px-1"
-                    (click)="deleteFolder(folder.id, $event)"
-                    title="Delete Folder"
+                    (click)="deleteBoard(board.id, $event)"
+                    title="Delete Board"
                   >×</button>
                 }
               </div>
@@ -132,14 +141,14 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
           <div class="pt-2 border-t-2 border-dashed border-soft">
             <div class="flex gap-2">
               <input
-                #newFolderInput
+                #newBoardInput
                 type="text"
                 class="doodle-input text-sm"
-                placeholder="New Folder..."
-                (keyup.enter)="createFolder(newFolderInput.value); newFolderInput.value = ''"
+                placeholder="New Board..."
+                (keyup.enter)="createBoard(newBoardInput.value); newBoardInput.value = ''"
               >
               <button
-                (click)="createFolder(newFolderInput.value); newFolderInput.value = ''"
+                (click)="createBoard(newBoardInput.value); newBoardInput.value = ''"
                 class="doodle-btn px-2 py-0 text-lg bg-[var(--tint-green)] text-[var(--ink-color)]"
               >+</button>
             </div>
@@ -156,7 +165,7 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
           <div class="absolute top-4 left-4 right-4 md:left-auto md:right-auto md:w-96 z-30">
             <div class="p-4 border-2 border-dashed border-[var(--accent-2)] rounded-lg bg-[var(--tint-blue)] text-[var(--ink-color)] relative animate-slideDown shadow-xl">
               <button (click)="aiPanelOpen.set(false)" class="absolute top-2 right-2 text-xl hover:text-red-500 text-[var(--ink-color)]">×</button>
-              <h3 class="font-bold text-lg mb-2 text-[var(--ink-color)]"><app-icon name="sparkles"></app-icon> Brainstorm with Genie</h3>
+              <h3 class="font-bold text-lg mb-2 text-[var(--ink-color)]"><app-icon name="sparkles"></app-icon> Brainstorm with AI</h3>
               <div class="flex gap-2">
                 <input
                   #topicInput
@@ -180,7 +189,7 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
           @if (filteredCards().length === 0) {
             <div class="text-center py-20 opacity-50">
               <div class="text-6xl mb-4"><app-icon name="leaf"></app-icon></div>
-              <p class="text-2xl marker-font">Empty Folder...</p>
+              <p class="text-2xl marker-font">Empty Board...</p>
               <p>Drag notes here or create new ones!</p>
             </div>
           }
@@ -225,8 +234,8 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
       }
       @if (sharePanelOpen()) {
         <app-share-modal
-          [folderId]="activeFolderId()"
-          [folderName]="currentFolderName()"
+          [boardId]="activeBoardId()"
+          [boardName]="currentBoardName()"
           [cards]="filteredCards()"
           (close)="sharePanelOpen.set(false)"
         ></app-share-modal>
@@ -234,8 +243,8 @@ import { Card, Folder, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mod
     </div>
   `,
   styles: [`
-    .folder-item:hover { background-color: var(--surface-hover); }
-    .folder-item.active {
+    .board-item:hover { background-color: var(--surface-hover); }
+    .board-item.active {
       background-color: var(--surface-hover);
       font-weight: bold;
       box-shadow: inset 3px 0 0 var(--accent);
@@ -265,15 +274,24 @@ export class BoardComponent implements OnInit {
   aiAvailable = this.aiService.isAvailable;
   private toastService = inject(ToastService);
 
-  saveStatus = this.boardService.saveStatus;
-  folders = this.boardService.folders;
+  saveStatus = this.boardService.syncStatus;
+  boards = this.boardService.boards;
   updateCard = (card: Card) => this.boardService.updateCard(card);
   toggleSticker = (id: string, sticker: string) => this.boardService.toggleSticker(id, sticker);
   togglePin = (id: string) => this.boardService.togglePin(id);
 
   searchQuery = signal('');
   activeTag = signal<string | null>(null);
-  activeFolderId = signal<string>('default');
+  activeBoardId = signal<string>('default');
+
+  constructor() {
+    effect(() => {
+      const boards = this.boardService.boards();
+      if (boards.length > 0 && !boards.find(b => b.id === this.activeBoardId())) {
+        untracked(() => this.activeBoardId.set(boards[0].id));
+      }
+    });
+  }
 
   aiPanelOpen = signal(false);
   sharePanelOpen = signal(false);
@@ -283,9 +301,8 @@ export class BoardComponent implements OnInit {
   isGenerating = signal(false);
 
   editingCard = signal<Card | null>(null);
-  renamingFolderId = signal<string | null>(null);
+  renamingBoardId = signal<string | null>(null);
 
-  /** Background motif paths for the active theme (doodles / chalk math / blueprint / neon). */
   motifs = this.themeService.motifs;
   doodles: { x: number; y: number; rot: number; scale: number; mi: number }[] = [];
   private draggedCardId: string | null = null;
@@ -296,8 +313,6 @@ export class BoardComponent implements OnInit {
   }
 
   private generateBackgroundDoodles() {
-    // Position/rotation is fixed; the actual glyph is pulled from the current
-    // theme's motif set so the background restyles itself when the theme changes.
     this.doodles = Array.from({ length: 14 }, (_, i) => ({
       x: Math.random() * 100,
       y: Math.random() * 100,
@@ -310,51 +325,58 @@ export class BoardComponent implements OnInit {
   filteredCards = computed(() => {
     const query = this.searchQuery().toLowerCase();
     const tag = this.activeTag();
-    const folder = this.activeFolderId();
+    const board = this.activeBoardId();
 
     return this.boardService.cards()
       .filter((card: Card) => {
-        if (card.folderId !== folder) return false;
+        if (card.boardId !== board) return false;
         const matchesSearch =
           card.title.toLowerCase().includes(query) ||
           card.content.toLowerCase().includes(query) ||
           card.tags.some((t: string) => t.toLowerCase().includes(query));
         return matchesSearch && (tag ? card.tags.includes(tag) : true);
-      });
+      })
+      .sort((a, b) =>
+        (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0) ||
+        (a.position ?? '').localeCompare(b.position ?? '')
+      );
   });
 
-  currentFolderName = computed(() =>
-    this.boardService.folders().find((f: Folder) => f.id === this.activeFolderId())?.name ?? 'Folder'
+  currentBoardName = computed(() =>
+    this.boardService.boards().find((b: Board) => b.id === this.activeBoardId())?.name ?? 'Board'
   );
 
-  createFolder(name: string) {
+  createBoard(name: string) {
     if (!name.trim()) return;
-    const id = this.boardService.addFolder(name);
-    this.activeFolderId.set(id);
-    this.toastService.show(`Created folder "${name}"`, 'success');
+    const id = this.boardService.addBoard(name);
+    this.activeBoardId.set(id);
+    this.toastService.show(`Created board "${name}"`, 'success');
   }
 
   commitRename(name: string, id: string) {
-    if (name.trim()) this.boardService.renameFolder(id, name.trim());
-    this.renamingFolderId.set(null);
+    if (name.trim()) this.boardService.renameBoard(id, name.trim());
+    this.renamingBoardId.set(null);
   }
 
-  deleteFolder(id: string, event: Event) {
+  deleteBoard(id: string, event: Event) {
     event.stopPropagation();
-    this.toastService.show('Delete folder? Notes will move to General.', 'warning', {
+    const fallbackName = this.boardService.boards().find(b => b.id !== id)?.name ?? 'another board';
+    this.toastService.show(`Delete board? Notes will move to "${fallbackName}".`, 'warning', {
       label: 'Yes, Delete',
       callback: () => {
-        this.boardService.deleteFolder(id);
-        if (this.activeFolderId() === id) this.activeFolderId.set('default');
-        this.toastService.show('Folder deleted', 'info');
+        this.boardService.deleteBoard(id);
+        if (this.activeBoardId() === id) {
+          this.activeBoardId.set(this.boardService.boards()[0]?.id ?? '');
+        }
+        this.toastService.show('Board deleted', 'info');
       }
     });
   }
 
   createNewCard() {
     const color = CARD_COLORS[Math.floor(Math.random() * CARD_COLORS.length)];
-    this.boardService.addCard({ title: '', content: '', tags: [], color, folderId: this.activeFolderId() });
-    this.toastService.show('Fresh paper extracted!', 'success');
+    this.boardService.addCard({ title: '', content: '', tags: [], color, boardId: this.activeBoardId() });
+    this.toastService.show('Note created', 'success');
   }
 
   async generateCard(topic: string) {
@@ -363,9 +385,9 @@ export class BoardComponent implements OnInit {
     try {
       const result = await this.aiService.brainstormCard(topic);
       const color = CARD_COLORS_AI[Math.floor(Math.random() * CARD_COLORS_AI.length)];
-      this.boardService.addCard({ ...result, color, folderId: this.activeFolderId() });
+      this.boardService.addCard({ ...result, color, boardId: this.activeBoardId() });
       this.aiPanelOpen.set(false);
-      this.toastService.show('Genie granted your wish!', 'success');
+      this.toastService.show('Note generated', 'success');
     } catch {
       this.toastService.show('AI brainstorm failed — check your API key', 'error');
     } finally {
@@ -375,17 +397,12 @@ export class BoardComponent implements OnInit {
 
   handleDeleteCard(id: string) {
     this.boardService.deleteCard(id);
-    this.toastService.show('Crumpled and tossed!', 'info');
+    this.toastService.show('Note deleted', 'info');
   }
 
   handleDragStart(cardId: string, event: DragEvent) {
     const isHandle = event.composedPath().some((el: any) => el.classList?.contains('drag-handle'));
-    if (!isHandle) {
-      const ghost = new Image(); ghost.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-      event.dataTransfer?.setDragImage(ghost, 0, 0);
-      event.preventDefault();
-      return;
-    }
+    if (!isHandle) { event.preventDefault(); return; }
     this.draggedCardId = cardId;
     if (event.dataTransfer) {
       event.dataTransfer.effectAllowed = 'move';
@@ -405,5 +422,4 @@ export class BoardComponent implements OnInit {
     }
     this.draggedCardId = null;
   }
-
 }

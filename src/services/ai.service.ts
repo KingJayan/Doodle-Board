@@ -1,73 +1,21 @@
 import { Injectable } from '@angular/core';
-import { GoogleGenAI, Type } from '@google/genai';
+import { supabase } from './supabase.provider';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class AiService {
-  private ai: GoogleGenAI | null = null;
-  readonly isAvailable: boolean;
-
-  constructor() {
-    const apiKey = import.meta.env['VITE_API_KEY'];
-    this.isAvailable = !!apiKey;
-    if (apiKey) {
-      this.ai = new GoogleGenAI({ apiKey });
-    }
-  }
+  readonly isAvailable = !!supabase;
 
   async brainstormCard(topic: string): Promise<{ title: string; content: string; tags: string[] }> {
-    if (!this.ai) return { title: 'No AI', content: 'Add an API key to enable AI features.', tags: ['ai-disabled'] };
-    if (!topic) topic = 'Something random and interesting';
-
-    try {
-      const response = await this.ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: `Create a creative sticky note about: "${topic}".
-        Return a JSON object with 'title' (max 5 words), 'content' (max 20 words), and 'tags' (array of 1-3 strings).
-        Keep the tone playful and handwritten.`,
-        config: {
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              title: { type: Type.STRING },
-              content: { type: Type.STRING },
-              tags: {
-                type: Type.ARRAY,
-                items: { type: Type.STRING }
-              }
-            }
-          }
-        }
-      });
-
-      if (response.text) {
-        return JSON.parse(response.text);
-      }
-      throw new Error('No response text');
-    } catch (error) {
-      throw error;
-    }
+    if (!supabase) return { title: 'No AI', content: 'Cloud sync required for AI features.', tags: ['ai-disabled'] };
+    const { data, error } = await supabase.functions.invoke('ai-proxy', { body: { action: 'brainstorm', topic } });
+    if (error) throw error;
+    return data;
   }
 
   async polishText(text: string, mode: 'fix' | 'expand' | 'tone'): Promise<string> {
-    if (!this.ai) throw new Error('AI not available');
-
-    try {
-      let prompt = '';
-      if (mode === 'fix') prompt = 'Fix grammar and spelling. Keep the formatting markdown.';
-      if (mode === 'expand') prompt = 'Expand on this thought with 1-2 sentences. Keep the same tone but clean it up.';
-      if (mode === 'tone') prompt = 'Rewrite this to sound more clear, confident, and engaging. Keep the meaning intact.';
-
-      const response = await this.ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: `${prompt}\n\nInput Text:\n${text}`,
-      });
-      return response.text || text;
-    } catch (e) {
-      console.error(e);
-      throw e;
-    }
+    if (!supabase) throw new Error('AI not available');
+    const { data, error } = await supabase.functions.invoke('ai-proxy', { body: { action: 'polish', text, mode } });
+    if (error) throw error;
+    return data.text ?? text;
   }
 }

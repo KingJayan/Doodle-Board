@@ -1,6 +1,6 @@
 {
   "name": "doodle-board",
-  "version": "0.16.0",
+  "version": "0.17.2",
   "type": "module",
   "engines": {
     "node": ">=20.11.0"
@@ -20,6 +20,9 @@
     "@angular/platform-browser": "^18.2.14",
     "@angular/router": "^18.2.14",
     "@google/genai": "^2.8.0",
+    "@supabase/supabase-js": "^2.108.0",
+    "dexie": "^4.4.3",
+    "fractional-indexing": "^3.2.0",
     "js-yaml": "^4.2.0",
     "jszip": "^3.10.1",
     "rxjs": "^7.8.2",
@@ -35,6 +38,7 @@
     "autoprefixer": "^10.5.0",
     "husky": "^9.1.7",
     "postcss": "^8.5.15",
+    "supabase": "^2.105.0",
     "tailwindcss": "^3.4.19",
     "terser": "^5.48.0",
     "typescript": "~5.5.4",

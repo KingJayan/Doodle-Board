@@ -10,7 +10,7 @@
 <img src="https://img.shields.io/badge/google%20gemini-%238E75B2.svg?style=for-the-badge&logo=googlegemini&logoColor=white" alt="gemini" />
 </div>
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.16.0-blue">
+  <img src="https://img.shields.io/badge/version-0.17.2-blue">
 </p>
 
 >[!IMPORTANT]
@@ -34,17 +34,18 @@
 - export/import, auto-save to localStorage
 - filtering + search
 - pin + max/minimize
+- cloud sync across devices (Supabase + Dexie.js, anonymous auth + account linking)
+- snapshot sharing with expiry
 
 ## planned features until v1
-- improved themes with full customization/personalization
+- user-custom themes
 - performance optimizations for low hardware
 - improved file CRUD + folder organization (boards over folders, +nested)
-- cloud sync across devices(supabase + dexiejs)
 
 ## v1+
-- live collaboration through cf workers + partykit
+- live collaboration through cf workers + partykit (leads to team features--paid)
 - language support, browser extension integrations
-- more ai providers + webLLM alternative support(llama 3 8b or qwen 2.5 1.5b)
+- more ai providers + webLLM support(llama 3 8b + qwen 2.5 1.5b dep on hardware -- chunk context, run on sw, few-shot)
 - full markdown editing, rendering, import, and export support
 
 
@@ -53,7 +54,8 @@
 ### prereqs
 
 - node 20+ and bun
-- a google ai api key (for ai features)
+- a [Supabase](https://supabase.com) project
+- a [Google AI API key](https://aistudio.google.com/app/apikey) (for AI features)
 
 ### installation
 
@@ -73,17 +75,34 @@ bun install
 cp .env.example .env
 ```
 
-edit `.env` and add your [Google AI API key](https://aistudio.google.com/app/apikey):
+edit `.env` with your Supabase project credentials (found in Project Settings → API):
 ```
-VITE_API_KEY=your_google_ai_api_key_here
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key_here
 ```
 
-4. run the dev server:
+4. apply the database schema:
+
+create a project at [supabase.com/dashboard](https://supabase.com/dashboard), then run the contents of `supabase/schema.sql` in the SQL editor, or via CLI:
+```bash
+bunx supabase login
+bunx supabase init
+bunx supabase link --project-ref your-project-ref
+cat supabase/schema.sql | bunx supabase db query --linked
+```
+
+5. deploy the AI proxy edge function and set the Gemini secret:
+```bash
+bunx supabase functions deploy ai-proxy
+bunx supabase secrets set GEMINI_API_KEY=your_google_ai_api_key_here
+```
+
+6. run the dev server:
 ```bash
 bun dev # http://localhost:5173
 ```
 
-5. building for prod:
+7. building for prod:
 
 ```bash
 bun run build # outputs to dist
