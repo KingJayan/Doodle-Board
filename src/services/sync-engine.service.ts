@@ -89,9 +89,10 @@ export class SyncEngineService {
         const { data: upserted, error } = await supabase!.from('boards').upsert(toSbBoard(row, userId)).select('updated_at').single();
         if (error) throw error;
         const serverTs = upserted?.updated_at ? +new Date(upserted.updated_at) : now;
+        const staleSeqs = await db.outbox.where('entityId').equals(entry.entityId).primaryKeys();
         await db.transaction('rw', db.boards, db.outbox, async () => {
           await db.boards.update(entry.entityId, { _dirty: 0, _serverUpdatedAt: serverTs });
-          await db.outbox.where('entityId').equals(entry.entityId).delete();
+          await db.outbox.bulkDelete(staleSeqs);
         });
       } else {
         const row = await db.cards.get(entry.entityId);
@@ -99,9 +100,10 @@ export class SyncEngineService {
         const { data: upserted, error } = await supabase!.from('cards').upsert(toSbCard(row, userId)).select('updated_at').single();
         if (error) throw error;
         const serverTs = upserted?.updated_at ? +new Date(upserted.updated_at) : now;
+        const staleCardSeqs = await db.outbox.where('entityId').equals(entry.entityId).primaryKeys();
         await db.transaction('rw', db.cards, db.outbox, async () => {
           await db.cards.update(entry.entityId, { _dirty: 0, _serverUpdatedAt: serverTs });
-          await db.outbox.where('entityId').equals(entry.entityId).delete();
+          await db.outbox.bulkDelete(staleCardSeqs);
         });
       }
     } catch (e) {

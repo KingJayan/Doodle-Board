@@ -51,7 +51,7 @@ const version = '0.17.0';
                       <app-icon name="globe"></app-icon> Link Google
                     </button>
                     <div class="flex gap-2 mt-1">
-                      <input #emailInput type="email" [(ngModel)]="emailInput" class="doodle-input text-sm flex-1" placeholder="your@email.com">
+                      <input type="email" [(ngModel)]="emailInput" class="doodle-input text-sm flex-1" placeholder="your@email.com">
                       <button (click)="linkEmail()" [disabled]="linking()" class="doodle-btn text-sm">Link Email</button>
                     </div>
                   </div>
