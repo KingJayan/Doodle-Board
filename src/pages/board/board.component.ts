@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, effect, untracked, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, effect, untracked, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -18,6 +18,7 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mode
 @Component({
   selector: 'app-board',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule, CardComponent, EditorComponent, SettingsModalComponent, HelpModalComponent, ShareModalComponent, TrashModalComponent, IconComponent],
   template: `
     <div class="h-screen flex flex-col overflow-hidden">
@@ -197,63 +198,82 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mode
 
         <!-- main card grid -->
         <main class="p-4 md:p-8 flex-grow w-full z-10 overflow-y-auto h-full" (dragover)="handleDragOver($event)">
-          @if (filteredCards().length === 0) {
-            <div class="text-center py-20 opacity-50">
-              <div class="text-6xl mb-4"><app-icon name="leaf"></app-icon></div>
-              <p class="text-2xl marker-font">Empty Board...</p>
-              <p>Drag notes here or create new ones!</p>
+          @if (isHydrating()) {
+            <div class="flex flex-wrap gap-6 md:gap-8 pb-20 justify-center md:justify-start">
+              @for (i of skeletonCards; track i) {
+                <div class="flex-none rounded-sm animate-pulse bg-[var(--surface)] opacity-60" style="width:192px;height:140px"></div>
+              }
             </div>
-          }
-
-          <div class="flex flex-wrap gap-6 md:gap-8 pb-20 justify-center md:justify-start">
-            @for (card of filteredCards(); track card.id) {
-              <div
-                class="relative flex-none"
-                [class.animate-popIn]="!themeService.reduceMotion()"
-                [style.animation-delay]="($index * 50) + 'ms'"
-                draggable="true"
-                (dragstart)="handleDragStart(card.id, $event)"
-                (drop)="handleDrop(card.id, $event)"
-                (dragover)="handleDragOver($event)"
-              >
-                <app-card
-                  [card]="card"
-                  [searchQuery]="searchQuery()"
-                  (update)="updateCard($event)"
-                  (delete)="handleDeleteCard($event)"
-                  (expand)="editingCard.set($event)"
-                  (tagClick)="activeTag.set($event)"
-                  (stickerToggle)="toggleSticker(card.id, $event)"
-                  (pinToggle)="togglePin(card.id)"
-                ></app-card>
+          } @else {
+            @if (filteredCards().length === 0) {
+              <div class="text-center py-20 opacity-50">
+                <div class="text-6xl mb-4"><app-icon name="leaf"></app-icon></div>
+                <p class="text-2xl marker-font">Empty Board...</p>
+                <p>Drag notes here or create new ones!</p>
               </div>
             }
-          </div>
+            <div class="flex flex-wrap gap-6 md:gap-8 pb-20 justify-center md:justify-start">
+              @for (card of filteredCards(); track card.id) {
+                <div
+                  class="relative flex-none"
+                  [class.animate-popIn]="!themeService.reduceMotion()"
+                  [style.animation-delay]="($index * 50) + 'ms'"
+                  draggable="true"
+                  (dragstart)="handleDragStart(card.id, $event)"
+                  (drop)="handleDrop(card.id, $event)"
+                  (dragover)="handleDragOver($event)"
+                >
+                  <app-card
+                    [card]="card"
+                    [searchQuery]="searchQuery()"
+                    (update)="updateCard($event)"
+                    (delete)="handleDeleteCard($event)"
+                    (expand)="editingCard.set($event)"
+                    (tagClick)="activeTag.set($event)"
+                    (stickerToggle)="toggleSticker(card.id, $event)"
+                    (pinToggle)="togglePin(card.id)"
+                  ></app-card>
+                </div>
+              }
+            </div>
+          }
         </main>
       </div>
 
-      <!-- editor modal -->
-      @if (editingCard()) {
-        <app-editor [card]="editingCard()!" (close)="editingCard.set(null)"></app-editor>
-      }
+      @defer (when !!editingCard()) {
+        @if (editingCard()) {
+          <app-editor [card]="editingCard()!" (close)="editingCard.set(null)"></app-editor>
+        }
+      } @placeholder { <span></span> }
 
-      @if (settingsPanelOpen()) {
-        <app-settings-modal (close)="settingsPanelOpen.set(false)"></app-settings-modal>
-      }
-      @if (helpPanelOpen()) {
-        <app-help-modal [aiAvailable]="!!aiAvailable" (close)="helpPanelOpen.set(false)"></app-help-modal>
-      }
-      @if (sharePanelOpen()) {
-        <app-share-modal
-          [boardId]="activeBoardId()"
-          [boardName]="currentBoardName()"
-          [cards]="filteredCards()"
-          (close)="sharePanelOpen.set(false)"
-        ></app-share-modal>
-      }
-      @if (trashPanelOpen()) {
-        <app-trash-modal (close)="trashPanelOpen.set(false)"></app-trash-modal>
-      }
+      @defer (when settingsPanelOpen()) {
+        @if (settingsPanelOpen()) {
+          <app-settings-modal (close)="settingsPanelOpen.set(false)"></app-settings-modal>
+        }
+      } @placeholder { <span></span> }
+
+      @defer (when helpPanelOpen()) {
+        @if (helpPanelOpen()) {
+          <app-help-modal [aiAvailable]="!!aiAvailable" (close)="helpPanelOpen.set(false)"></app-help-modal>
+        }
+      } @placeholder { <span></span> }
+
+      @defer (when sharePanelOpen()) {
+        @if (sharePanelOpen()) {
+          <app-share-modal
+            [boardId]="activeBoardId()"
+            [boardName]="currentBoardName()"
+            [cards]="filteredCards()"
+            (close)="sharePanelOpen.set(false)"
+          ></app-share-modal>
+        }
+      } @placeholder { <span></span> }
+
+      @defer (when trashPanelOpen()) {
+        @if (trashPanelOpen()) {
+          <app-trash-modal (close)="trashPanelOpen.set(false)"></app-trash-modal>
+        }
+      } @placeholder { <span></span> }
     </div>
   `,
   styles: [`
@@ -314,6 +334,8 @@ export class BoardComponent implements OnInit {
   trashPanelOpen = signal(false);
   sidebarOpen = signal(true);
   trashedCards = this.boardService.trashedCards;
+  isHydrating = this.boardService.isHydrating;
+  readonly skeletonCards = [0, 1, 2, 3, 4];
   isGenerating = signal(false);
 
   editingCard = signal<Card | null>(null);

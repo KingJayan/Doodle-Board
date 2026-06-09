@@ -36,6 +36,7 @@ export class BoardService {
   readonly boards = signal<Board[]>([]);
   readonly trashedCards = signal<Card[]>([]);
   readonly syncStatus = signal<string>('Saved locally');
+  readonly isHydrating = signal(true);
 
   constructor(private auth: AuthService) {
     this.init();
@@ -56,14 +57,38 @@ export class BoardService {
     const migrated = await db.meta.get('migratedFromLocalStorage');
     if (!migrated?.value) await this.migrateFromLocalStorage();
     await this.migrateDefaultBoardId();
-    const [dbBoards, dbCards, dbTrashed] = await Promise.all([
+
+    const [dbBoards, dbTrashed] = await Promise.all([
       db.boards.where('_deleted').equals(0).toArray(),
-      db.cards.where('_deleted').equals(0).toArray(),
       db.cards.where('_deleted').equals(1).toArray()
     ]);
-    this.boards.set(dbBoards.sort((a, b) => a.position.localeCompare(b.position)).map(dbToBoard));
-    this.cards.set(dbCards.sort((a, b) => a.position.localeCompare(b.position)).map(dbToCard));
+    const sorted = dbBoards.sort((a, b) => a.position.localeCompare(b.position));
+    this.boards.set(sorted.map(dbToBoard));
     this.trashedCards.set(dbTrashed.sort((a, b) => b.updatedAt - a.updatedAt).map(dbToCard));
+
+    const firstId = sorted[0]?.id;
+    if (firstId) {
+      const activeCards = await db.cards.where('boardId').equals(firstId).filter(c => c._deleted === 0).toArray();
+      this.cards.set(activeCards.sort((a, b) => a.position.localeCompare(b.position)).map(dbToCard));
+    }
+    this.isHydrating.set(false);
+
+    if (sorted.length > 1) {
+      const loadRest = async () => {
+        const otherIds = sorted.slice(1).map(b => b.id);
+        const rest = await db.cards.where('boardId').anyOf(otherIds).filter(c => c._deleted === 0).toArray();
+        if (rest.length) {
+          this.cards.update(current => {
+            const seen = new Set(current.map(c => c.id));
+            const incoming = rest.filter(c => !seen.has(c.id)).map(dbToCard);
+            return incoming.length ? [...current, ...incoming] : current;
+          });
+        }
+      };
+      'requestIdleCallback' in window
+        ? (window as any).requestIdleCallback(loadRest)
+        : setTimeout(loadRest, 0);
+    }
   }
 
   private async migrateDefaultBoardId() {

@@ -1,4 +1,4 @@
-import { Component, Output, EventEmitter, inject } from '@angular/core';
+import { Component, Output, EventEmitter, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BoardService } from '../../services/board.service';
 import { ThemeService } from '../../services/theme.service';
@@ -7,6 +7,7 @@ import { IconComponent } from '../icon/icon.component';
 @Component({
   selector: 'app-trash-modal',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, IconComponent],
   template: `
     <div class="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4" (click)="close.emit()">

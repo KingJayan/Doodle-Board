@@ -40,6 +40,7 @@ import { IconComponent, iconFor } from '../icon/icon.component';
         [class.hover:scale-[1.02]]="!isEditing() && !isResizing()"
         [class.hover:z-card-float]="!isEditing() && !isResizing()"
         [class.animate-scribbleOut]="isDeleting()"
+        [class.card-animated]="isDeleting()"
         [style.background-color]="noteBg(card().color)"
         [style.height.px]="card().isMinimized ? null : (card().height || D.height)"
       >

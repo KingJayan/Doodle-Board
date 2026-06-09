@@ -65,6 +65,7 @@ body {
 .hover-surface:hover { background-color: var(--surface-hover); }
 
 .card-ink { color: var(--note-ink); }
+.card-animated { will-change: transform; }
 
 app-root {
   display: block;

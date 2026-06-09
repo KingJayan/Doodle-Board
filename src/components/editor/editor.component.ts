@@ -1,4 +1,4 @@
-import { Component, inject, signal, Output, EventEmitter, ViewChild, ElementRef, input, effect } from '@angular/core';
+import { Component, inject, signal, Output, EventEmitter, ViewChild, ElementRef, input, effect, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Card } from '../../models/card.model';
@@ -11,6 +11,7 @@ import { IconComponent } from '../icon/icon.component';
 @Component({
   selector: 'app-editor',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule, IconComponent],
   template: `
     <div

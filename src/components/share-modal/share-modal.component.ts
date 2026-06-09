@@ -1,4 +1,4 @@
-import { Component, Output, EventEmitter, inject, input, signal, OnInit } from '@angular/core';
+import { Component, Output, EventEmitter, inject, input, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BoardService } from '../../services/board.service';
 import { IoService } from '../../services/io.service';
@@ -11,6 +11,7 @@ import { IconComponent } from '../icon/icon.component';
 @Component({
   selector: 'app-share-modal',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, IconComponent],
   template: `
     <div class="fixed inset-0 z-overlay flex items-center justify-center bg-black/50 backdrop-blur-sm" (click)="close.emit()">
