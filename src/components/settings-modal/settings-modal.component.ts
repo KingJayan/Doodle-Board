@@ -37,10 +37,10 @@ const version = '0.17.0';
                   <p class="text-muted text-xs mb-3">Link a permanent account to sign in from any device without losing your boards.</p>
 
                   @if (linkError()) {
-                    <p class="text-red-500 text-xs mb-2 p-2 bg-red-500/10 rounded">{{ linkError() }}</p>
+                    <p class="text-[var(--ink-color)] text-xs mb-2 p-2 bg-[var(--tint-pink)] rounded flex items-center gap-1"><app-icon name="warning"></app-icon> {{ linkError() }}</p>
                   }
                   @if (linkEmailSent()) {
-                    <p class="text-green-700 text-xs mb-2 p-2 bg-green-500/10 rounded">Check your email for a verification link!</p>
+                    <p class="text-[var(--ink-color)] text-xs mb-2 p-2 bg-[var(--tint-green)] rounded flex items-center gap-1"><app-icon name="check"></app-icon> Check your email for a verification link!</p>
                   }
 
                   <div class="flex flex-col gap-2">
@@ -52,14 +52,14 @@ const version = '0.17.0';
                     </button>
                     <div class="flex gap-2 mt-1">
                       <input type="email" [(ngModel)]="emailInput" class="doodle-input text-sm flex-1" placeholder="your@email.com">
-                      <button (click)="linkEmail()" [disabled]="linking()" class="doodle-btn text-sm">Link Email</button>
+                      <button (click)="linkEmail()" [disabled]="linking()" class="doodle-btn text-sm"><app-icon name="memo"></app-icon> Link Email</button>
                     </div>
                   </div>
                 </div>
               } @else {
-                <div class="bg-[var(--tint-blue)] p-3 rounded-lg text-sm">
-                  <p class="text-muted text-xs mb-2">Cloud sync activates automatically when you create your first note.</p>
-                  <button (click)="activateSync()" [disabled]="linking()" class="doodle-btn text-sm">Activate Cloud Sync Now</button>
+                <div class="bg-[var(--tint-blue)] p-3 rounded-lg text-sm flex flex-col gap-2">
+                  <p class="text-muted text-xs flex items-center gap-1"><app-icon name="globe"></app-icon> Cloud sync activates automatically when you create your first note.</p>
+                  <button (click)="activateSync()" [disabled]="linking()" class="doodle-btn text-sm self-start"><app-icon name="sparkles"></app-icon> Activate Cloud Sync Now</button>
                 </div>
               }
             </div>

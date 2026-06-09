@@ -62,8 +62,17 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mode
               <span class="absolute right-3 top-2 opacity-50"><app-icon name="search"></app-icon></span>
             </div>
 
-            <div class="text-xs font-mono opacity-60 w-16 text-center hidden md:block">
-              {{ saveStatus() }}
+            <div class="hidden md:flex items-center gap-1 text-xs font-mono px-2 py-1 rounded-full border border-[var(--ink-color)]/20 bg-[var(--surface)]/60 text-[var(--ink-color)] opacity-70">
+              @if (saveStatus() === 'Syncing…') {
+                <app-icon name="sparkles"></app-icon>
+              } @else if (saveStatus() === 'Backed up') {
+                <app-icon name="globe"></app-icon>
+              } @else if (saveStatus() === 'Offline') {
+                <app-icon name="warning"></app-icon>
+              } @else {
+                <app-icon name="check"></app-icon>
+              }
+              <span>{{ saveStatus() }}</span>
             </div>
 
             @if (activeTag()) {
