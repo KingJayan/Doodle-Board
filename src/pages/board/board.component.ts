@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, effect, untracked, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, computed, effect, untracked, OnInit, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -95,6 +95,7 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mode
             @if (aiAvailable) {
               <button (click)="aiPanelOpen.set(!aiPanelOpen())" class="doodle-btn bg-[var(--tint-blue)] text-[var(--ink-color)] text-base" title="Brainstorm with AI"><app-icon name="sparkles"></app-icon> AI</button>
             }
+            <button (click)="toggleBulkMode()" class="doodle-btn text-sm" [class.bg-surface-2]="isBulkMode()">{{ isBulkMode() ? 'Cancel' : 'Select' }}</button>
             <button (click)="createNewCard()" class="doodle-btn bg-[var(--tint-green)] text-[var(--ink-color)] font-bold text-base">+ New Note</button>
           </div>
         </div>
@@ -109,20 +110,30 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mode
         >
           <h3 class="marker-font text-xl border-b-2 border-dashed border-soft pb-2 mb-2"><app-icon name="folder-open"></app-icon> Boards</h3>
 
-          <div class="flex-grow overflow-y-auto flex flex-col gap-2">
-            @for (board of boards(); track board.id) {
+          <div class="flex-grow overflow-y-auto flex flex-col gap-1">
+            @for (board of topLevelBoards(); track board.id) {
               <div
                 class="board-item flex items-center gap-2 p-2 rounded cursor-pointer transition-colors group relative"
                 [class.active]="activeBoardId() === board.id"
-                [class.drag-over]="dragTargetBoardId() === board.id"
+                [class.drag-over]="dragTargetBoardId() === board.id && draggingBoardId() !== board.id"
                 [class.animate-sidebarItemIn]="newBoardId() === board.id && !themeService.reduceMotion()"
+                draggable="true"
+                (dragstart)="handleBoardDragStart(board.id, $event)"
+                (dragend)="handleBoardDragEnd()"
                 (click)="activeBoardId.set(board.id); sidebarOpen.set(false)"
                 (dragover)="handleDragOver($event)"
                 (dragenter)="handleDragEnterBoard(board.id)"
                 (dragleave)="handleDragLeaveBoard()"
                 (drop)="handleDropOnBoard(board.id, $event)"
               >
-                <span class="text-xl"><app-icon name="folder"></app-icon></span>
+                @if (hasChildren(board.id)) {
+                  <button
+                    (click)="toggleExpand(board.id); $event.stopPropagation()"
+                    class="text-sm opacity-50 hover:opacity-100 flex-none w-5 text-center"
+                  >{{ expandedFolders().has(board.id) ? '▾' : '▸' }}</button>
+                } @else {
+                  <span class="text-xl flex-none"><app-icon name="folder"></app-icon></span>
+                }
                 @if (renamingBoardId() === board.id) {
                   <input
                     class="doodle-input text-sm flex-grow"
@@ -133,16 +144,71 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mode
                     (click)="$event.stopPropagation()"
                   >
                 } @else {
-                  <span class="truncate flex-grow" (dblclick)="renamingBoardId.set(board.id); $event.stopPropagation()">{{ board.name }}</span>
+                  <span class="truncate flex-grow text-sm" (dblclick)="renamingBoardId.set(board.id); $event.stopPropagation()">{{ board.name }}</span>
                 }
-                @if (boards().length > 1) {
+                <div class="flex gap-0.5 opacity-0 group-hover:opacity-100 flex-none ml-auto">
                   <button
-                    class="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 px-1"
-                    (click)="deleteBoard(board.id, $event)"
-                    title="Delete Board"
-                  >×</button>
-                }
+                    (click)="showAddSubBoard(board.id, $event)"
+                    class="w-5 h-5 flex items-center justify-center rounded hover-surface text-sm font-bold"
+                    title="Add sub-board"
+                  >+</button>
+                  @if (boards().length > 1) {
+                    <button
+                      class="w-5 h-5 flex items-center justify-center rounded hover-surface text-red-500"
+                      (click)="deleteBoard(board.id, $event)"
+                      title="Delete board"
+                    >×</button>
+                  }
+                </div>
               </div>
+
+              @if (addingSubBoardId() === board.id) {
+                <div class="pl-7 pr-2 pb-1 flex gap-1">
+                  <input
+                    #subInput
+                    class="doodle-input text-xs flex-grow"
+                    placeholder="Sub-board name..."
+                    (keyup.enter)="createSubBoard(board.id, $any($event.target).value); $any($event.target).value = ''"
+                    (keyup.escape)="addingSubBoardId.set(null)"
+                    (blur)="addingSubBoardId.set(null)"
+                  >
+                </div>
+              }
+
+              @if (expandedFolders().has(board.id)) {
+                @for (child of childBoards(board.id); track child.id) {
+                  <div
+                    class="board-item board-item--child flex items-center gap-2 pl-7 pr-2 py-2 rounded cursor-pointer transition-colors group relative"
+                    [class.active]="activeBoardId() === child.id"
+                    [class.drag-over]="dragTargetBoardId() === child.id"
+                    [class.animate-sidebarItemIn]="newBoardId() === child.id && !themeService.reduceMotion()"
+                    (click)="activeBoardId.set(child.id); sidebarOpen.set(false)"
+                    (dragover)="handleDragOver($event)"
+                    (dragenter)="handleDragEnterBoard(child.id)"
+                    (dragleave)="handleDragLeaveBoard()"
+                    (drop)="handleDropOnBoard(child.id, $event)"
+                  >
+                    <span class="text-base flex-none"><app-icon name="page"></app-icon></span>
+                    @if (renamingBoardId() === child.id) {
+                      <input
+                        class="doodle-input text-xs flex-grow"
+                        [value]="child.name"
+                        (keyup.enter)="commitRename($any($event.target).value, child.id)"
+                        (keyup.escape)="renamingBoardId.set(null)"
+                        (blur)="commitRename($any($event.target).value, child.id)"
+                        (click)="$event.stopPropagation()"
+                      >
+                    } @else {
+                      <span class="truncate flex-grow text-xs" (dblclick)="renamingBoardId.set(child.id); $event.stopPropagation()">{{ child.name }}</span>
+                    }
+                    <button
+                      class="opacity-0 group-hover:opacity-100 w-5 h-5 flex items-center justify-center rounded hover-surface text-red-500"
+                      (click)="deleteBoard(child.id, $event)"
+                      title="Delete board"
+                    >×</button>
+                  </div>
+                }
+              }
             }
           </div>
 
@@ -235,12 +301,16 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mode
                   <app-card
                     [card]="card"
                     [searchQuery]="searchQuery()"
+                    [bulkMode]="isBulkMode()"
+                    [isSelected]="selectedCardIds().has(card.id)"
                     (update)="updateCard($event)"
                     (delete)="handleDeleteCard($event)"
                     (expand)="editingCard.set($event)"
                     (tagClick)="activeTag.set($event)"
                     (stickerToggle)="toggleSticker(card.id, $event)"
                     (pinToggle)="togglePin(card.id)"
+                    (duplicate)="duplicateCard(card)"
+                    (select)="toggleCardSelection(card.id)"
                   ></app-card>
                 </div>
               }
@@ -248,6 +318,25 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mode
           }
         </main>
       </div>
+
+      <!-- bulk action bar -->
+      @if (selectedCardIds().size > 0) {
+        <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[var(--paper-color)] border-2 border-[var(--ink-color)] rounded-full shadow-2xl px-6 py-3 flex items-center gap-4 animate-slideDown">
+          <span class="font-bold text-sm">{{ selectedCardIds().size }} selected</span>
+          <div class="relative">
+            <button (click)="showBulkMoveMenu.set(!showBulkMoveMenu())" class="doodle-btn text-xs">Move to ▾</button>
+            @if (showBulkMoveMenu()) {
+              <div class="absolute bottom-full mb-2 left-0 bg-[var(--surface)] border-2 border-[var(--ink-color)] rounded-lg p-2 w-44 shadow-xl flex flex-col gap-1" (click)="$event.stopPropagation()">
+                @for (board of boards(); track board.id) {
+                  <button (click)="bulkMove(board.id)" class="text-left text-sm px-3 py-2 hover-surface rounded truncate">{{ board.name }}</button>
+                }
+              </div>
+            }
+          </div>
+          <button (click)="bulkDelete()" class="doodle-btn text-xs border-red-300 text-red-500">Delete</button>
+          <button (click)="clearSelection()" class="text-xl hover:text-red-500 leading-none">✕</button>
+        </div>
+      }
 
       @defer (when !!editingCard()) {
         @if (editingCard()) {
@@ -292,6 +381,7 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mode
       font-weight: bold;
       box-shadow: inset 3px 0 0 var(--accent);
     }
+    .board-item--child { border-left: 2px solid var(--border-soft); margin-left: 8px; }
     .animate-slideDown {
       animation: slideDown 0.3s ease-out forwards;
     }
@@ -333,7 +423,7 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mode
     }
   `]
 })
-export class BoardComponent implements OnInit {
+export class BoardComponent implements OnInit, OnDestroy {
   private boardService = inject(BoardService);
   themeService = inject(ThemeService);
   router = inject(Router);
@@ -343,6 +433,7 @@ export class BoardComponent implements OnInit {
 
   saveStatus = this.boardService.syncStatus;
   boards = this.boardService.boards;
+  topLevelBoards = this.boardService.topLevelBoards;
   updateCard = (card: Card) => this.boardService.updateCard(card);
   toggleSticker = (id: string, sticker: string) => this.boardService.toggleSticker(id, sticker);
   togglePin = (id: string) => this.boardService.togglePin(id);
@@ -370,6 +461,22 @@ export class BoardComponent implements OnInit {
         prevBoardId = id;
       });
     });
+
+    effect(() => {
+      const id = this.activeBoardId();
+      const board = this.boardService.boards().find(b => b.id === id);
+      if (board?.parentId) {
+        untracked(() => {
+          this.expandedFolders.update(set => {
+            if (set.has(board.parentId!)) return set;
+            const next = new Set(set);
+            next.add(board.parentId!);
+            localStorage.setItem('doodle_expanded_folders', JSON.stringify([...next]));
+            return next;
+          });
+        });
+      }
+    });
   }
 
   aiPanelOpen = signal(false);
@@ -385,7 +492,15 @@ export class BoardComponent implements OnInit {
   justSwitchedBoard = signal(false);
   newBoardId = signal<string | null>(null);
   draggingCardId = signal<string | null>(null);
+  draggingBoardId = signal<string | null>(null);
   dragTargetBoardId = signal<string | null>(null);
+  expandedFolders = signal<Set<string>>(
+    new Set<string>(JSON.parse(localStorage.getItem('doodle_expanded_folders') ?? '[]') as string[])
+  );
+  addingSubBoardId = signal<string | null>(null);
+  selectedCardIds = signal<Set<string>>(new Set());
+  isBulkMode = signal(false);
+  showBulkMoveMenu = signal(false);
 
   editingCard = signal<Card | null>(null);
   renamingBoardId = signal<string | null>(null);
@@ -393,10 +508,28 @@ export class BoardComponent implements OnInit {
   motifs = this.themeService.motifs;
   doodles: { x: number; y: number; rot: number; scale: number; mi: number }[] = [];
   private draggedCardId: string | null = null;
+  private draggedBoardId: string | null = null;
+
+  private readonly keydownHandler = (e: KeyboardEvent) => {
+    const el = document.activeElement as HTMLElement;
+    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') return;
+    if (e.key === 'n' || e.key === 'N') {
+      e.preventDefault();
+      this.createNewCard();
+    }
+    if (e.key === 'Escape' && this.selectedCardIds().size > 0) {
+      this.clearSelection();
+    }
+  };
 
   ngOnInit() {
     this.generateBackgroundDoodles();
     if (window.innerWidth < 768) this.sidebarOpen.set(false);
+    document.addEventListener('keydown', this.keydownHandler);
+  }
+
+  ngOnDestroy() {
+    document.removeEventListener('keydown', this.keydownHandler);
   }
 
   private generateBackgroundDoodles() {
@@ -407,6 +540,41 @@ export class BoardComponent implements OnInit {
       scale: 0.5 + Math.random() * 1.5,
       mi: i
     }));
+  }
+
+  hasChildren(boardId: string): boolean {
+    return this.boardService.boards().some(b => b.parentId === boardId);
+  }
+
+  childBoards(parentId: string): Board[] {
+    return this.boardService.boards().filter(b => b.parentId === parentId);
+  }
+
+  toggleExpand(boardId: string) {
+    this.expandedFolders.update(set => {
+      const next = new Set(set);
+      if (next.has(boardId)) next.delete(boardId);
+      else next.add(boardId);
+      localStorage.setItem('doodle_expanded_folders', JSON.stringify([...next]));
+      return next;
+    });
+  }
+
+  showAddSubBoard(parentId: string, event: Event) {
+    event.stopPropagation();
+    this.addingSubBoardId.set(parentId);
+    if (!this.expandedFolders().has(parentId)) this.toggleExpand(parentId);
+  }
+
+  createSubBoard(parentId: string, name: string) {
+    if (!name.trim()) { this.addingSubBoardId.set(null); return; }
+    const id = this.boardService.addBoard(name.trim(), parentId);
+    this.activeBoardId.set(id);
+    this.newBoardId.set(id);
+    setTimeout(() => this.newBoardId.set(null), 400);
+    this.addingSubBoardId.set(null);
+    if (!this.expandedFolders().has(parentId)) this.toggleExpand(parentId);
+    this.toastService.show(`Created sub-board "${name}"`, 'success');
   }
 
   filteredCards = computed(() => {
@@ -468,6 +636,52 @@ export class BoardComponent implements OnInit {
     this.toastService.show('Note created', 'success');
   }
 
+  duplicateCard(card: Card) {
+    this.boardService.duplicateCard(card);
+    this.toastService.show('Note duplicated', 'success');
+  }
+
+  toggleBulkMode() {
+    if (this.isBulkMode()) {
+      this.clearSelection();
+    } else {
+      this.isBulkMode.set(true);
+    }
+  }
+
+  toggleCardSelection(cardId: string) {
+    this.selectedCardIds.update(set => {
+      const next = new Set(set);
+      if (next.has(cardId)) next.delete(cardId);
+      else next.add(cardId);
+      return next;
+    });
+  }
+
+  clearSelection() {
+    this.selectedCardIds.set(new Set());
+    this.isBulkMode.set(false);
+    this.showBulkMoveMenu.set(false);
+  }
+
+  bulkDelete() {
+    const ids = [...this.selectedCardIds()];
+    ids.forEach(id => this.boardService.deleteCard(id));
+    this.toastService.show(`${ids.length} notes moved to trash`, 'info', {
+      label: 'Undo',
+      callback: () => ids.forEach(id => this.boardService.restoreCard(id))
+    });
+    this.clearSelection();
+  }
+
+  bulkMove(boardId: string) {
+    const ids = this.selectedCardIds();
+    this.boardService.bulkMoveCards(ids, boardId);
+    const boardName = this.boardService.boards().find(b => b.id === boardId)?.name ?? 'board';
+    this.toastService.show(`${ids.size} notes moved to "${boardName}"`, 'success');
+    this.clearSelection();
+  }
+
   async generateCard(topic: string) {
     if (this.isGenerating()) return;
     this.isGenerating.set(true);
@@ -492,6 +706,23 @@ export class BoardComponent implements OnInit {
     });
   }
 
+  handleBoardDragStart(boardId: string, event: DragEvent) {
+    this.draggedCardId = null;
+    this.draggingCardId.set(null);
+    this.draggedBoardId = boardId;
+    this.draggingBoardId.set(boardId);
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', `board:${boardId}`);
+    }
+  }
+
+  handleBoardDragEnd() {
+    this.draggedBoardId = null;
+    this.draggingBoardId.set(null);
+    this.dragTargetBoardId.set(null);
+  }
+
   handleDragStart(cardId: string, event: DragEvent) {
     const isHandle = event.composedPath().some((el: any) => el.classList?.contains('drag-handle'));
     if (!isHandle) { event.preventDefault(); return; }
@@ -509,7 +740,7 @@ export class BoardComponent implements OnInit {
   }
 
   handleDragEnterBoard(boardId: string) {
-    if (this.draggedCardId) this.dragTargetBoardId.set(boardId);
+    if (this.draggedCardId || this.draggedBoardId) this.dragTargetBoardId.set(boardId);
   }
 
   handleDragLeaveBoard() {
@@ -518,6 +749,21 @@ export class BoardComponent implements OnInit {
 
   handleDropOnBoard(boardId: string, event: DragEvent) {
     event.preventDefault();
+
+    if (this.draggedBoardId && this.draggedBoardId !== boardId) {
+      const dragged = this.boardService.boards().find(b => b.id === this.draggedBoardId);
+      const target = this.boardService.boards().find(b => b.id === boardId);
+      if (dragged && target && !target.parentId && !dragged.parentId) {
+        this.boardService.moveBoardToParent(this.draggedBoardId, boardId);
+        if (!this.expandedFolders().has(boardId)) this.toggleExpand(boardId);
+        this.toastService.show(`Moved "${dragged.name}" under "${target.name}"`, 'success');
+      }
+      this.draggedBoardId = null;
+      this.draggingBoardId.set(null);
+      this.dragTargetBoardId.set(null);
+      return;
+    }
+
     if (this.draggedCardId && boardId !== this.activeBoardId()) {
       const card = this.boardService.cards().find(c => c.id === this.draggedCardId);
       if (card) {

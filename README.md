@@ -2,12 +2,15 @@
 <h2><code>KingJayan/Doodle-Board</code></h2>
 <p>A visual knowledge board for brainstorming, ideas, and notes with folders, AI-assisted ideation, and offline-first storage.</p>
 
-<img src="https://img.shields.io/badge/angular-%23DD0031.svg?style=for-the-badge&logo=angular&logoColor=white" alt="angular" />
-<img src="https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white" alt="typescript" />
-<img src="https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="tailwindcss" />
-<img src="https://img.shields.io/badge/vite-%23646CFF.svg?style=for-the-badge&logo=vite&logoColor=white" alt="vite" />
-<img src="https://img.shields.io/badge/bun-%23000000.svg?style=for-the-badge&logo=bun&logoColor=white" alt="bun" />
-<img src="https://img.shields.io/badge/google%20gemini-%238E75B2.svg?style=for-the-badge&logo=googlegemini&logoColor=white" alt="gemini" />
+<img src="https://img.shields.io/badge/Angular-DD0031?style=for-the-badge&logo=angular&logoColor=white" alt="Angular" />
+<img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
+<img src="https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="Tailwind CSS" />
+<img src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite" />
+<img src="https://img.shields.io/badge/Bun-F9F1E1?style=for-the-badge&logo=bun&logoColor=000000" alt="Bun" />
+<img src="https://img.shields.io/badge/Gemini-4285F4?style=for-the-badge&logo=googlegemini&logoColor=white" alt="Gemini" />
+<img src="https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" alt="Supabase" />
+<img src="https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Vercel" />
+
 </div>
 <p align="center">
   <img src="https://img.shields.io/badge/version-0.17.2-blue">
@@ -27,20 +30,18 @@
 
 ## current features
 
-- create and organize sticky notes
-- folder organization
+- create and organize sticky notes with drag-and-drop support
+- folder organization (boards)
 - ai-powered brainstorming (via Gemini)
 - themes
-- export/import, auto-save to localStorage
+- export/import, auto-save to dexie.js
 - filtering + search
 - pin + max/minimize
-- cloud sync across devices (Supabase + Dexie.js, anonymous auth + account linking)
+- cloud sync across devices (Supabase, anonymous auth + account linking)
 - snapshot sharing with expiry
 
 ## planned features until v1
 - user-custom themes
-- performance optimizations for low hardware
-- improved file CRUD + folder organization (boards over folders, +nested)
 
 ## v1+
 - live collaboration through cf workers + partykit (leads to team features--paid)

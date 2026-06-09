@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, computed } from '@angular/core';
 import { generateKeyBetween, generateNKeysBetween } from 'fractional-indexing';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -27,13 +27,14 @@ function dbToCard(c: DbCard): Card {
 }
 
 function dbToBoard(b: DbBoard): Board {
-  return { id: b.id, name: b.name, position: b.position };
+  return { id: b.id, name: b.name, position: b.position, parentId: b.parentId ?? null };
 }
 
 @Injectable({ providedIn: 'root' })
 export class BoardService {
   readonly cards = signal<Card[]>([]);
   readonly boards = signal<Board[]>([]);
+  readonly topLevelBoards = computed(() => this.boards().filter(b => !b.parentId));
   readonly trashedCards = signal<Card[]>([]);
   readonly syncStatus = signal<string>('Saved locally');
   readonly isHydrating = signal(true);
@@ -135,6 +136,7 @@ export class BoardService {
       id: idMap.get(f.id)!,
       name: f.name,
       position: boardPositions[i],
+      parentId: null,
       createdAt: now,
       updatedAt: now,
       ownerId: null,
@@ -220,6 +222,7 @@ export class BoardService {
       id: board.id,
       name: board.name,
       position: board.position,
+      parentId: board.parentId ?? null,
       createdAt: existing?.createdAt ?? now,
       updatedAt: now,
       ownerId: existing?.ownerId ?? this.auth.authState().userId ?? null,
@@ -238,21 +241,35 @@ export class BoardService {
     return generateKeyBetween(null, sorted[0]?.position ?? null);
   }
 
-  addBoard(name: string): string {
+  addBoard(name: string, parentId?: string | null): string {
     const id = crypto.randomUUID();
-    const boards = this.boards();
-    const lastPos = boards.length > 0 ? boards[boards.length - 1].position : null;
+    const siblings = parentId
+      ? this.boards().filter(b => b.parentId === parentId)
+      : this.boards().filter(b => !b.parentId);
+    const sorted = [...siblings].sort((a, b) => a.position.localeCompare(b.position));
+    const lastPos = sorted.length > 0 ? sorted[sorted.length - 1].position : null;
     const pos = generateKeyBetween(lastPos, null);
-    const newBoard: Board = { id, name, position: pos };
+    const newBoard: Board = { id, name, position: pos, parentId: parentId ?? null };
     this.boards.update(b => [...b, newBoard]);
     this.writeBoard(newBoard);
     return id;
+  }
+
+  moveBoardToParent(boardId: string, parentId: string | null) {
+    this.boards.update(b => b.map(x => x.id === boardId ? { ...x, parentId } : x));
+    const board = this.boards().find(b => b.id === boardId);
+    if (board) this.writeBoard(board);
   }
 
   deleteBoard(boardId: string) {
     const fallback = this.boards().find(b => b.id !== boardId);
     if (!fallback) return;
     const now = Date.now();
+    const children = this.boards().filter(b => b.parentId === boardId);
+    if (children.length) {
+      this.boards.update(b => b.map(x => x.parentId === boardId ? { ...x, parentId: null } : x));
+      children.forEach(child => this.writeBoard({ ...child, parentId: null }));
+    }
     const toMove = this.cards().filter(c => c.boardId === boardId).map(c => ({ ...c, boardId: fallback.id, updatedAt: now }));
     this.cards.update(cards =>
       cards.map(c => c.boardId === boardId ? { ...c, boardId: fallback.id, updatedAt: now } : c)
@@ -380,6 +397,30 @@ export class BoardService {
     const updated = { ...moved, position: newPos };
     this.cards.update(cards => cards.map(c => c.id === movedId ? updated : c));
     this.writeCard(updated);
+  }
+
+  duplicateCard(card: Card): void {
+    const boardCards = this.cards()
+      .filter(c => c.boardId === card.boardId && c.position)
+      .sort((a, b) => (a.position ?? '').localeCompare(b.position ?? ''));
+    const idx = boardCards.findIndex(c => c.id === card.id);
+    const next = boardCards[idx + 1];
+    const pos = generateKeyBetween(card.position ?? null, next?.position ?? null);
+    const copy: Card = { ...card, id: crypto.randomUUID(), position: pos, isPinned: false, updatedAt: Date.now() };
+    this.cards.update(cs => [...cs, copy]);
+    this.writeCard(copy);
+  }
+
+  bulkMoveCards(ids: Set<string>, boardId: string) {
+    const now = Date.now();
+    const updated: Card[] = [];
+    this.cards.update(cards => cards.map(c => {
+      if (!ids.has(c.id)) return c;
+      const moved = { ...c, boardId, updatedAt: now };
+      updated.push(moved);
+      return moved;
+    }));
+    updated.forEach(c => this.writeCard(c));
   }
 
   importCardsIntoBoard(newCards: Omit<Card, 'position'>[], boardId: string) {

@@ -43,6 +43,7 @@ import { IconComponent, iconFor } from '../icon/icon.component';
         [class.card-animated]="isDeleting()"
         [class.animate-pinPulse]="isPinning()"
         [class.card-minimizing]="isMinimizing()"
+        [class.card-selected]="isSelected()"
         [style.background-color]="noteBg(card().color)"
         [style.height.px]="card().isMinimized ? null : (card().height || D.height)"
       >
@@ -112,6 +113,12 @@ import { IconComponent, iconFor } from '../icon/icon.component';
           </div>
 
           <div class="flex gap-2 justify-end">
+            <button
+              (click)="handleDuplicate($event)"
+              class="w-9 h-9 bg-[var(--surface)] text-[var(--ink-color)] rounded-full flex items-center justify-center shadow-md hover-surface hover:scale-110 transition-transform doodle-border text-sm cursor-pointer"
+              aria-label="Duplicate note"
+              title="Duplicate"
+            ><app-icon name="page"></app-icon></button>
             <button
               (click)="handleExpand($event)"
               class="w-9 h-9 bg-[var(--surface)] text-[var(--ink-color)] rounded-full flex items-center justify-center shadow-md hover-surface hover:scale-110 transition-transform doodle-border text-sm cursor-pointer"
@@ -274,6 +281,8 @@ export class CardComponent implements OnDestroy {
 
   card = input.required<Card>();
   searchQuery = input<string>('');
+  isSelected = input<boolean>(false);
+  bulkMode = input<boolean>(false);
 
   @Output() update = new EventEmitter<Card>();
   @Output() delete = new EventEmitter<string>();
@@ -281,6 +290,8 @@ export class CardComponent implements OnDestroy {
   @Output() tagClick = new EventEmitter<string>();
   @Output() stickerToggle = new EventEmitter<string>();
   @Output() pinToggle = new EventEmitter<void>();
+  @Output() duplicate = new EventEmitter<void>();
+  @Output() select = new EventEmitter<void>();
 
   isDeleting = signal(false);
   isEditing = signal(false);
@@ -370,9 +381,15 @@ export class CardComponent implements OnDestroy {
   });
 
   startEdit() {
+    if (this.bulkMode()) { this.select.emit(); return; }
     if (this.card().isMinimized) return;
     this.editForm = { title: this.card().title, content: this.card().content };
     this.isEditing.set(true);
+  }
+
+  handleDuplicate(event: Event) {
+    event.stopPropagation();
+    this.duplicate.emit();
   }
 
   saveEdit() {

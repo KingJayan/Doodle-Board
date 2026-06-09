@@ -21,6 +21,7 @@ function toSbCard(c: DbCard, uid: string) {
 
 function fromSbBoard(r: Record<string, unknown>): DbBoard {
   return { id: r['id'] as string, name: r['name'] as string, position: r['position'] as string,
+    parentId: (r['parent_id'] as string | null) ?? null,
     createdAt: +new Date(r['created_at'] as string), updatedAt: +new Date(r['updated_at'] as string),
     ownerId: r['owner_id'] as string,
     _rev: 1, _dirty: 0, _deleted: r['deleted'] ? 1 : 0,

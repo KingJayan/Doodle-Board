@@ -2,6 +2,7 @@ export interface Board {
   id: string;
   name: string;
   position: string;
+  parentId?: string | null;
 }
 
 export interface Card {

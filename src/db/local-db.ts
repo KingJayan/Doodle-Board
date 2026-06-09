@@ -4,6 +4,7 @@ export interface DbBoard {
   id: string;
   name: string;
   position: string;
+  parentId: string | null;
   createdAt: number;
   updatedAt: number;
   ownerId: string | null;
@@ -66,6 +67,9 @@ class LocalDb extends Dexie {
       cards: '&id, boardId, updatedAt, _dirty, _deleted, isPinned, position, [boardId+position], *tags, ownerId',
       outbox: '++seq, entityId, nextAttemptAt, [entity+entityId]',
       meta: '&key'
+    });
+    this.version(2).stores({
+      boards: '&id, position, updatedAt, _dirty, _deleted, ownerId, parentId'
     });
   }
 }
