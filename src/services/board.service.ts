@@ -2,6 +2,7 @@ import { Injectable, signal } from '@angular/core';
 import { generateKeyBetween, generateNKeysBetween } from 'fractional-indexing';
 import { Card, Board, CARD_COLORS, CARD_DEFAULTS, CARD_PALETTE } from '../models/card.model';
 import { db, DbBoard, DbCard } from '../db/local-db';
+import { AuthService } from './auth.service';
 
 function dbToCard(c: DbCard): Card {
   return {
@@ -30,10 +31,19 @@ function dbToBoard(b: DbBoard): Board {
 export class BoardService {
   readonly cards = signal<Card[]>([]);
   readonly boards = signal<Board[]>([]);
-  readonly saveStatus = signal<string>('Saved locally');
+  readonly syncStatus = signal<string>('Saved locally');
 
-  constructor() {
+  constructor(private auth: AuthService) {
     this.init();
+  }
+
+  async rehydrate() {
+    const [dbBoards, dbCards] = await Promise.all([
+      db.boards.where('_deleted').equals(0).toArray(),
+      db.cards.where('_deleted').equals(0).toArray()
+    ]);
+    this.boards.set(dbBoards.sort((a, b) => a.position.localeCompare(b.position)).map(dbToBoard));
+    this.cards.set(dbCards.sort((a, b) => a.position.localeCompare(b.position)).map(dbToCard));
   }
 
   private async init() {
@@ -226,6 +236,7 @@ export class BoardService {
     };
     this.cards.update(cards => [newCard, ...cards]);
     this.writeCard(newCard);
+    this.auth.triggerAnonymousSignIn();
   }
 
   updateCard(updatedCard: Card) {

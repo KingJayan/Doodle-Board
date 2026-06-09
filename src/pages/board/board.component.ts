@@ -265,7 +265,7 @@ export class BoardComponent implements OnInit {
   aiAvailable = this.aiService.isAvailable;
   private toastService = inject(ToastService);
 
-  saveStatus = this.boardService.saveStatus;
+  saveStatus = this.boardService.syncStatus;
   boards = this.boardService.boards;
   updateCard = (card: Card) => this.boardService.updateCard(card);
   toggleSticker = (id: string, sticker: string) => this.boardService.toggleSticker(id, sticker);

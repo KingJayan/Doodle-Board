@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ToastComponent } from './components/toast/toast.component';
+import { SyncEngineService } from './services/sync-engine.service';
 
 @Component({
   selector: 'app-root',
@@ -11,4 +12,6 @@ import { ToastComponent } from './components/toast/toast.component';
     <router-outlet></router-outlet>
   `
 })
-export class AppComponent {}
+export class AppComponent {
+  constructor(private sync: SyncEngineService) {}
+}
