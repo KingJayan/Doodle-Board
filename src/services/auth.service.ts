@@ -8,6 +8,7 @@ export interface AuthState { mode: AuthMode; userId: string | null; }
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   readonly authState = signal<AuthState>({ mode: 'none', userId: null });
+  readonly linkedProviders = signal<string[]>([]);
   readonly supabaseAvailable = !!supabase;
   private signInPromise: Promise<void> | null = null;
 
@@ -16,11 +17,17 @@ export class AuthService {
   private async init() {
     if (!supabase) return;
     const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) this.applyUser(session.user);
-    supabase.auth.onAuthStateChange((_, session) => {
-      if (session?.user) this.applyUser(session.user);
-      else this.authState.set({ mode: 'none', userId: null });
+    if (session?.user) { this.applyUser(session.user); await this.refreshIdentities(); }
+    supabase.auth.onAuthStateChange(async (_, session) => {
+      if (session?.user) { this.applyUser(session.user); await this.refreshIdentities(); }
+      else { this.authState.set({ mode: 'none', userId: null }); this.linkedProviders.set([]); }
     });
+  }
+
+  private async refreshIdentities() {
+    if (!supabase) return;
+    const { data } = await supabase.auth.getUserIdentities();
+    this.linkedProviders.set(data?.identities.map(i => i.provider) ?? []);
   }
 
   private applyUser(user: { id: string; is_anonymous?: boolean }) {
@@ -68,6 +75,7 @@ export class AuthService {
     if (!identity) return `No ${provider} identity found`;
     if (data.identities.length === 1) return 'Cannot unlink your only sign-in method';
     const { error } = await supabase.auth.unlinkIdentity(identity);
+    if (!error) await this.refreshIdentities();
     return error ? error.message : null;
   }
 

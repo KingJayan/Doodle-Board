@@ -5,7 +5,7 @@ import { ThemeService, ThemeDef } from '../../services/theme.service';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
 import { IconComponent } from '../icon/icon.component';
-const version = '0.17.3';
+const version = '0.17.4';
 
 @Component({
   selector: 'app-settings-modal',
@@ -38,11 +38,27 @@ const version = '0.17.3';
                     <p class="text-muted text-xs">Your boards sync across all your devices.</p>
                   </div>
                 </div>
-                <div class="flex flex-wrap gap-2">
-                  <button (click)="confirmUnlink('github')" [disabled]="linking()" class="doodle-btn text-xs"><app-icon name="octopus"></app-icon> Unlink GitHub</button>
-                  <button (click)="confirmUnlink('google')" [disabled]="linking()" class="doodle-btn text-xs"><app-icon name="globe"></app-icon> Unlink Google</button>
-                  <button (click)="confirmLogout()" [disabled]="linking()" class="doodle-btn text-xs ml-auto"><app-icon name="warning"></app-icon> Sign Out</button>
-                </div>
+                @if (confirmingAction()) {
+                  <div class="flex items-center gap-2 bg-[var(--tint-pink)] p-2 rounded text-xs">
+                    <app-icon name="warning"></app-icon>
+                    <span class="flex-1">
+                      @if (confirmingAction() === 'logout') { Sure you want to sign out? }
+                      @else { Unlink {{ confirmingAction() === 'github' ? 'GitHub' : 'Google' }} from your account? }
+                    </span>
+                    <button (click)="executeConfirm()" [disabled]="linking()" class="doodle-btn text-xs">Yes</button>
+                    <button (click)="cancelConfirm()" class="doodle-btn text-xs">Cancel</button>
+                  </div>
+                } @else {
+                  <div class="flex flex-wrap gap-2">
+                    @if (authService.linkedProviders().includes('github')) {
+                      <button (click)="confirmUnlink('github')" [disabled]="linking()" class="doodle-btn text-xs"><app-icon name="octopus"></app-icon> Unlink GitHub</button>
+                    }
+                    @if (authService.linkedProviders().includes('google')) {
+                      <button (click)="confirmUnlink('google')" [disabled]="linking()" class="doodle-btn text-xs"><app-icon name="globe"></app-icon> Unlink Google</button>
+                    }
+                    <button (click)="confirmLogout()" [disabled]="linking()" class="doodle-btn text-xs ml-auto"><app-icon name="warning"></app-icon> Sign Out</button>
+                  </div>
+                }
               </div>
             } @else if (authService.authState().mode === 'anonymous') {
               <div class="bg-[var(--tint-yellow)] p-3 rounded-lg text-sm">
@@ -244,6 +260,7 @@ export class SettingsModalComponent {
   linking = signal(false);
   linkError = signal<string | null>(null);
   linkEmailSent = signal(false);
+  confirmingAction = signal<'logout' | 'github' | 'google' | null>(null);
   emailInput = '';
 
   readonly groups = [
@@ -277,40 +294,26 @@ export class SettingsModalComponent {
     if (err) { this.linkError.set(err); this.linking.set(false); }
   }
 
-  confirmLogout() {
-    this.toastService.show('Sign out of DoodleBoard?', 'warning', {
-      label: 'Sign Out',
-      callback: () => this.doLogout()
-    });
-  }
+  confirmLogout() { this.confirmingAction.set('logout'); }
+  confirmUnlink(provider: 'github' | 'google') { this.confirmingAction.set(provider); }
+  cancelConfirm() { this.confirmingAction.set(null); }
 
-  private async doLogout() {
+  async executeConfirm() {
+    const action = this.confirmingAction();
+    if (!action) return;
+    this.confirmingAction.set(null);
     this.linking.set(true);
-    const err = await this.authService.logout();
-    this.linking.set(false);
-    if (err) {
-      this.toastService.show(err, 'error');
+    if (action === 'logout') {
+      const err = await this.authService.logout();
+      this.linking.set(false);
+      if (err) { this.toastService.show(err, 'error'); }
+      else { this.toastService.show('Signed out successfully', 'success'); this.startClose(); }
     } else {
-      this.toastService.show('Signed out successfully', 'success');
-      this.startClose();
-    }
-  }
-
-  confirmUnlink(provider: 'github' | 'google') {
-    this.toastService.show(`Unlink ${provider === 'github' ? 'GitHub' : 'Google'} from your account?`, 'warning', {
-      label: 'Unlink',
-      callback: () => this.doUnlink(provider)
-    });
-  }
-
-  private async doUnlink(provider: 'github' | 'google') {
-    this.linking.set(true);
-    const err = await this.authService.unlinkIdentity(provider);
-    this.linking.set(false);
-    if (err) {
-      this.toastService.show(err, 'error');
-    } else {
-      this.toastService.show(`${provider === 'github' ? 'GitHub' : 'Google'} unlinked`, 'success');
+      const label = action === 'github' ? 'GitHub' : 'Google';
+      const err = await this.authService.unlinkIdentity(action);
+      this.linking.set(false);
+      if (err) { this.toastService.show(err, 'error'); }
+      else { this.toastService.show(`${label} unlinked`, 'success'); }
     }
   }
 
