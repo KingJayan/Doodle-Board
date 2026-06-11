@@ -54,6 +54,23 @@ export class AuthService {
     return error.message;
   }
 
+  async logout(): Promise<string | null> {
+    if (!supabase) return 'Supabase not configured';
+    const { error } = await supabase.auth.signOut();
+    return error ? error.message : null;
+  }
+
+  async unlinkIdentity(provider: string): Promise<string | null> {
+    if (!supabase) return 'Supabase not configured';
+    const { data, error: fetchErr } = await supabase.auth.getUserIdentities();
+    if (fetchErr || !data) return fetchErr?.message ?? 'Could not fetch identities';
+    const identity = data.identities.find(i => i.provider === provider);
+    if (!identity) return `No ${provider} identity found`;
+    if (data.identities.length === 1) return 'Cannot unlink your only sign-in method';
+    const { error } = await supabase.auth.unlinkIdentity(identity);
+    return error ? error.message : null;
+  }
+
   async linkWithEmail(email: string): Promise<string | null> {
     if (!supabase) return 'Supabase not configured';
     if (!email.trim()) return 'Enter a valid email address';

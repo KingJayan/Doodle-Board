@@ -3,8 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ThemeService, ThemeDef } from '../../services/theme.service';
 import { AuthService } from '../../services/auth.service';
+import { ToastService } from '../../services/toast.service';
 import { IconComponent } from '../icon/icon.component';
-const version = '0.17.2';
+const version = '0.17.3';
 
 @Component({
   selector: 'app-settings-modal',
@@ -29,11 +30,18 @@ const version = '0.17.2';
                 <p class="opacity-60 text-xs leading-relaxed">Cloud sync is not configured. Add <code class="font-mono bg-[var(--surface-hover)] px-1 rounded">VITE_SUPABASE_URL</code> and <code class="font-mono bg-[var(--surface-hover)] px-1 rounded">VITE_SUPABASE_ANON_KEY</code> to your <code class="font-mono bg-[var(--surface-hover)] px-1 rounded">.env</code> to enable syncing across devices.</p>
               </div>
             } @else if (authService.authState().mode === 'linked') {
-              <div class="bg-[var(--tint-green)] p-3 rounded-lg text-sm flex items-center gap-2">
-                <app-icon name="check"></app-icon>
-                <div>
-                  <p class="font-bold">Permanent account linked</p>
-                  <p class="text-muted text-xs">Your boards sync across all your devices.</p>
+              <div class="bg-[var(--tint-green)] p-3 rounded-lg text-sm flex flex-col gap-3">
+                <div class="flex items-center gap-2">
+                  <app-icon name="check"></app-icon>
+                  <div>
+                    <p class="font-bold">Permanent account linked</p>
+                    <p class="text-muted text-xs">Your boards sync across all your devices.</p>
+                  </div>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  <button (click)="confirmUnlink('github')" [disabled]="linking()" class="doodle-btn text-xs"><app-icon name="octopus"></app-icon> Unlink GitHub</button>
+                  <button (click)="confirmUnlink('google')" [disabled]="linking()" class="doodle-btn text-xs"><app-icon name="globe"></app-icon> Unlink Google</button>
+                  <button (click)="confirmLogout()" [disabled]="linking()" class="doodle-btn text-xs ml-auto"><app-icon name="warning"></app-icon> Sign Out</button>
                 </div>
               </div>
             } @else if (authService.authState().mode === 'anonymous') {
@@ -228,6 +236,7 @@ const version = '0.17.2';
 export class SettingsModalComponent {
   themeService = inject(ThemeService);
   authService = inject(AuthService);
+  toastService = inject(ToastService);
   @Output() close = new EventEmitter<void>();
   protected readonly version = version;
 
@@ -266,6 +275,43 @@ export class SettingsModalComponent {
     this.linkError.set(null);
     const err = await this.authService.linkWithProvider(provider);
     if (err) { this.linkError.set(err); this.linking.set(false); }
+  }
+
+  confirmLogout() {
+    this.toastService.show('Sign out of DoodleBoard?', 'warning', {
+      label: 'Sign Out',
+      callback: () => this.doLogout()
+    });
+  }
+
+  private async doLogout() {
+    this.linking.set(true);
+    const err = await this.authService.logout();
+    this.linking.set(false);
+    if (err) {
+      this.toastService.show(err, 'error');
+    } else {
+      this.toastService.show('Signed out successfully', 'success');
+      this.startClose();
+    }
+  }
+
+  confirmUnlink(provider: 'github' | 'google') {
+    this.toastService.show(`Unlink ${provider === 'github' ? 'GitHub' : 'Google'} from your account?`, 'warning', {
+      label: 'Unlink',
+      callback: () => this.doUnlink(provider)
+    });
+  }
+
+  private async doUnlink(provider: 'github' | 'google') {
+    this.linking.set(true);
+    const err = await this.authService.unlinkIdentity(provider);
+    this.linking.set(false);
+    if (err) {
+      this.toastService.show(err, 'error');
+    } else {
+      this.toastService.show(`${provider === 'github' ? 'GitHub' : 'Google'} unlinked`, 'success');
+    }
   }
 
   async linkEmail() {

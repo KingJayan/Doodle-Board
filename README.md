@@ -14,7 +14,7 @@
 
 </div>
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.17.2-blue">
+  <img src="https://img.shields.io/badge/version-0.17.3-blue">
 </p>
 
 >[!IMPORTANT]
