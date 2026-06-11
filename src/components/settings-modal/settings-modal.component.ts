@@ -5,7 +5,7 @@ import { ThemeService, ThemeDef } from '../../services/theme.service';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
 import { IconComponent } from '../icon/icon.component';
-const version = '0.17.4';
+const version = '1.0.0';
 
 @Component({
   selector: 'app-settings-modal',

@@ -14,7 +14,7 @@
 
 </div>
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.17.4-blue">
+  <img src="https://img.shields.io/badge/version-1.0.0-blue">
 </p>
 
 >[!IMPORTANT]
@@ -40,9 +40,6 @@
 - pin + max/minimize
 - cloud sync across devices (Supabase, anonymous auth + account linking)
 - snapshot sharing with expiry
-
-## planned features until v1
-- user-custom themes
 
 ## v1+
 - live collaboration through cf workers + partykit (leads to team features--paid)
