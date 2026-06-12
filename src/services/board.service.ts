@@ -492,7 +492,12 @@ export class BoardService {
       position: positions[i],
       stickers: c.stickers ?? [],
       isPinned: c.isPinned ?? false,
-      updatedAt: c.updatedAt ?? now
+      updatedAt: c.updatedAt ?? now,
+      rotation: Math.max(-15, Math.min(15, c.rotation ?? 0)),
+      width: c.width != null ? Math.max(CARD_DEFAULTS.minWidth, Math.min(800, c.width)) : undefined,
+      height: c.height != null ? Math.max(CARD_DEFAULTS.minHeight, Math.min(800, c.height)) : undefined,
+      x: undefined,
+      y: undefined,
     }));
     this.cards.update(current => [...current, ...migrated]);
     migrated.forEach(c => this.writeCard(c));

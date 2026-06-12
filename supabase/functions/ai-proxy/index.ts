@@ -1,5 +1,11 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const ALLOWED_ORIGIN = Deno.env.get('ALLOWED_ORIGIN') ?? '*';
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
+const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+
 const CORS = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
@@ -8,10 +14,10 @@ const json = (body: unknown, status = 200) =>
 
 async function gemini(apiKey: string, contents: string, schema?: object): Promise<string> {
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+    'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
     {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
       body: JSON.stringify({
         contents: [{ parts: [{ text: contents }] }],
         ...(schema ? { generationConfig: { responseMimeType: 'application/json', responseSchema: schema } } : {}),
@@ -29,6 +35,12 @@ Deno.serve(async (req) => {
   const apiKey = Deno.env.get('GEMINI_API_KEY');
   if (!apiKey) return json({ error: 'AI not configured' }, 503);
 
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader?.startsWith('Bearer ')) return json({ error: 'Unauthorized' }, 401);
+  const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { global: { headers: { Authorization: authHeader } } });
+  const { error: authErr } = await client.auth.getUser();
+  if (authErr) return json({ error: 'Unauthorized' }, 401);
+
   let body: Record<string, unknown>;
   try {
     body = await req.json();
@@ -40,7 +52,8 @@ Deno.serve(async (req) => {
 
   try {
     if (action === 'brainstorm') {
-      const topic = (body['topic'] as string) || 'Something random and interesting';
+      const raw = (body['topic'] as string) || '';
+      const topic = raw.slice(0, 500) || 'Something random and interesting';
       const text = await gemini(
         apiKey,
         `Create a creative sticky note about: "${topic}". Return a JSON object with 'title' (max 5 words), 'content' (max 20 words), and 'tags' (array of 1-3 strings). Keep the tone playful and handwritten.`,
@@ -57,7 +70,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'polish') {
-      const text = body['text'] as string;
+      const text = ((body['text'] as string) ?? '').slice(0, 3000);
       const mode = body['mode'] as string;
       const prompts: Record<string, string> = {
         fix: 'Fix grammar and spelling. Keep the formatting markdown.',
@@ -70,7 +83,7 @@ Deno.serve(async (req) => {
     }
 
     return json({ error: 'Unknown action' }, 400);
-  } catch (e) {
-    return json({ error: String(e) }, 500);
+  } catch {
+    return json({ error: 'AI request failed' }, 500);
   }
 });
