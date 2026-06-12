@@ -3,6 +3,7 @@ create table boards (
   owner_id    uuid not null references auth.users(id) on delete cascade,
   name        text not null,
   position    text not null,
+  parent_id   uuid references boards(id) on delete set null,
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now(),
   deleted     boolean not null default false
@@ -21,6 +22,8 @@ create table cards (
   is_pinned    boolean not null default false,
   is_minimized boolean not null default false,
   position     text not null,
+  x            float,
+  y            float,
   width        float,
   height       float,
   created_at   timestamptz not null default now(),
@@ -29,6 +32,7 @@ create table cards (
 );
 
 create index boards_owner_updated on boards(owner_id, updated_at);
+create index boards_parent on boards(parent_id);
 create index cards_owner_updated on cards(owner_id, updated_at);
 create index cards_board on cards(board_id);
 

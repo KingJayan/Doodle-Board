@@ -38,7 +38,7 @@ export class SyncEngineService {
       await pull(db, supabase, userId, () => this.boardService.rehydrate());
       this.boardService.syncStatus.set('Backed up');
     } catch {
-      this.boardService.syncStatus.set('Offline');
+      this.boardService.syncStatus.set(navigator.onLine ? 'Sync error' : 'Offline');
     } finally {
       this.running = false;
     }

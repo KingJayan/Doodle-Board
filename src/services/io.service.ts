@@ -29,10 +29,9 @@ export class IoService {
     if (text.startsWith('---')) {
       const end = text.indexOf('\n---', 3);
       if (end !== -1) {
-        const yaml = text.substring(3, end);
-        const content = text.substring(end + 4).trim();
         try {
-          const raw = yamlLoad(yaml) as Record<string, unknown>;
+          const raw = yamlLoad(text.substring(3, end)) as Record<string, unknown>;
+          const content = text.substring(end + 4).trim();
           const safe: Partial<Card> = {};
           if (typeof raw['id'] === 'string') safe.id = raw['id'];
           if (typeof raw['title'] === 'string') safe.title = raw['title'];
@@ -49,6 +48,7 @@ export class IoService {
           if (Array.isArray(raw['stickers']) && raw['stickers'].every(s => typeof s === 'string')) safe.stickers = raw['stickers'];
           return { ...safe, content };
         } catch {
+          return { title: 'Imported Note', content: text, tags: [] };
         }
       }
     }

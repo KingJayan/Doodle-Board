@@ -1,6 +1,6 @@
 {
   "name": "doodle-board",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "type": "module",
   "engines": {
     "node": ">=20.11.0"
@@ -20,7 +20,6 @@
     "@angular/forms": "^18.2.14",
     "@angular/platform-browser": "^18.2.14",
     "@angular/router": "^18.2.14",
-    "@google/genai": "^2.8.0",
     "@supabase/supabase-js": "^2.108.0",
     "dexie": "^4.4.3",
     "dompurify": "^3.4.9",
@@ -36,9 +35,8 @@
     "@analogjs/vite-plugin-angular": "^2.6.0",
     "@angular/build": "^18.2.21",
     "@angular/compiler-cli": "^18.2.14",
-    "@types/dompurify": "^3.2.0",
     "@types/js-yaml": "^4.0.9",
-    "@types/node": "^18.19.130",
+    "@types/node": "^20",
     "autoprefixer": "^10.5.0",
     "fake-indexeddb": "^6.2.5",
     "husky": "^9.1.7",

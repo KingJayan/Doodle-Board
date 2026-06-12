@@ -337,17 +337,21 @@ export class CardComponent implements OnDestroy {
       .replace(/'/g, '&#039;');
   }
 
+  private escapeRegex(s: string): string {
+    return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
   highlightText(text: string): string {
     const query = this.searchQuery();
     if (!query) return this.escapeHtml(text);
     try {
-      const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+      const regex = new RegExp(this.escapeRegex(query), 'gi');
       const parts: string[] = [];
       let last = 0;
       let m: RegExpExecArray | null;
       while ((m = regex.exec(text)) !== null) {
         parts.push(this.escapeHtml(text.slice(last, m.index)));
-        parts.push(`<mark>${this.escapeHtml(m[1])}</mark>`);
+        parts.push(`<mark>${this.escapeHtml(m[0])}</mark>`);
         last = m.index + m[0].length;
       }
       parts.push(this.escapeHtml(text.slice(last)));
@@ -358,15 +362,37 @@ export class CardComponent implements OnDestroy {
   }
 
   parsedContent = computed(() => {
-    let html = this.renderedContent();
+    const html = this.renderedContent();
     const query = this.searchQuery();
-    if (query && html) {
-      try {
-        const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})(?![^<]*>)`, 'gi');
-        html = html.replace(regex, '<mark>$1</mark>');
-      } catch {}
+    if (!query || !html) return html;
+    try {
+      const regex = new RegExp(this.escapeRegex(query), 'gi');
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const walker = document.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
+      const nodes: Text[] = [];
+      let node: Node | null;
+      while ((node = walker.nextNode())) nodes.push(node as Text);
+      for (const textNode of nodes) {
+        const text = textNode.nodeValue ?? '';
+        if (!regex.test(text)) { regex.lastIndex = 0; continue; }
+        regex.lastIndex = 0;
+        const frag = document.createDocumentFragment();
+        let last = 0;
+        let m: RegExpExecArray | null;
+        while ((m = regex.exec(text)) !== null) {
+          if (last < m.index) frag.appendChild(document.createTextNode(text.slice(last, m.index)));
+          const mark = document.createElement('mark');
+          mark.textContent = m[0];
+          frag.appendChild(mark);
+          last = m.index + m[0].length;
+        }
+        if (last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
+        textNode.replaceWith(frag);
+      }
+      return doc.body.innerHTML;
+    } catch {
+      return html;
     }
-    return html;
   });
 
   startEdit() {
