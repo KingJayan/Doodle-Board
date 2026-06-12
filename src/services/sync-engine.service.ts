@@ -14,7 +14,7 @@ function toSbCard(c: DbCard, uid: string) {
   return { id: c.id, board_id: c.boardId, title: c.title, content: c.content,
     tags: c.tags, color: c.color, rotation: c.rotation, stickers: c.stickers,
     is_pinned: c.isPinned === 1, is_minimized: c.isMinimized === 1, position: c.position,
-    width: c.width, height: c.height,
+    x: c.x, y: c.y, width: c.width, height: c.height,
     created_at: new Date(c.createdAt).toISOString(), updated_at: new Date(c.updatedAt).toISOString(),
     owner_id: uid, deleted: c._deleted === 1 };
 }
@@ -34,7 +34,9 @@ function fromSbCard(r: Record<string, unknown>): DbCard {
     tags: (r['tags'] as string[]) ?? [], color: r['color'] as string,
     rotation: r['rotation'] as number, stickers: (r['stickers'] as string[]) ?? [],
     isPinned: r['is_pinned'] ? 1 : 0, isMinimized: r['is_minimized'] ? 1 : 0,
-    position: r['position'] as string, width: r['width'] as number | null,
+    position: r['position'] as string,
+    x: (r['x'] as number | null) ?? null, y: (r['y'] as number | null) ?? null,
+    width: r['width'] as number | null,
     height: r['height'] as number | null,
     createdAt: +new Date(r['created_at'] as string), updatedAt: +new Date(r['updated_at'] as string),
     ownerId: r['owner_id'] as string,

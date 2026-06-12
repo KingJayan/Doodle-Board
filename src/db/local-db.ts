@@ -26,6 +26,8 @@ export interface DbCard {
   isPinned: 0 | 1;
   isMinimized: 0 | 1;
   position: string;
+  x: number | null;
+  y: number | null;
   width: number | null;
   height: number | null;
   createdAt: number;
@@ -71,6 +73,7 @@ class LocalDb extends Dexie {
     this.version(2).stores({
       boards: '&id, position, updatedAt, _dirty, _deleted, ownerId, parentId'
     });
+    this.version(3).stores({});
   }
 }
 

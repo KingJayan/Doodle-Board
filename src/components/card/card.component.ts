@@ -52,7 +52,7 @@ import { IconComponent, iconFor } from '../icon/icon.component';
         }
 
         <!-- drag handle -->
-        <div class="drag-handle absolute top-2 left-2 cursor-grab active:cursor-grabbing z-40 opacity-30 group-hover:opacity-100 transition-opacity p-2 hover:bg-black/5 rounded-full" aria-label="Drag to reorder" role="button">
+        <div class="drag-handle absolute top-2 left-2 cursor-grab active:cursor-grabbing z-40 opacity-30 group-hover:opacity-100 transition-opacity p-2 hover:bg-black/5 rounded-full" aria-label="Drag to move" role="button" (pointerdown)="dragHandlePointerDown.emit($event)">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="pointer-events-none">
             <circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle>
             <circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle>
@@ -285,6 +285,7 @@ export class CardComponent implements OnDestroy {
   @Output() pinToggle = new EventEmitter<void>();
   @Output() duplicate = new EventEmitter<void>();
   @Output() select = new EventEmitter<void>();
+  @Output() dragHandlePointerDown = new EventEmitter<PointerEvent>();
 
   isDeleting = signal(false);
   isEditing = signal(false);

@@ -271,38 +271,35 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mode
           </div>
         }
 
-        <!-- main card grid -->
-        <main class="p-4 md:p-8 flex-grow w-full z-10 overflow-y-auto h-full" (dragover)="handleDragOver($event)" (drop)="handleFileDrop($event)">
+        <!-- main canvas -->
+        <main class="flex-grow w-full z-10 overflow-auto h-full relative" (dragover)="handleDragOver($event)" (drop)="handleFileDrop($event)">
           @if (isHydrating()) {
-            <div class="flex flex-wrap gap-6 md:gap-8 pb-20 justify-center md:justify-start">
+            <div class="flex flex-wrap gap-6 p-8">
               @for (i of skeletonCards; track i) {
                 <div class="flex-none rounded-sm animate-pulse bg-[var(--surface)] opacity-60" style="width:192px;height:140px"></div>
               }
             </div>
           } @else {
             @if (filteredCards().length === 0) {
-              <div class="text-center py-20 opacity-50">
+              <div class="text-center py-20 opacity-50 pointer-events-none select-none">
                 <div class="text-6xl mb-4"><app-icon name="leaf"></app-icon></div>
                 <p class="text-2xl marker-font">Empty Board...</p>
                 <p>Drag notes here or create new ones!</p>
               </div>
             }
-            <div class="flex flex-wrap gap-6 md:gap-8 pb-20 justify-center md:justify-start">
+            <div class="relative" [style.width.px]="canvasSize().w" [style.height.px]="canvasSize().h">
               @for (card of filteredCards(); track card.id) {
                 <div
-                  class="relative flex-none"
+                  class="absolute"
                   [class.animate-popIn]="!justSwitchedBoard() && prefs.motionEnabled()"
                   [class.animate-cardEnter]="justSwitchedBoard() && prefs.motionEnabled()"
                   [class.is-dragging]="draggingCardId() === card.id"
                   [class.drag-settle]="droppedCardId() === card.id"
                   [class.micro-anim]="droppedCardId() === card.id"
+                  [style.left.px]="card.x ?? 32"
+                  [style.top.px]="card.y ?? 32"
+                  [style.z-index]="draggingCardId() === card.id ? 1000 : (card.isPinned ? 10 : 1)"
                   [style.animation-delay]="(Math.min($index, 12) * 50) + 'ms'"
-                  draggable="true"
-                  (mousedown)="setDragFromHandle($event)"
-                  (dragstart)="handleDragStart(card.id, $event)"
-                  (dragend)="handleDragEnd()"
-                  (drop)="handleDrop(card.id, $event)"
-                  (dragover)="handleDragOver($event)"
                 >
                   <app-card
                     [card]="card"
@@ -317,6 +314,7 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mode
                     (pinToggle)="togglePin(card.id)"
                     (duplicate)="duplicateCard(card)"
                     (select)="toggleCardSelection(card.id)"
+                    (dragHandlePointerDown)="startCardDrag(card.id, $event)"
                   ></app-card>
                 </div>
               }
@@ -530,9 +528,19 @@ export class BoardComponent implements OnInit, OnDestroy {
     return all;
   });
   readonly Math = Math;
-  private draggedCardId: string | null = null;
   private draggedBoardId: string | null = null;
-  private dragFromHandle = false;
+  private pointerDrag: { cardId: string; startX: number; startY: number; origX: number; origY: number; moveHandler: (e: PointerEvent) => void; upHandler: (e: PointerEvent) => void } | null = null;
+
+  canvasSize = computed(() => {
+    const cards = this.filteredCards();
+    if (!cards.length) return { w: 2000, h: 1200 };
+    let maxX = 0, maxY = 0;
+    for (const c of cards) {
+      maxX = Math.max(maxX, (c.x ?? 32) + (c.width ?? 280) + 64);
+      maxY = Math.max(maxY, (c.y ?? 32) + (c.height ?? 320) + 64);
+    }
+    return { w: Math.max(maxX, 2000), h: Math.max(maxY, 1200) };
+  });
 
   private readonly keydownHandler = (e: KeyboardEvent) => {
     const el = document.activeElement as HTMLElement | null;
@@ -740,8 +748,6 @@ export class BoardComponent implements OnInit, OnDestroy {
   }
 
   handleBoardDragStart(boardId: string, event: DragEvent) {
-    this.draggedCardId = null;
-    this.draggingCardId.set(null);
     this.draggedBoardId = boardId;
     this.draggingBoardId.set(boardId);
     if (event.dataTransfer) {
@@ -756,33 +762,46 @@ export class BoardComponent implements OnInit, OnDestroy {
     this.dragTargetBoardId.set(null);
   }
 
-  setDragFromHandle(event: MouseEvent) {
-    this.dragFromHandle = event.composedPath().some((el: any) => el.classList?.contains('drag-handle'));
-  }
-
-  handleDragStart(cardId: string, event: DragEvent) {
-    if (!this.dragFromHandle) { event.preventDefault(); return; }
-    this.dragFromHandle = false;
-    this.draggedCardId = cardId;
+  startCardDrag(cardId: string, event: PointerEvent) {
+    event.preventDefault();
+    const card = this.boardService.cards().find(c => c.id === cardId);
+    if (!card) return;
+    const origX = card.x ?? 32;
+    const origY = card.y ?? 32;
     this.draggingCardId.set(cardId);
-    if (event.dataTransfer) {
-      event.dataTransfer.effectAllowed = 'move';
-      event.dataTransfer.setData('text/plain', cardId);
-    }
-  }
 
-  handleDragEnd() {
-    const dropped = this.draggingCardId();
-    this.draggingCardId.set(null);
-    this.dragTargetBoardId.set(null);
-    if (dropped) {
+    const moveHandler = (e: PointerEvent) => {
+      if (!this.pointerDrag) return;
+      const dx = e.clientX - this.pointerDrag.startX;
+      const dy = e.clientY - this.pointerDrag.startY;
+      const nx = Math.max(0, this.pointerDrag.origX + dx);
+      const ny = Math.max(0, this.pointerDrag.origY + dy);
+      this.boardService.cards.update(cards => cards.map(c => c.id === cardId ? { ...c, x: nx, y: ny } : c));
+    };
+
+    const upHandler = (e: PointerEvent) => {
+      if (!this.pointerDrag) return;
+      const dx = e.clientX - this.pointerDrag.startX;
+      const dy = e.clientY - this.pointerDrag.startY;
+      const nx = Math.max(0, this.pointerDrag.origX + dx);
+      const ny = Math.max(0, this.pointerDrag.origY + dy);
+      this.boardService.moveCard(cardId, nx, ny);
+      window.removeEventListener('pointermove', moveHandler);
+      window.removeEventListener('pointerup', upHandler);
+      this.pointerDrag = null;
+      const dropped = cardId;
+      this.draggingCardId.set(null);
       this.droppedCardId.set(dropped);
       setTimeout(() => this.droppedCardId.set(null), 350);
-    }
+    };
+
+    this.pointerDrag = { cardId, startX: event.clientX, startY: event.clientY, origX, origY, moveHandler, upHandler };
+    window.addEventListener('pointermove', moveHandler);
+    window.addEventListener('pointerup', upHandler);
   }
 
   handleDragEnterBoard(boardId: string) {
-    if (this.draggedCardId || this.draggedBoardId) this.dragTargetBoardId.set(boardId);
+    if (this.draggedBoardId) this.dragTargetBoardId.set(boardId);
   }
 
   handleDragLeaveBoard() {
@@ -806,16 +825,14 @@ export class BoardComponent implements OnInit, OnDestroy {
       return;
     }
 
-    if (this.draggedCardId && boardId !== this.activeBoardId()) {
-      const card = this.boardService.cards().find(c => c.id === this.draggedCardId);
+    if (this.pointerDrag && boardId !== this.activeBoardId()) {
+      const card = this.boardService.cards().find(c => c.id === this.pointerDrag!.cardId);
       if (card) {
         this.boardService.updateCard({ ...card, boardId });
         this.toastService.show('Moved note to board', 'success');
       }
     }
     this.dragTargetBoardId.set(null);
-    this.draggedCardId = null;
-    this.draggingCardId.set(null);
   }
 
   handleDragOver(event: DragEvent) {
@@ -847,13 +864,5 @@ export class BoardComponent implements OnInit, OnDestroy {
       });
     }
     this.toastService.show(`${mdFiles.length} note${mdFiles.length > 1 ? 's' : ''} imported`, 'success');
-  }
-
-  handleDrop(targetCardId: string, event: DragEvent) {
-    event.preventDefault();
-    if (this.draggedCardId && this.draggedCardId !== targetCardId) {
-      this.boardService.reorderCard(this.draggedCardId, targetCardId);
-    }
-    this.draggedCardId = null;
   }
 }

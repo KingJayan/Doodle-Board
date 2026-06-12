@@ -20,6 +20,8 @@ function dbToCard(c: DbCard): Card {
     isPinned: c.isPinned === 1,
     isMinimized: c.isMinimized === 1,
     position: c.position,
+    x: c.x ?? undefined,
+    y: c.y ?? undefined,
     width: c.width ?? undefined,
     height: c.height ?? undefined,
     updatedAt: c.updatedAt
@@ -166,6 +168,8 @@ export class BoardService {
       isPinned: (c.isPinned ? 1 : 0) as 0 | 1,
       isMinimized: (c.isMinimized ? 1 : 0) as 0 | 1,
       position: cardPositions[i],
+      x: c.x ?? null,
+      y: c.y ?? null,
       width: c.width ?? CARD_DEFAULTS.width,
       height: c.height ?? CARD_DEFAULTS.height,
       createdAt: c.updatedAt ?? now,
@@ -201,6 +205,8 @@ export class BoardService {
       isPinned: card.isPinned ? 1 : 0,
       isMinimized: card.isMinimized ? 1 : 0,
       position: pos,
+      x: card.x ?? null,
+      y: card.y ?? null,
       width: card.width ?? null,
       height: card.height ?? null,
       createdAt: existing?.createdAt ?? card.updatedAt,
@@ -291,9 +297,24 @@ export class BoardService {
     if (board) this.writeBoard(board);
   }
 
+  private scatterPos(boardId: string): { x: number; y: number } {
+    const boardCards = this.cards().filter(c => c.boardId === boardId);
+    const cols = Math.ceil(Math.sqrt(boardCards.length + 1));
+    const idx = boardCards.length;
+    const col = idx % cols;
+    const row = Math.floor(idx / cols);
+    return {
+      x: 32 + col * (CARD_DEFAULTS.width + 32) + Math.round(Math.random() * 16 - 8),
+      y: 32 + row * (CARD_DEFAULTS.height + 32) + Math.round(Math.random() * 16 - 8)
+    };
+  }
+
   addCard(cardData: Partial<Card> & { title: string; content: string; tags: string[] }) {
     const boardId = cardData.boardId ?? 'default';
     const pos = this.nextFrontPosition(boardId);
+    const { x, y } = cardData.x !== undefined && cardData.y !== undefined
+      ? { x: cardData.x, y: cardData.y }
+      : this.scatterPos(boardId);
     const newCard: Card = {
       id: cardData.id ?? crypto.randomUUID(),
       boardId,
@@ -305,6 +326,8 @@ export class BoardService {
       stickers: cardData.stickers ?? [],
       isPinned: cardData.isPinned ?? false,
       position: pos,
+      x,
+      y,
       updatedAt: cardData.updatedAt ?? Date.now(),
       width: cardData.width ?? CARD_DEFAULTS.width,
       height: cardData.height ?? CARD_DEFAULTS.height
@@ -312,6 +335,14 @@ export class BoardService {
     this.cards.update(cards => [newCard, ...cards]);
     this.writeCard(newCard);
     this.auth.triggerAnonymousSignIn();
+  }
+
+  moveCard(id: string, x: number, y: number) {
+    const card = this.cards().find(c => c.id === id);
+    if (!card) return;
+    const updated = { ...card, x, y, updatedAt: Date.now() };
+    this.cards.update(cards => cards.map(c => c.id === id ? updated : c));
+    this.writeCard(updated);
   }
 
   updateCard(updatedCard: Card) {
@@ -407,7 +438,7 @@ export class BoardService {
     const idx = boardCards.findIndex(c => c.id === card.id);
     const next = boardCards[idx + 1];
     const pos = generateKeyBetween(card.position ?? null, next?.position ?? null);
-    const copy: Card = { ...card, id: crypto.randomUUID(), position: pos, isPinned: false, updatedAt: Date.now() };
+    const copy: Card = { ...card, id: crypto.randomUUID(), position: pos, x: (card.x ?? 32) + 24, y: (card.y ?? 32) + 24, isPinned: false, updatedAt: Date.now() };
     this.cards.update(cs => [...cs, copy]);
     this.writeCard(copy);
   }

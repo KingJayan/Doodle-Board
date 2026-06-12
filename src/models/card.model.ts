@@ -16,6 +16,8 @@ export interface Card {
   stickers: string[];
   isPinned: boolean;
   position?: string;
+  x?: number;
+  y?: number;
   updatedAt: number;
   width?: number;
   height?: number;
