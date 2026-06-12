@@ -292,6 +292,8 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mode
                   [class.animate-popIn]="!justSwitchedBoard() && !themeService.reduceMotion()"
                   [class.animate-cardEnter]="justSwitchedBoard() && !themeService.reduceMotion()"
                   [class.is-dragging]="draggingCardId() === card.id"
+                  [class.drag-settle]="droppedCardId() === card.id"
+                  [class.micro-anim]="droppedCardId() === card.id"
                   [style.animation-delay]="(Math.min($index, 12) * 50) + 'ms'"
                   draggable="true"
                   (dragstart)="handleDragStart(card.id, $event)"
@@ -407,7 +409,7 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mode
     }
     .is-dragging {
       opacity: 0.6;
-      transform: scale(1.03) rotate(2deg);
+      transform: scale(1.03) rotate(calc(2deg * var(--motion-scale)));
       box-shadow: 0 16px 40px rgba(0,0,0,0.25);
       z-index: 50;
     }
@@ -498,6 +500,7 @@ export class BoardComponent implements OnInit, OnDestroy {
   draggingCardId = signal<string | null>(null);
   draggingBoardId = signal<string | null>(null);
   dragTargetBoardId = signal<string | null>(null);
+  droppedCardId = signal<string | null>(null);
   expandedFolders = signal<Set<string>>(
     new Set<string>(JSON.parse(localStorage.getItem('doodle_expanded_folders') ?? '[]') as string[])
   );
@@ -753,8 +756,13 @@ export class BoardComponent implements OnInit, OnDestroy {
   }
 
   handleDragEnd() {
+    const dropped = this.draggingCardId();
     this.draggingCardId.set(null);
     this.dragTargetBoardId.set(null);
+    if (dropped) {
+      this.droppedCardId.set(dropped);
+      setTimeout(() => this.droppedCardId.set(null), 350);
+    }
   }
 
   handleDragEnterBoard(boardId: string) {

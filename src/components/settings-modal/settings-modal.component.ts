@@ -6,7 +6,7 @@ import { PreferencesService, PerfPreset } from '../../services/preferences.servi
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
 import { IconComponent } from '../icon/icon.component';
-const version = '1.1.0';
+const version = '1.1.1';
 
 @Component({
   selector: 'app-settings-modal',
@@ -205,7 +205,7 @@ const version = '1.1.0';
               <input
                 type="checkbox"
                 [checked]="prefs.reduceMotion()"
-                (change)="prefs.reduceMotion.update(v => !v)"
+                (change)="prefs.reduceMotion.set(!prefs.reduceMotion())"
                 class="w-5 h-5 accent-[var(--ink-color)]"
               >
               <span>Reduce Motion (No wiggles)</span>

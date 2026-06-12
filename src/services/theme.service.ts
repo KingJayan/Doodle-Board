@@ -118,6 +118,7 @@ function defineTheme(s: ThemeSpec): ThemeDef {
     '--display-shadow': s.displayShadow ?? 'none',
     '--card-shadow':
       s.cardShadow ?? (dark ? '2px 4px 12px rgba(0,0,0,0.5)' : '2px 4px 6px rgba(0,0,0,0.15)'),
+    '--motion-scale': String(s.tilt ?? 1),
   };
 
   const vars: Record<string, string> = {

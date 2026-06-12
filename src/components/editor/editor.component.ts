@@ -124,16 +124,6 @@ import { IconComponent } from '../icon/icon.component';
   `,
   styles: [`
     .font-hand { font-family: var(--font-body); }
-    .animate-fadeIn { animation: fadeIn 0.2s ease-out forwards; }
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-    .animate-slideUp { animation: slideUp 0.4s var(--ease-spring) forwards; }
-    @keyframes slideUp {
-      from { transform: translateY(50px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-    }
   `]
 })
 export class EditorComponent {

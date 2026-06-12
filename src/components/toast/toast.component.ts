@@ -54,16 +54,7 @@ import { IconComponent } from '../icon/icon.component';
     </div>
   `,
   styles: [`
-    .font-hand {
-      font-family: var(--font-body);
-    }
-    .animate-slideIn {
-      animation: slideIn 0.3s var(--ease-spring) forwards;
-    }
-    @keyframes slideIn {
-      from { transform: translateY(100%) scale(0.8); opacity: 0; }
-      to { transform: translateY(0) scale(1); opacity: 1; }
-    }
+    .font-hand { font-family: var(--font-body); }
   `]
 })
 export class ToastComponent {

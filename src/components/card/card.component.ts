@@ -43,6 +43,8 @@ import { IconComponent, iconFor } from '../icon/icon.component';
         [class.card-animated]="isDeleting()"
         [class.animate-pinPulse]="isPinning()"
         [class.card-minimizing]="isMinimizing()"
+        [class.card-save]="isSaving()"
+        [class.micro-anim]="isSaving()"
         [class.card-selected]="isSelected()"
         [style.background-color]="noteBg(card().color)"
         [style.height.px]="card().isMinimized ? null : (card().height || D.height)"
@@ -138,7 +140,7 @@ import { IconComponent, iconFor } from '../icon/icon.component';
             <!-- color picker -->
             <div class="relative group/colors">
               <button class="w-8 h-8 rounded-full border-2 border-[var(--border-soft)] shadow-inner hover:scale-110 transition-transform" [style.background-color]="noteBg(card().color)" aria-label="Change color"></button>
-              <div class="absolute bottom-full left-0 mb-3 p-3 bg-[var(--surface)] rounded-xl shadow-xl border-2 border-soft hidden group-hover/colors:flex gap-2 animate-slideUp">
+              <div class="absolute bottom-full left-0 mb-3 p-3 bg-[var(--surface)] rounded-xl shadow-xl border-2 border-soft hidden group-hover/colors:flex gap-2 animate-popupSlide">
                 @for (c of palette; track c) {
                   <button
                     (click)="changeColor(c, $event)"
@@ -246,8 +248,8 @@ import { IconComponent, iconFor } from '../icon/icon.component';
     .custom-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 4px; }
     .animate-pinPulse { animation: pinPulse 0.2s var(--ease-stamp); }
     @keyframes pinPulse { 0% { transform: scale(1); } 50% { transform: scale(1.06); } 100% { transform: scale(1); } }
-    .card-minimizing { animation: minimizeCard 0.2s var(--ease-spring) forwards; overflow: hidden; }
-    @keyframes minimizeCard { to { max-height: 48px; } }
+    .card-minimizing { animation: minimizeCard 0.2s var(--ease-spring) forwards; overflow: hidden; transform-origin: top center; }
+    @keyframes minimizeCard { to { transform: scaleY(0.25); opacity: 0.4; } }
     .animate-scribbleOut { animation: scribbleOut 0.5s ease-in-out forwards; pointer-events: none; }
     .animate-stamp { animation: stampIn 0.2s var(--ease-stamp) forwards; }
     @keyframes stampIn {
@@ -262,11 +264,11 @@ import { IconComponent, iconFor } from '../icon/icon.component';
       80% { transform: scale(0.5) rotate(-2deg); opacity: 0.3; }
       100% { transform: scale(0) rotate(0); opacity: 0; }
     }
-    @keyframes slideUp {
-      from { transform: translateY(10px); opacity: 0; }
+    @keyframes popupSlide {
+      from { transform: translateY(8px); opacity: 0; }
       to { transform: translateY(0); opacity: 1; }
     }
-    .animate-slideUp { animation: slideUp 0.2s ease-out; }
+    .animate-popupSlide { animation: popupSlide 0.18s ease-out; }
   `]
 })
 export class CardComponent implements OnDestroy {
@@ -298,6 +300,7 @@ export class CardComponent implements OnDestroy {
   isResizing = signal(false);
   isPinning = signal(false);
   isMinimizing = signal(false);
+  isSaving = signal(false);
   showMoveMenu = signal(false);
   editForm = { title: '', content: '' };
 
@@ -395,6 +398,8 @@ export class CardComponent implements OnDestroy {
   saveEdit() {
     this.update.emit({ ...this.card(), title: this.editForm.title || 'Untitled', content: this.editForm.content });
     this.isEditing.set(false);
+    this.isSaving.set(true);
+    setTimeout(() => this.isSaving.set(false), 220);
   }
 
   cancelEdit() {

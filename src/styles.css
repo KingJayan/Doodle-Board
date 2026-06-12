@@ -39,6 +39,7 @@
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-stamp: cubic-bezier(0.175, 0.885, 0.32, 1.275);
   --ease-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --motion-scale: 1;
 }
 
 body {
@@ -176,4 +177,43 @@ h1, h2, h3, .marker-font {
 app-card {
   content-visibility: auto;
   contain-intrinsic-size: auto 240px;
+}
+
+.animate-fadeIn { animation: fadeIn 0.18s ease-out forwards; }
+.animate-modalIn { animation: fadeIn 0.18s ease-out forwards; }
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-slideUp { animation: slideUp 0.4s var(--ease-spring) forwards; }
+@keyframes slideUp {
+  from { transform: translateY(40px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.animate-slideIn { animation: slideIn 0.3s var(--ease-pop) forwards; }
+@keyframes slideIn {
+  from { transform: translateX(80%) scale(0.9); opacity: 0; }
+  to { transform: translateX(0) scale(1); opacity: 1; }
+}
+
+.card-save.micro-anim { animation: cardSave 0.2s var(--ease-spring) forwards; }
+@keyframes cardSave {
+  0%   { transform: scaleY(1); }
+  40%  { transform: scaleY(0.984); }
+  100% { transform: scaleY(1); }
+}
+
+.sticker-off.micro-anim { animation: stickerOff 0.18s var(--ease-stamp) forwards; }
+@keyframes stickerOff {
+  from { transform: scale(1); opacity: 0.9; }
+  to   { transform: scale(1.5); opacity: 0; }
+}
+
+.drag-settle.micro-anim { animation: dragSettle 0.3s var(--ease-spring) forwards; }
+@keyframes dragSettle {
+  0%   { transform: rotate(calc(1deg * var(--motion-scale))); }
+  50%  { transform: rotate(calc(-0.5deg * var(--motion-scale))); }
+  100% { transform: none; }
 }
