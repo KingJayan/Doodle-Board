@@ -12,6 +12,32 @@ export type ThemeName = string;
 export type ThemeMode = 'system' | ThemeName;
 export type ThemeCategory = 'light' | 'dark';
 
+export interface CustomThemeConfig {
+  name: string;
+  paper: string;
+  ink: string;
+  accent: string;
+  fontDisplay: string;
+  fontBody: string;
+  bg: 'dots' | 'grid' | 'none';
+  cornerStyle: string;
+  rotMin: number;
+  rotMax: number;
+}
+
+export const DEFAULT_CUSTOM_THEME: CustomThemeConfig = {
+  name: 'My Theme',
+  paper: '#fdfbf7',
+  ink: '#2d2d2d',
+  accent: '#ff6b6b',
+  fontDisplay: "'Permanent Marker', cursive",
+  fontBody: "'Patrick Hand', cursive",
+  bg: 'dots',
+  cornerStyle: '255px 15px 225px 15px / 15px 225px 15px 255px',
+  rotMin: -3,
+  rotMax: 3,
+};
+
 export interface ThemeDef {
   name: ThemeName;
   label: string;
@@ -490,6 +516,11 @@ export const THEMES: Record<string, ThemeDef> = Object.fromEntries(
   SPECS.map((s) => [s.name, defineTheme(s)])
 );
 
+function isColorDark(hex: string): boolean {
+  const [r, g, b] = hexToRgb(hex.length < 4 ? '#aaaaaa' : hex);
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 < 0.5;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -502,16 +533,44 @@ export class ThemeService {
 
   get reduceMotion() { return this.prefs.reduceMotion; }
 
+  readonly MAX_CUSTOM_THEMES = 3;
+  customConfigs = signal<CustomThemeConfig[]>(this.loadCustomConfigs());
+  customThemeDefs = computed<ThemeDef[]>(() => this.customConfigs().map(c => this.buildThemeDef(c)));
+
+  effectiveRotRange = computed<{ min: number; max: number }>(() => {
+    const m = this.mode();
+    if (/^custom_\d$/.test(m)) {
+      const c = this.customConfigs()[parseInt(m[7])];
+      if (c) return { min: c.rotMin, max: c.rotMax };
+    }
+    const t = this.tilt();
+    return { min: -3 * t, max: 3 * t };
+  });
+
   resolvedTheme = computed<ThemeName>(() => {
     const m = this.mode();
     if (m === 'system') return this.systemDark() ? 'chalkboard' : 'paper';
+    if (/^custom_\d$/.test(m)) {
+      return parseInt(m[7]) < this.customConfigs().length ? m : 'paper';
+    }
     return m in THEMES ? m : 'paper';
   });
 
-  motifs = computed(() => THEMES[this.resolvedTheme()].motifs);
-  isDark = computed(() => THEMES[this.resolvedTheme()].dark);
-
-  tilt = computed(() => THEMES[this.resolvedTheme()].tilt);
+  motifs = computed(() => {
+    const t = this.resolvedTheme();
+    if (/^custom_\d$/.test(t)) return this.customThemeDefs()[parseInt(t[7])]?.motifs ?? THEMES['paper'].motifs;
+    return THEMES[t].motifs;
+  });
+  isDark = computed(() => {
+    const t = this.resolvedTheme();
+    if (/^custom_\d$/.test(t)) return this.customThemeDefs()[parseInt(t[7])]?.dark ?? false;
+    return THEMES[t].dark;
+  });
+  tilt = computed(() => {
+    const t = this.resolvedTheme();
+    if (/^custom_\d$/.test(t)) return this.customThemeDefs()[parseInt(t[7])]?.tilt ?? 1;
+    return THEMES[t].tilt;
+  });
 
   readonly themes = THEMES;
   readonly themeList: ThemeDef[] = Object.values(THEMES);
@@ -520,7 +579,11 @@ export class ThemeService {
 
   constructor() {
     const saved = localStorage.getItem('doodle_theme') as ThemeMode | null;
-    if (saved && (saved === 'system' || saved in THEMES)) this.mode.set(saved);
+    if (saved) {
+      if (saved === 'system' || saved in THEMES) this.mode.set(saved);
+      else if (saved === 'custom' && this.customConfigs().length > 0) this.mode.set('custom_0');
+      else if (/^custom_\d$/.test(saved) && parseInt(saved[7]) < this.customConfigs().length) this.mode.set(saved);
+    }
 
     this.systemDark.set(this.mql.matches);
     this.mql.addEventListener('change', (e) => this.systemDark.set(e.matches));
@@ -535,26 +598,111 @@ export class ThemeService {
     this.mode.set(mode);
   }
 
+  buildThemeDef(c: CustomThemeConfig): ThemeDef {
+    const dark = isColorDark(c.paper);
+    const tiltVal = Math.max(Math.abs(c.rotMin), c.rotMax) / 3;
+    return defineTheme({
+      name: 'custom',
+      label: c.name,
+      emoji: '✏️',
+      icon: 'pencil',
+      dark,
+      paper: c.paper,
+      ink: c.ink,
+      accent: c.accent,
+      grid: mix(c.paper, c.ink, 0.15),
+      bg: c.bg,
+      fontDisplay: c.fontDisplay,
+      fontBody: c.fontBody,
+      radius: c.cornerStyle,
+      tilt: tiltVal,
+      motifs: THEMES['paper'].motifs,
+    });
+  }
+
+  saveCustomConfig(config: CustomThemeConfig, index: number) {
+    const configs = [...this.customConfigs()];
+    configs[index] = config;
+    this.customConfigs.set(configs);
+    localStorage.setItem('doodle_custom_themes', JSON.stringify(configs));
+  }
+
+  addCustomTheme(): number {
+    const configs = this.customConfigs();
+    if (configs.length >= this.MAX_CUSTOM_THEMES) return -1;
+    const newConfig: CustomThemeConfig = { ...DEFAULT_CUSTOM_THEME, name: `My Theme ${configs.length + 1}` };
+    const newConfigs = [...configs, newConfig];
+    this.customConfigs.set(newConfigs);
+    localStorage.setItem('doodle_custom_themes', JSON.stringify(newConfigs));
+    return newConfigs.length - 1;
+  }
+
+  deleteCustomTheme(index: number) {
+    const mode = this.mode();
+    const newConfigs = this.customConfigs().filter((_, i) => i !== index);
+    if (/^custom_\d$/.test(mode)) {
+      const activeIdx = parseInt(mode[7]);
+      if (activeIdx === index) {
+        this.mode.set('system');
+        localStorage.setItem('doodle_theme', 'system');
+      } else if (activeIdx > index) {
+        const newMode = `custom_${activeIdx - 1}`;
+        this.mode.set(newMode);
+        localStorage.setItem('doodle_theme', newMode);
+      }
+    }
+    this.customConfigs.set(newConfigs);
+    localStorage.setItem('doodle_custom_themes', JSON.stringify(newConfigs));
+  }
+
+  resetCustomTheme(index: number) {
+    this.saveCustomConfig({ ...DEFAULT_CUSTOM_THEME }, index);
+  }
 
   noteBg(hex: string): string {
-    const t = THEMES[this.resolvedTheme()];
-    return t.dark ? mix(hex, t.vars['--paper-color'], 0.72) : hex;
+    const t = this.resolvedTheme();
+    let def: ThemeDef;
+    if (/^custom_\d$/.test(t)) {
+      def = this.customThemeDefs()[parseInt(t[7])] ?? THEMES['paper'];
+    } else {
+      def = THEMES[t];
+    }
+    return def.dark ? mix(hex, def.vars['--paper-color'], 0.72) : hex;
   }
 
   toggleMotion() {
     this.reduceMotion.update((v) => !v);
   }
 
+  private loadCustomConfigs(): CustomThemeConfig[] {
+    try {
+      const newKey = localStorage.getItem('doodle_custom_themes');
+      if (newKey) return JSON.parse(newKey) as CustomThemeConfig[];
+      const oldKey = localStorage.getItem('doodle_custom_theme');
+      if (oldKey) {
+        const migrated = [{ ...DEFAULT_CUSTOM_THEME, ...JSON.parse(oldKey) }];
+        localStorage.setItem('doodle_custom_themes', JSON.stringify(migrated));
+        return migrated;
+      }
+    } catch { }
+    return [];
+  }
+
   private applyTheme(theme: ThemeName) {
     const root = document.documentElement;
-    const def = THEMES[theme];
+    let def: ThemeDef | undefined;
+    if (/^custom_\d$/.test(theme)) {
+      def = this.customThemeDefs()[parseInt(theme[7])];
+    } else {
+      def = THEMES[theme];
+    }
+    if (!def) return;
     for (const [key, value] of Object.entries(def.vars)) {
       root.style.setProperty(key, value);
     }
-    root.setAttribute('data-theme', theme);
+    root.setAttribute('data-theme', /^custom_\d$/.test(theme) ? 'custom' : theme);
     root.style.colorScheme = def.dark ? 'dark' : 'light';
 
-    // keep the mobile browser chrome in sync
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute('content', def.vars['--paper-color']);
   }

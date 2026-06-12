@@ -1,4 +1,4 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
 import { generateKeyBetween, generateNKeysBetween } from 'fractional-indexing';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -6,6 +6,7 @@ function isUUID(s: string) { return UUID_RE.test(s); }
 import { Card, Board, CARD_COLORS, CARD_DEFAULTS, CARD_PALETTE } from '../models/card.model';
 import { db, DbBoard, DbCard } from '../db/local-db';
 import { AuthService } from './auth.service';
+import { ThemeService } from './theme.service';
 
 function dbToCard(c: DbCard): Card {
   return {
@@ -32,6 +33,8 @@ function dbToBoard(b: DbBoard): Board {
   return { id: b.id, name: b.name, position: b.position, parentId: b.parentId ?? null };
 }
 
+export const MAX_CARDS_PER_BOARD = 20;
+
 @Injectable({ providedIn: 'root' })
 export class BoardService {
   readonly cards = signal<Card[]>([]);
@@ -40,6 +43,8 @@ export class BoardService {
   readonly trashedCards = signal<Card[]>([]);
   readonly syncStatus = signal<string>('Saved locally');
   readonly isHydrating = signal(true);
+
+  private themeService = inject(ThemeService);
 
   constructor(private auth: AuthService) {
     this.init();
@@ -309,8 +314,13 @@ export class BoardService {
     };
   }
 
-  addCard(cardData: Partial<Card> & { title: string; content: string; tags: string[] }) {
+  private boardCardCount(boardId: string): number {
+    return this.cards().filter(c => c.boardId === boardId).length;
+  }
+
+  addCard(cardData: Partial<Card> & { title: string; content: string; tags: string[] }): boolean {
     const boardId = cardData.boardId ?? 'default';
+    if (this.boardCardCount(boardId) >= MAX_CARDS_PER_BOARD) return false;
     const pos = this.nextFrontPosition(boardId);
     const { x, y } = cardData.x !== undefined && cardData.y !== undefined
       ? { x: cardData.x, y: cardData.y }
@@ -322,7 +332,10 @@ export class BoardService {
       content: cardData.content,
       tags: cardData.tags,
       color: cardData.color ?? CARD_COLORS[Math.floor(Math.random() * CARD_COLORS.length)],
-      rotation: cardData.rotation !== undefined ? cardData.rotation : Math.random() * 6 - 3,
+      rotation: cardData.rotation !== undefined ? cardData.rotation : (() => {
+        const { min, max } = this.themeService.effectiveRotRange();
+        return Math.random() * (max - min) + min;
+      })(),
       stickers: cardData.stickers ?? [],
       isPinned: cardData.isPinned ?? false,
       position: pos,
@@ -335,6 +348,7 @@ export class BoardService {
     this.cards.update(cards => [newCard, ...cards]);
     this.writeCard(newCard);
     this.auth.triggerAnonymousSignIn();
+    return true;
   }
 
   moveCard(id: string, x: number, y: number) {
@@ -431,7 +445,8 @@ export class BoardService {
     this.writeCard(updated);
   }
 
-  duplicateCard(card: Card): void {
+  duplicateCard(card: Card): boolean {
+    if (this.boardCardCount(card.boardId) >= MAX_CARDS_PER_BOARD) return false;
     const boardCards = this.cards()
       .filter(c => c.boardId === card.boardId && c.position)
       .sort((a, b) => (a.position ?? '') < (b.position ?? '') ? -1 : (a.position ?? '') > (b.position ?? '') ? 1 : 0);
@@ -441,6 +456,7 @@ export class BoardService {
     const copy: Card = { ...card, id: crypto.randomUUID(), position: pos, x: (card.x ?? 32) + 24, y: (card.y ?? 32) + 24, isPinned: false, updatedAt: Date.now() };
     this.cards.update(cs => [...cs, copy]);
     this.writeCard(copy);
+    return true;
   }
 
   bulkMoveCards(ids: Set<string>, boardId: string) {

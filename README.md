@@ -14,11 +14,11 @@
 
 </div>
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.1.6-blue">
+  <img src="https://img.shields.io/badge/version-1.2.0-blue">
 </p>
 
 >[!IMPORTANT]
-> currently in beta, actively developed(kinda)
+> currently in (open) beta, actively developed(kinda)
 
 > note: uses [husky](https://github.com/KingJayan/Doodle-Board/blob/main/.husky/commit-msg) for inline commit versioning. 
 > just append 'major', 'minor', or 'patch' to the end of a commit message to bump the version
@@ -33,17 +33,18 @@
 
 - create and organize sticky notes with drag-and-drop support
 - full markdown compat (import/export, editing, rendering)
-- folder organization (boards)
+- folder(board) organization
 - ai-powered brainstorming (via Gemini)
-- themes
+- themes + custom themes
 - export/import, auto-save to dexie.js
-- filtering + search
-- pin + max/minimize
+- filtering + search all
+- pin + max/minimize notes
 - cloud sync across devices (Supabase, anonymous auth + account linking)
 - snapshot sharing with expiry
 
 ## v1+
-- live collaboration through cf workers + partykit (leads to team features--paid)
+- live collaboration through cf workers + partykit
+- paid team features
 - language support, browser extension integrations
 - more ai providers + webLLM support(llama 3 8b + qwen 2.5 1.5b dep on hardware -- chunk context, run on sw, few-shot)
 

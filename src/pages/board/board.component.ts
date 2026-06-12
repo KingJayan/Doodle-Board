@@ -2,13 +2,14 @@ import { Component, inject, signal, computed, effect, untracked, OnInit, OnDestr
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { BoardService } from '../../services/board.service';
+import { BoardService, MAX_CARDS_PER_BOARD } from '../../services/board.service';
 import { CardComponent } from '../../components/card/card.component';
 import { EditorComponent } from '../../components/editor/editor.component';
 import { SettingsModalComponent } from '../../components/settings-modal/settings-modal.component';
 import { HelpModalComponent } from '../../components/help-modal/help-modal.component';
 import { ShareModalComponent } from '../../components/share-modal/share-modal.component';
 import { TrashModalComponent } from '../../components/trash-modal/trash-modal.component';
+import { BoardSidebarComponent } from '../../components/board-sidebar/board-sidebar.component';
 import { IconComponent } from '../../components/icon/icon.component';
 import { AiService } from '../../services/ai.service';
 import { ToastService } from '../../services/toast.service';
@@ -22,7 +23,7 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI, CARD_DEFAULTS } from '../../m
   selector: 'app-board',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, CardComponent, EditorComponent, SettingsModalComponent, HelpModalComponent, ShareModalComponent, TrashModalComponent, IconComponent],
+  imports: [CommonModule, FormsModule, CardComponent, EditorComponent, SettingsModalComponent, HelpModalComponent, ShareModalComponent, TrashModalComponent, BoardSidebarComponent, IconComponent],
   template: `
     <div class="h-screen flex flex-col overflow-hidden">
 
@@ -107,140 +108,14 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI, CARD_DEFAULTS } from '../../m
       <div class="flex flex-grow relative max-w-7xl mx-auto w-full min-h-0">
 
         <!-- sidebar -->
-        <aside
-          class="absolute md:static top-0 left-0 bottom-0 z-30 w-64 bg-[var(--paper-color)] border-r-2 border-[var(--ink-color)] transform transition-transform duration-300 md:translate-x-0 p-4 flex flex-col gap-4 shadow-xl md:shadow-none h-full"
-          [class.-translate-x-full]="!sidebarOpen()"
-        >
-          <h3 class="marker-font text-xl border-b-2 border-dashed border-soft pb-2 mb-2"><app-icon name="folder-open"></app-icon> Boards</h3>
-
-          <div class="flex-grow overflow-y-auto flex flex-col gap-1">
-            @for (board of topLevelBoards(); track board.id) {
-              <div
-                class="board-item flex items-center gap-2 p-2 rounded cursor-pointer transition-colors group relative"
-                [class.active]="activeBoardId() === board.id"
-                [class.drag-over]="dragTargetBoardId() === board.id && draggingBoardId() !== board.id"
-                [class.animate-sidebarItemIn]="newBoardId() === board.id && !themeService.reduceMotion()"
-                draggable="true"
-                (dragstart)="handleBoardDragStart(board.id, $event)"
-                (dragend)="handleBoardDragEnd()"
-                (click)="activeBoardId.set(board.id); sidebarOpen.set(false)"
-                (dragover)="handleDragOver($event)"
-                (dragenter)="handleDragEnterBoard(board.id)"
-                (dragleave)="handleDragLeaveBoard()"
-                (drop)="handleDropOnBoard(board.id, $event)"
-              >
-                @if (hasChildren(board.id)) {
-                  <button
-                    (click)="toggleExpand(board.id); $event.stopPropagation()"
-                    class="text-sm opacity-50 hover:opacity-100 flex-none w-5 text-center"
-                  >{{ expandedFolders().has(board.id) ? '▾' : '▸' }}</button>
-                } @else {
-                  <span class="text-xl flex-none"><app-icon name="folder"></app-icon></span>
-                }
-                @if (renamingBoardId() === board.id) {
-                  <input
-                    class="doodle-input text-sm flex-grow"
-                    [value]="board.name"
-                    (keyup.enter)="commitRename($any($event.target).value, board.id)"
-                    (keyup.escape)="renamingBoardId.set(null)"
-                    (blur)="commitRename($any($event.target).value, board.id)"
-                    (click)="$event.stopPropagation()"
-                  >
-                } @else {
-                  <span class="truncate flex-grow text-sm" (dblclick)="renamingBoardId.set(board.id); $event.stopPropagation()">{{ board.name }}</span>
-                }
-                <div class="flex gap-0.5 opacity-0 group-hover:opacity-100 flex-none ml-auto">
-                  <button
-                    (click)="showAddSubBoard(board.id, $event)"
-                    class="w-5 h-5 flex items-center justify-center rounded hover-surface text-sm font-bold"
-                    title="Add sub-board"
-                  >+</button>
-                  @if (boards().length > 1) {
-                    <button
-                      class="w-5 h-5 flex items-center justify-center rounded hover-surface text-red-500"
-                      (click)="deleteBoard(board.id, $event)"
-                      title="Delete board"
-                    >×</button>
-                  }
-                </div>
-              </div>
-
-              @if (addingSubBoardId() === board.id) {
-                <div class="pl-7 pr-2 pb-1 flex gap-1">
-                  <input
-                    #subInput
-                    class="doodle-input text-xs flex-grow"
-                    placeholder="Sub-board name..."
-                    (keyup.enter)="createSubBoard(board.id, $any($event.target).value); $any($event.target).value = ''"
-                    (keyup.escape)="addingSubBoardId.set(null)"
-                    (blur)="addingSubBoardId.set(null)"
-                  >
-                </div>
-              }
-
-              @if (expandedFolders().has(board.id)) {
-                @for (child of childBoards(board.id); track child.id) {
-                  <div
-                    class="board-item board-item--child flex items-center gap-2 pl-7 pr-2 py-2 rounded cursor-pointer transition-colors group relative"
-                    [class.active]="activeBoardId() === child.id"
-                    [class.drag-over]="dragTargetBoardId() === child.id"
-                    [class.animate-sidebarItemIn]="newBoardId() === child.id && !themeService.reduceMotion()"
-                    (click)="activeBoardId.set(child.id); sidebarOpen.set(false)"
-                    (dragover)="handleDragOver($event)"
-                    (dragenter)="handleDragEnterBoard(child.id)"
-                    (dragleave)="handleDragLeaveBoard()"
-                    (drop)="handleDropOnBoard(child.id, $event)"
-                  >
-                    <span class="text-base flex-none"><app-icon name="page"></app-icon></span>
-                    @if (renamingBoardId() === child.id) {
-                      <input
-                        class="doodle-input text-xs flex-grow"
-                        [value]="child.name"
-                        (keyup.enter)="commitRename($any($event.target).value, child.id)"
-                        (keyup.escape)="renamingBoardId.set(null)"
-                        (blur)="commitRename($any($event.target).value, child.id)"
-                        (click)="$event.stopPropagation()"
-                      >
-                    } @else {
-                      <span class="truncate flex-grow text-xs" (dblclick)="renamingBoardId.set(child.id); $event.stopPropagation()">{{ child.name }}</span>
-                    }
-                    <button
-                      class="opacity-0 group-hover:opacity-100 w-5 h-5 flex items-center justify-center rounded hover-surface text-red-500"
-                      (click)="deleteBoard(child.id, $event)"
-                      title="Delete board"
-                    >×</button>
-                  </div>
-                }
-              }
-            }
-          </div>
-
-          <div class="pt-2 border-t-2 border-dashed border-soft flex flex-col gap-2">
-            <button
-              (click)="trashPanelOpen.set(true)"
-              class="flex items-center gap-2 p-2 rounded hover-surface text-[var(--ink-color)] opacity-60 hover:opacity-100 transition-opacity text-sm w-full"
-            >
-              <app-icon name="trash"></app-icon>
-              <span>Trash</span>
-              @if (trashedCards().length) {
-                <span class="ml-auto text-xs bg-[var(--tint-pink)] px-2 rounded-full">{{ trashedCards().length }}</span>
-              }
-            </button>
-            <div class="flex gap-2">
-              <input
-                #newBoardInput
-                type="text"
-                class="doodle-input text-sm"
-                placeholder="New Board..."
-                (keyup.enter)="createBoard(newBoardInput.value); newBoardInput.value = ''"
-              >
-              <button
-                (click)="createBoard(newBoardInput.value); newBoardInput.value = ''"
-                class="doodle-btn px-2 py-0 text-lg bg-[var(--tint-green)] text-[var(--ink-color)]"
-              >+</button>
-            </div>
-          </div>
-        </aside>
+        <app-board-sidebar
+          [activeBoardId]="activeBoardId()"
+          [isOpen]="sidebarOpen()"
+          [draggingCardId]="draggingCardId()"
+          (activate)="activeBoardId.set($event)"
+          (close)="sidebarOpen.set(false)"
+          (openTrash)="trashPanelOpen.set(true)"
+        ></app-board-sidebar>
 
         <!-- sidebar overlay (mobile) -->
         @if (sidebarOpen()) {
@@ -272,7 +147,7 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI, CARD_DEFAULTS } from '../../m
         }
 
         <!-- main canvas -->
-        <main class="flex-grow w-full z-10 overflow-auto h-full relative" (dragover)="handleDragOver($event)" (drop)="handleFileDrop($event)">
+        <main class="flex-grow w-full z-10 overflow-y-auto overflow-x-hidden h-full relative" (dragover)="handleDragOver($event)" (drop)="handleFileDrop($event)">
           @if (isHydrating()) {
             <div class="flex flex-wrap gap-6 p-8">
               @for (i of skeletonCards; track i) {
@@ -287,7 +162,7 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI, CARD_DEFAULTS } from '../../m
                 <p>Drag notes here or create new ones!</p>
               </div>
             }
-            <div class="relative" [style.width.px]="canvasSize().w" [style.height.px]="canvasSize().h">
+            <div class="relative w-full" [style.height.px]="canvasSize().h">
               @for (card of filteredCards(); track card.id) {
                 <div
                   class="absolute"
@@ -415,13 +290,6 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI, CARD_DEFAULTS } from '../../m
     </div>
   `,
   styles: [`
-    .board-item:hover { background-color: var(--surface-hover); }
-    .board-item.active {
-      background-color: var(--surface-hover);
-      font-weight: bold;
-      box-shadow: inset 3px 0 0 var(--accent);
-    }
-    .board-item--child { border-left: 2px solid var(--border-soft); margin-left: 8px; }
     .animate-slideDown {
       animation: slideDown 0.3s ease-out forwards;
     }
@@ -446,20 +314,9 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI, CARD_DEFAULTS } from '../../m
     }
     .is-dragging {
       opacity: 0.6;
-      transform: scale(1.03) rotate(calc(2deg * var(--motion-scale)));
+      transform: rotate(calc(2deg * var(--motion-scale)));
       box-shadow: 0 16px 40px rgba(0,0,0,0.25);
       z-index: 50;
-    }
-    .board-item.drag-over {
-      border: 2px dashed var(--accent);
-      background-color: var(--surface-hover);
-    }
-    @keyframes sidebarItemIn {
-      from { opacity: 0; transform: translateX(-8px); }
-      to { opacity: 1; transform: none; }
-    }
-    .animate-sidebarItemIn {
-      animation: sidebarItemIn 0.3s var(--ease-spring) forwards;
     }
   `]
 })
@@ -476,7 +333,6 @@ export class BoardComponent implements OnInit, OnDestroy {
 
   saveStatus = this.boardService.syncStatus;
   boards = this.boardService.boards;
-  topLevelBoards = this.boardService.topLevelBoards;
   updateCard = (card: Card) => this.boardService.updateCard(card);
   toggleSticker = (id: string, sticker: string) => this.boardService.toggleSticker(id, sticker);
   togglePin = (id: string) => this.boardService.togglePin(id);
@@ -509,22 +365,6 @@ export class BoardComponent implements OnInit, OnDestroy {
         prevBoardId = id;
       });
     });
-
-    effect(() => {
-      const id = this.activeBoardId();
-      const board = this.boardService.boards().find(b => b.id === id);
-      if (board?.parentId) {
-        untracked(() => {
-          this.expandedFolders.update(set => {
-            if (set.has(board.parentId!)) return set;
-            const next = new Set(set);
-            next.add(board.parentId!);
-            localStorage.setItem('doodle_expanded_folders', JSON.stringify([...next]));
-            return next;
-          });
-        });
-      }
-    });
   }
 
   aiPanelOpen = signal(false);
@@ -533,26 +373,16 @@ export class BoardComponent implements OnInit, OnDestroy {
   helpPanelOpen = signal(false);
   trashPanelOpen = signal(false);
   sidebarOpen = signal(true);
-  trashedCards = this.boardService.trashedCards;
   isHydrating = this.boardService.isHydrating;
   readonly skeletonCards = [0, 1, 2, 3, 4];
   isGenerating = signal(false);
   justSwitchedBoard = signal(false);
-  newBoardId = signal<string | null>(null);
   draggingCardId = signal<string | null>(null);
-  draggingBoardId = signal<string | null>(null);
-  dragTargetBoardId = signal<string | null>(null);
   droppedCardId = signal<string | null>(null);
-  expandedFolders = signal<Set<string>>(
-    new Set<string>(JSON.parse(localStorage.getItem('doodle_expanded_folders') ?? '[]') as string[])
-  );
-  addingSubBoardId = signal<string | null>(null);
   selectedCardIds = signal<Set<string>>(new Set());
   isBulkMode = signal(false);
   showBulkMoveMenu = signal(false);
-
   editingCard = signal<Card | null>(null);
-  renamingBoardId = signal<string | null>(null);
 
   motifs = this.themeService.motifs;
   private allDoodles = signal<{ x: number; y: number; rot: number; scale: number; mi: number }[]>([]);
@@ -564,8 +394,6 @@ export class BoardComponent implements OnInit, OnDestroy {
     return all;
   });
   readonly Math = Math;
-  private draggedBoardId: string | null = null;
-  private readonly GRID = 20;
   private pointerDrag: { cardId: string; startX: number; startY: number; origX: number; origY: number; moveHandler: (e: PointerEvent) => void; upHandler: (e: PointerEvent) => void } | null = null;
 
   subBoardPreviews = computed(() => {
@@ -605,17 +433,11 @@ export class BoardComponent implements OnInit, OnDestroy {
   canvasSize = computed(() => {
     const cards = this.filteredCards();
     const previews = this.subBoardPreviews();
-    if (!cards.length && !previews.length) return { w: 2000, h: 1200 };
-    let maxX = 0, maxY = 0;
-    for (const c of cards) {
-      maxX = Math.max(maxX, (c.x ?? 32) + (c.width ?? CARD_DEFAULTS.width) + 64);
-      maxY = Math.max(maxY, (c.y ?? 32) + (c.height ?? CARD_DEFAULTS.height) + 64);
-    }
-    for (const p of previews) {
-      maxX = Math.max(maxX, p.x + CARD_DEFAULTS.width + 64);
-      maxY = Math.max(maxY, p.y + 200 + 64);
-    }
-    return { w: Math.max(maxX, 2000), h: Math.max(maxY, 1200) };
+    if (!cards.length && !previews.length) return { h: 1200 };
+    let maxY = 0;
+    for (const c of cards) maxY = Math.max(maxY, (c.y ?? 32) + (c.height ?? CARD_DEFAULTS.height) + 64);
+    for (const p of previews) maxY = Math.max(maxY, p.y + 200 + 64);
+    return { h: Math.max(maxY, 1200) };
   });
 
   private readonly keydownHandler = (e: KeyboardEvent) => {
@@ -653,41 +475,6 @@ export class BoardComponent implements OnInit, OnDestroy {
     })));
   }
 
-  hasChildren(boardId: string): boolean {
-    return this.boardService.boards().some(b => b.parentId === boardId);
-  }
-
-  childBoards(parentId: string): Board[] {
-    return this.boardService.boards().filter(b => b.parentId === parentId);
-  }
-
-  toggleExpand(boardId: string) {
-    this.expandedFolders.update(set => {
-      const next = new Set(set);
-      if (next.has(boardId)) next.delete(boardId);
-      else next.add(boardId);
-      localStorage.setItem('doodle_expanded_folders', JSON.stringify([...next]));
-      return next;
-    });
-  }
-
-  showAddSubBoard(parentId: string, event: Event) {
-    event.stopPropagation();
-    this.addingSubBoardId.set(parentId);
-    if (!this.expandedFolders().has(parentId)) this.toggleExpand(parentId);
-  }
-
-  createSubBoard(parentId: string, name: string) {
-    if (!name.trim()) { this.addingSubBoardId.set(null); return; }
-    const id = this.boardService.addBoard(name.trim(), parentId);
-    this.activeBoardId.set(id);
-    this.newBoardId.set(id);
-    setTimeout(() => this.newBoardId.set(null), 400);
-    this.addingSubBoardId.set(null);
-    if (!this.expandedFolders().has(parentId)) this.toggleExpand(parentId);
-    this.toastService.show(`Created sub-board "${name}"`, 'success');
-  }
-
   filteredCards = computed(() => {
     const query = this.searchQuery().toLowerCase();
     const tag = this.activeTag();
@@ -718,43 +505,20 @@ export class BoardComponent implements OnInit, OnDestroy {
     this.searchTimer = setTimeout(() => this.searchQuery.set(val), 150);
   }
 
-  createBoard(name: string) {
-    if (!name.trim()) return;
-    const id = this.boardService.addBoard(name);
-    this.activeBoardId.set(id);
-    this.newBoardId.set(id);
-    setTimeout(() => this.newBoardId.set(null), 400);
-    this.toastService.show(`Created board "${name}"`, 'success');
-  }
-
-  commitRename(name: string, id: string) {
-    if (name.trim()) this.boardService.renameBoard(id, name.trim());
-    this.renamingBoardId.set(null);
-  }
-
-  deleteBoard(id: string, event: Event) {
-    event.stopPropagation();
-    const fallbackName = this.boardService.boards().find(b => b.id !== id)?.name ?? 'another board';
-    this.toastService.show(`Delete board? Notes will move to "${fallbackName}".`, 'warning', {
-      label: 'Yes, Delete',
-      callback: () => {
-        this.boardService.deleteBoard(id);
-        if (this.activeBoardId() === id) {
-          this.activeBoardId.set(this.boardService.boards()[0]?.id ?? '');
-        }
-        this.toastService.show('Board deleted', 'info');
-      }
-    });
-  }
-
   createNewCard() {
     const color = CARD_COLORS[Math.floor(Math.random() * CARD_COLORS.length)];
-    this.boardService.addCard({ title: '', content: '', tags: [], color, boardId: this.activeBoardId() });
+    if (!this.boardService.addCard({ title: '', content: '', tags: [], color, boardId: this.activeBoardId() })) {
+      this.toastService.show(`Board is full — max ${MAX_CARDS_PER_BOARD} notes per board`, 'error');
+      return;
+    }
     this.toastService.show('Note created', 'success');
   }
 
   duplicateCard(card: Card) {
-    this.boardService.duplicateCard(card);
+    if (!this.boardService.duplicateCard(card)) {
+      this.toastService.show(`Board is full — max ${MAX_CARDS_PER_BOARD} notes per board`, 'error');
+      return;
+    }
     this.toastService.show('Note duplicated', 'success');
   }
 
@@ -805,7 +569,10 @@ export class BoardComponent implements OnInit, OnDestroy {
     try {
       const result = await this.aiService.brainstormCard(topic);
       const color = CARD_COLORS_AI[Math.floor(Math.random() * CARD_COLORS_AI.length)];
-      this.boardService.addCard({ ...result, color, boardId: this.activeBoardId() });
+      if (!this.boardService.addCard({ ...result, color, boardId: this.activeBoardId() })) {
+        this.toastService.show(`Board is full — max ${MAX_CARDS_PER_BOARD} notes per board`, 'error');
+        return;
+      }
       this.aiPanelOpen.set(false);
       this.toastService.show('Note generated', 'success');
     } catch {
@@ -823,21 +590,6 @@ export class BoardComponent implements OnInit, OnDestroy {
     });
   }
 
-  handleBoardDragStart(boardId: string, event: DragEvent) {
-    this.draggedBoardId = boardId;
-    this.draggingBoardId.set(boardId);
-    if (event.dataTransfer) {
-      event.dataTransfer.effectAllowed = 'move';
-      event.dataTransfer.setData('text/plain', `board:${boardId}`);
-    }
-  }
-
-  handleBoardDragEnd() {
-    this.draggedBoardId = null;
-    this.draggingBoardId.set(null);
-    this.dragTargetBoardId.set(null);
-  }
-
   startCardDrag(cardId: string, event: PointerEvent) {
     event.preventDefault();
     const card = this.boardService.cards().find(c => c.id === cardId);
@@ -850,8 +602,8 @@ export class BoardComponent implements OnInit, OnDestroy {
       if (!this.pointerDrag) return;
       const dx = e.clientX - this.pointerDrag.startX;
       const dy = e.clientY - this.pointerDrag.startY;
-      const nx = Math.max(0, this.snap(this.pointerDrag.origX + dx));
-      const ny = Math.max(0, this.snap(this.pointerDrag.origY + dy));
+      const nx = Math.max(0, this.pointerDrag.origX + dx);
+      const ny = Math.max(0, this.pointerDrag.origY + dy);
       this.boardService.cards.update(cards => cards.map(c => c.id === cardId ? { ...c, x: nx, y: ny } : c));
     };
 
@@ -859,9 +611,7 @@ export class BoardComponent implements OnInit, OnDestroy {
       if (!this.pointerDrag) return;
       const dx = e.clientX - this.pointerDrag.startX;
       const dy = e.clientY - this.pointerDrag.startY;
-      const snappedX = Math.max(0, this.snap(this.pointerDrag.origX + dx));
-      const snappedY = Math.max(0, this.snap(this.pointerDrag.origY + dy));
-      const { x: nx, y: ny } = this.findFreePos(cardId, snappedX, snappedY);
+      const { x: nx, y: ny } = this.alignSnap(cardId, this.pointerDrag.origX + dx, this.pointerDrag.origY + dy);
       this.boardService.moveCard(cardId, nx, ny);
       window.removeEventListener('pointermove', moveHandler);
       window.removeEventListener('pointerup', upHandler);
@@ -877,64 +627,30 @@ export class BoardComponent implements OnInit, OnDestroy {
     window.addEventListener('pointerup', upHandler);
   }
 
-  private snap(v: number) { return Math.round(v / this.GRID) * this.GRID; }
-
-  private findFreePos(cardId: string, x: number, y: number): { x: number; y: number } {
+  private alignSnap(cardId: string, x: number, y: number): { x: number; y: number } {
+    const THRESH = 10;
     const card = this.filteredCards().find(c => c.id === cardId);
-    const cw = (card?.width ?? CARD_DEFAULTS.width) + 8;
-    const ch = (card?.height ?? CARD_DEFAULTS.height) + 8;
+    const w = card?.width ?? CARD_DEFAULTS.width;
+    const h = card?.height ?? CARD_DEFAULTS.height;
     const others = this.filteredCards().filter(c => c.id !== cardId);
-    const hits = (cx: number, cy: number) =>
-      others.some(o => cx < (o.x ?? 32) + (o.width ?? CARD_DEFAULTS.width) + 8 && cx + cw > (o.x ?? 32) &&
-                       cy < (o.y ?? 32) + (o.height ?? CARD_DEFAULTS.height) + 8 && cy + ch > (o.y ?? 32));
-    if (!hits(x, y)) return { x, y };
-    const G = this.GRID;
-    for (let r = 1; r <= 24; r++) {
-      const ring: [number, number][] = [];
-      for (let i = -r; i <= r; i++) { ring.push([i, -r]); ring.push([i, r]); }
-      for (let i = -r + 1; i < r; i++) { ring.push([-r, i]); ring.push([r, i]); }
-      for (const [dx, dy] of ring) {
-        const cx = Math.max(0, x + dx * G);
-        const cy = Math.max(0, y + dy * G);
-        if (!hits(cx, cy)) return { x: cx, y: cy };
+    let nx = x, ny = y, bestDx = THRESH + 1, bestDy = THRESH + 1;
+    for (const o of others) {
+      const ox = o.x ?? 32, oy = o.y ?? 32;
+      const ow = o.width ?? CARD_DEFAULTS.width, oh = o.height ?? CARD_DEFAULTS.height;
+      for (const drag of [x, x + w / 2, x + w]) {
+        for (const other of [ox, ox + ow / 2, ox + ow]) {
+          const d = Math.abs(drag - other);
+          if (d < bestDx) { bestDx = d; nx = other - (drag - x); }
+        }
+      }
+      for (const drag of [y, y + h / 2, y + h]) {
+        for (const other of [oy, oy + oh / 2, oy + oh]) {
+          const d = Math.abs(drag - other);
+          if (d < bestDy) { bestDy = d; ny = other - (drag - y); }
+        }
       }
     }
-    return { x, y };
-  }
-
-  handleDragEnterBoard(boardId: string) {
-    if (this.draggedBoardId) this.dragTargetBoardId.set(boardId);
-  }
-
-  handleDragLeaveBoard() {
-    this.dragTargetBoardId.set(null);
-  }
-
-  handleDropOnBoard(boardId: string, event: DragEvent) {
-    event.preventDefault();
-
-    if (this.draggedBoardId && this.draggedBoardId !== boardId) {
-      const dragged = this.boardService.boards().find(b => b.id === this.draggedBoardId);
-      const target = this.boardService.boards().find(b => b.id === boardId);
-      if (dragged && target && !target.parentId && !dragged.parentId) {
-        this.boardService.moveBoardToParent(this.draggedBoardId, boardId);
-        if (!this.expandedFolders().has(boardId)) this.toggleExpand(boardId);
-        this.toastService.show(`Moved "${dragged.name}" under "${target.name}"`, 'success');
-      }
-      this.draggedBoardId = null;
-      this.draggingBoardId.set(null);
-      this.dragTargetBoardId.set(null);
-      return;
-    }
-
-    if (this.pointerDrag && boardId !== this.activeBoardId()) {
-      const card = this.boardService.cards().find(c => c.id === this.pointerDrag!.cardId);
-      if (card) {
-        this.boardService.updateCard({ ...card, boardId });
-        this.toastService.show('Moved note to board', 'success');
-      }
-    }
-    this.dragTargetBoardId.set(null);
+    return { x: Math.max(0, nx), y: Math.max(0, ny) };
   }
 
   handleDragOver(event: DragEvent) {
@@ -949,12 +665,13 @@ export class BoardComponent implements OnInit, OnDestroy {
     if (!mdFiles.length) return;
     event.preventDefault();
     event.stopPropagation();
+    let imported = 0;
     for (const file of mdFiles) {
       const text = await this.ioService.readFileAsText(file);
       const parsed = this.ioService.parseMarkdownContent(text);
       if (!parsed.title || parsed.title === 'Imported Note') parsed.title = file.name.replace(/\.[^/.]+$/, '');
       this.markdownService.invalidate(parsed.content);
-      this.boardService.addCard({
+      const added = this.boardService.addCard({
         title: parsed.title || 'Untitled',
         content: parsed.content || '',
         tags: parsed.tags || [],
@@ -964,7 +681,13 @@ export class BoardComponent implements OnInit, OnDestroy {
         isPinned: parsed.isPinned,
         boardId: this.activeBoardId()
       });
+      if (!added) break;
+      imported++;
     }
-    this.toastService.show(`${mdFiles.length} note${mdFiles.length > 1 ? 's' : ''} imported`, 'success');
+    if (imported < mdFiles.length) {
+      this.toastService.show(`Imported ${imported}/${mdFiles.length} notes — board full (max ${MAX_CARDS_PER_BOARD})`, 'error');
+    } else {
+      this.toastService.show(`${imported} note${imported > 1 ? 's' : ''} imported`, 'success');
+    }
   }
 }
