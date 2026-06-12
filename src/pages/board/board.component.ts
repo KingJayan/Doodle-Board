@@ -13,6 +13,7 @@ import { IconComponent } from '../../components/icon/icon.component';
 import { AiService } from '../../services/ai.service';
 import { ToastService } from '../../services/toast.service';
 import { ThemeService } from '../../services/theme.service';
+import { PreferencesService } from '../../services/preferences.service';
 import { Card, Board, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.model';
 
 @Component({
@@ -25,7 +26,7 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mode
 
       <!-- bg motifs per-theme -->
       <div class="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-        @for (doodle of doodles; track $index) {
+        @for (doodle of visibleDoodles(); track $index) {
           <svg
             class="absolute transition-colors duration-500"
             [style.left.%]="doodle.x"
@@ -56,8 +57,8 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mode
             <div class="relative group">
               <input
                 type="text"
-                [ngModel]="searchQuery()"
-                (ngModelChange)="searchQuery.set($event)"
+                [ngModel]="searchRaw()"
+                (ngModelChange)="onSearch($event)"
                 placeholder="Search notes..."
                 class="doodle-input bg-[var(--surface)]/60 rounded-full px-4 py-1 w-48 focus:w-64 transition-all"
               />
@@ -291,7 +292,7 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mode
                   [class.animate-popIn]="!justSwitchedBoard() && !themeService.reduceMotion()"
                   [class.animate-cardEnter]="justSwitchedBoard() && !themeService.reduceMotion()"
                   [class.is-dragging]="draggingCardId() === card.id"
-                  [style.animation-delay]="($index * 50) + 'ms'"
+                  [style.animation-delay]="(Math.min($index, 12) * 50) + 'ms'"
                   draggable="true"
                   (dragstart)="handleDragStart(card.id, $event)"
                   (dragend)="handleDragEnd()"
@@ -426,6 +427,7 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mode
 export class BoardComponent implements OnInit, OnDestroy {
   private boardService = inject(BoardService);
   themeService = inject(ThemeService);
+  private prefs = inject(PreferencesService);
   router = inject(Router);
   private aiService = inject(AiService);
   aiAvailable = this.aiService.isAvailable;
@@ -438,7 +440,9 @@ export class BoardComponent implements OnInit, OnDestroy {
   toggleSticker = (id: string, sticker: string) => this.boardService.toggleSticker(id, sticker);
   togglePin = (id: string) => this.boardService.togglePin(id);
 
+  searchRaw = signal('');
   searchQuery = signal('');
+  private searchTimer: ReturnType<typeof setTimeout> | null = null;
   activeTag = signal<string | null>(null);
   activeBoardId = signal<string>('default');
 
@@ -506,7 +510,15 @@ export class BoardComponent implements OnInit, OnDestroy {
   renamingBoardId = signal<string | null>(null);
 
   motifs = this.themeService.motifs;
-  doodles: { x: number; y: number; rot: number; scale: number; mi: number }[] = [];
+  private allDoodles = signal<{ x: number; y: number; rot: number; scale: number; mi: number }[]>([]);
+  visibleDoodles = computed(() => {
+    const tier = this.prefs.effectiveTier();
+    const all = this.allDoodles();
+    if (tier === 'lite') return [];
+    if (tier === 'balanced') return all.slice(0, Math.ceil(all.length / 2));
+    return all;
+  });
+  readonly Math = Math;
   private draggedCardId: string | null = null;
   private draggedBoardId: string | null = null;
 
@@ -533,13 +545,13 @@ export class BoardComponent implements OnInit, OnDestroy {
   }
 
   private generateBackgroundDoodles() {
-    this.doodles = Array.from({ length: 14 }, (_, i) => ({
+    this.allDoodles.set(Array.from({ length: 14 }, (_, i) => ({
       x: Math.random() * 100,
       y: Math.random() * 100,
       rot: Math.random() * 360,
       scale: 0.5 + Math.random() * 1.5,
       mi: i
-    }));
+    })));
   }
 
   hasChildren(boardId: string): boolean {
@@ -600,6 +612,12 @@ export class BoardComponent implements OnInit, OnDestroy {
   currentBoardName = computed(() =>
     this.boardService.boards().find((b: Board) => b.id === this.activeBoardId())?.name ?? 'Board'
   );
+
+  onSearch(val: string) {
+    this.searchRaw.set(val);
+    if (this.searchTimer) clearTimeout(this.searchTimer);
+    this.searchTimer = setTimeout(() => this.searchQuery.set(val), 150);
+  }
 
   createBoard(name: string) {
     if (!name.trim()) return;

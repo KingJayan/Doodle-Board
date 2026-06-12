@@ -1,17 +1,18 @@
 import { Component, Output, EventEmitter, inject, signal, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, TitleCasePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ThemeService, ThemeDef } from '../../services/theme.service';
+import { PreferencesService, PerfPreset } from '../../services/preferences.service';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
 import { IconComponent } from '../icon/icon.component';
-const version = '1.0.0';
+const version = '1.1.0';
 
 @Component({
   selector: 'app-settings-modal',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, IconComponent],
+  imports: [CommonModule, FormsModule, IconComponent, TitleCasePipe],
   template: `
     <div class="fixed inset-0 z-overlay flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" [class.animate-modalOut]="isClosing()" (click)="startClose()">
       <div role="dialog" aria-modal="true" aria-labelledby="settings-title" class="bg-[var(--paper-color)] p-6 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-xl doodle-border relative text-[var(--ink-color)]" (click)="$event.stopPropagation()">
@@ -173,14 +174,38 @@ const version = '1.0.0';
             }
           </div>
 
+          <!-- PERFORMANCE -->
+          <div>
+            <h3 class="font-bold mb-3 text-lg border-b border-[var(--ink-color)] pb-1">Performance</h3>
+            <div class="flex flex-col gap-2">
+              @for (opt of perfPresets; track opt.value) {
+                <label
+                  class="flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all hover-surface"
+                  [class.border-soft]="prefs.perfPreset() !== opt.value"
+                  [style.border-color]="prefs.perfPreset() === opt.value ? 'var(--accent)' : null"
+                  [style.box-shadow]="prefs.perfPreset() === opt.value ? '0 0 0 1px var(--accent)' : null"
+                >
+                  <input type="radio" name="perfPreset" [value]="opt.value" [checked]="prefs.perfPreset() === opt.value" (change)="prefs.perfPreset.set(opt.value)" class="accent-[var(--accent)]">
+                  <div class="flex-1">
+                    <div class="font-bold text-sm">{{ opt.label }}</div>
+                    <div class="text-muted text-xs">{{ opt.desc }}</div>
+                    @if (opt.value === 'auto' && prefs.perfPreset() === 'auto') {
+                      <div class="text-xs mt-0.5 opacity-60">Detected: {{ prefs.detectedTier() | titlecase }} on this device</div>
+                    }
+                  </div>
+                </label>
+              }
+            </div>
+          </div>
+
           <!-- ACCESSIBILITY -->
           <div>
             <h3 class="font-bold mb-3 text-lg border-b border-[var(--ink-color)] pb-1">Accessibility</h3>
             <label class="flex items-center gap-3 cursor-pointer select-none">
               <input
                 type="checkbox"
-                [checked]="themeService.reduceMotion()"
-                (change)="themeService.toggleMotion()"
+                [checked]="prefs.reduceMotion()"
+                (change)="prefs.reduceMotion.update(v => !v)"
                 class="w-5 h-5 accent-[var(--ink-color)]"
               >
               <span>Reduce Motion (No wiggles)</span>
@@ -251,8 +276,16 @@ const version = '1.0.0';
 })
 export class SettingsModalComponent {
   themeService = inject(ThemeService);
+  prefs = inject(PreferencesService);
   authService = inject(AuthService);
   toastService = inject(ToastService);
+
+  readonly perfPresets: { value: PerfPreset; label: string; desc: string }[] = [
+    { value: 'auto', label: 'Auto (Recommended)', desc: 'Detects your device capabilities automatically.' },
+    { value: 'full', label: 'Full', desc: 'All animations and effects enabled.' },
+    { value: 'balanced', label: 'Balanced', desc: 'Reduced blur and capped stagger animations.' },
+    { value: 'lite', label: 'Lite', desc: 'No animations, no blur, no background motifs.' },
+  ];
   @Output() close = new EventEmitter<void>();
   protected readonly version = version;
 

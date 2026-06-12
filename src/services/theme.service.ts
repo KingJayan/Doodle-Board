@@ -1,5 +1,6 @@
 
-import { Injectable, signal, computed, effect } from '@angular/core';
+import { Injectable, signal, computed, effect, inject } from '@angular/core';
+import { PreferencesService } from './preferences.service';
 import type { IconName } from '../components/icon/icon.component';
 
 /*
@@ -493,10 +494,12 @@ export const THEMES: Record<string, ThemeDef> = Object.fromEntries(
 })
 export class ThemeService {
   mode = signal<ThemeMode>('system');
-  reduceMotion = signal<boolean>(false);
 
+  private prefs = inject(PreferencesService);
   private systemDark = signal<boolean>(false);
   private mql = window.matchMedia('(prefers-color-scheme: dark)');
+
+  get reduceMotion() { return this.prefs.reduceMotion; }
 
   resolvedTheme = computed<ThemeName>(() => {
     const m = this.mode();
@@ -521,22 +524,9 @@ export class ThemeService {
     this.systemDark.set(this.mql.matches);
     this.mql.addEventListener('change', (e) => this.systemDark.set(e.matches));
 
-    const savedMotion = localStorage.getItem('doodle_motion');
-    this.reduceMotion.set(
-      savedMotion !== null
-        ? JSON.parse(savedMotion)
-        : window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    );
-
     effect(() => {
       this.applyTheme(this.resolvedTheme());
       localStorage.setItem('doodle_theme', this.mode());
-    });
-
-    effect(() => {
-      const rm = this.reduceMotion();
-      localStorage.setItem('doodle_motion', JSON.stringify(rm));
-      document.body.classList.toggle('reduce-motion', rm);
     });
   }
 

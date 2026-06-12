@@ -151,3 +151,29 @@ h1, h2, h3, .marker-font {
     transition-duration: 0.001ms !important;
   }
 }
+
+[data-perf='lite'] .micro-anim {
+  animation: none !important;
+  transition: none !important;
+}
+
+[data-perf='balanced'] .backdrop-blur-sm,
+[data-perf='balanced'] .backdrop-blur,
+[data-perf='lite'] .backdrop-blur-sm,
+[data-perf='lite'] .backdrop-blur {
+  backdrop-filter: none !important;
+}
+
+[data-perf='lite'] .card-shadow {
+  box-shadow: none !important;
+  border: 1px solid var(--border-soft) !important;
+}
+
+[data-perf='lite'] .hover\:scale-\[1\.02\]:hover {
+  transform: none !important;
+}
+
+app-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 240px;
+}
