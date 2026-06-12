@@ -220,7 +220,7 @@ import { IconComponent, iconFor } from '../icon/icon.component';
         @if (!card().isMinimized && !isEditing()) {
           <div
             class="absolute -bottom-3 -right-3 w-12 h-12 cursor-se-resize z-card-float flex items-center justify-center group/resize"
-            (mousedown)="startResize($event)"
+            (pointerdown)="startResize($event)"
           >
             <svg viewBox="0 0 10 10" class="w-5 h-5 fill-black/20 group-hover/resize:fill-black/80 transition-colors transform -translate-x-2 -translate-y-2">
               <path d="M 6 10 L 10 10 L 10 6 Z" />
@@ -325,8 +325,8 @@ export class CardComponent implements OnDestroy {
   private startY = 0;
   private startWidth = 0;
   private startHeight = 0;
-  private resizeListener?: (e: MouseEvent) => void;
-  private stopResizeListener?: (e: MouseEvent) => void;
+  private resizeListener?: (e: PointerEvent) => void;
+  private stopResizeListener?: (e: PointerEvent) => void;
 
   private escapeHtml(text: string): string {
     return (text || '')
@@ -481,7 +481,7 @@ export class CardComponent implements OnDestroy {
     this.toastService.show('Moved note to board!', 'success');
   }
 
-  startResize(event: MouseEvent) {
+  startResize(event: PointerEvent) {
     event.preventDefault();
     event.stopPropagation();
     this.isResizing.set(true);
@@ -494,11 +494,11 @@ export class CardComponent implements OnDestroy {
 
     this.resizeListener = this.onResize.bind(this);
     this.stopResizeListener = this.stopResize.bind(this);
-    window.addEventListener('mousemove', this.resizeListener);
-    window.addEventListener('mouseup', this.stopResizeListener);
+    window.addEventListener('pointermove', this.resizeListener);
+    window.addEventListener('pointerup', this.stopResizeListener);
   }
 
-  private onResize(event: MouseEvent) {
+  private onResize(event: PointerEvent) {
     if (!this.isResizing()) return;
     this.previewWidth.set(Math.max(CARD_DEFAULTS.minWidth, this.startWidth + event.clientX - this.startX));
     this.previewHeight.set(Math.max(CARD_DEFAULTS.minHeight, this.startHeight + event.clientY - this.startY));
@@ -506,15 +506,15 @@ export class CardComponent implements OnDestroy {
 
   private stopResize() {
     this.isResizing.set(false);
-    window.removeEventListener('mousemove', this.resizeListener!);
-    window.removeEventListener('mouseup', this.stopResizeListener!);
+    window.removeEventListener('pointermove', this.resizeListener!);
+    window.removeEventListener('pointerup', this.stopResizeListener!);
     this.update.emit({ ...this.card(), width: this.previewWidth(), height: this.previewHeight() });
   }
 
   ngOnDestroy() {
     if (this.isResizing() && this.resizeListener && this.stopResizeListener) {
-      window.removeEventListener('mousemove', this.resizeListener);
-      window.removeEventListener('mouseup', this.stopResizeListener);
+      window.removeEventListener('pointermove', this.resizeListener);
+      window.removeEventListener('pointerup', this.stopResizeListener);
     }
   }
 }

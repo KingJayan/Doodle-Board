@@ -195,54 +195,58 @@ export class BoardService {
 
   private async writeCard(card: Card, position?: string) {
     const now = Date.now();
-    const existing = await db.cards.get(card.id);
-    const pos = position ?? card.position ?? existing?.position ?? this.nextFrontPosition(card.boardId);
-    const rev = (existing?._rev ?? 0) + 1;
-    await db.cards.put({
-      id: card.id,
-      boardId: card.boardId,
-      title: card.title,
-      content: card.content,
-      tags: card.tags,
-      color: card.color,
-      rotation: card.rotation,
-      stickers: card.stickers,
-      isPinned: card.isPinned ? 1 : 0,
-      isMinimized: card.isMinimized ? 1 : 0,
-      position: pos,
-      x: card.x ?? null,
-      y: card.y ?? null,
-      width: card.width ?? null,
-      height: card.height ?? null,
-      createdAt: existing?.createdAt ?? card.updatedAt,
-      updatedAt: card.updatedAt,
-      ownerId: existing?.ownerId ?? this.auth.authState().userId ?? null,
-      _rev: rev,
-      _dirty: 1,
-      _deleted: 0,
-      _serverUpdatedAt: existing?._serverUpdatedAt ?? null
+    await db.transaction('rw', db.cards, db.outbox, async () => {
+      const existing = await db.cards.get(card.id);
+      const pos = position ?? card.position ?? existing?.position ?? this.nextFrontPosition(card.boardId);
+      const rev = (existing?._rev ?? 0) + 1;
+      await db.cards.put({
+        id: card.id,
+        boardId: card.boardId,
+        title: card.title,
+        content: card.content,
+        tags: card.tags,
+        color: card.color,
+        rotation: card.rotation,
+        stickers: card.stickers,
+        isPinned: card.isPinned ? 1 : 0,
+        isMinimized: card.isMinimized ? 1 : 0,
+        position: pos,
+        x: card.x ?? null,
+        y: card.y ?? null,
+        width: card.width ?? null,
+        height: card.height ?? null,
+        createdAt: existing?.createdAt ?? card.updatedAt,
+        updatedAt: card.updatedAt,
+        ownerId: existing?.ownerId ?? this.auth.authState().userId ?? null,
+        _rev: rev,
+        _dirty: 1,
+        _deleted: 0,
+        _serverUpdatedAt: existing?._serverUpdatedAt ?? null
+      });
+      await db.outbox.add({ entity: 'card', entityId: card.id, op: 'upsert', payloadRev: rev, enqueuedAt: now, attempts: 0, nextAttemptAt: now, lastError: null });
     });
-    await db.outbox.add({ entity: 'card', entityId: card.id, op: 'upsert', payloadRev: rev, enqueuedAt: now, attempts: 0, nextAttemptAt: now, lastError: null });
   }
 
   private async writeBoard(board: Board) {
     const now = Date.now();
-    const existing = await db.boards.get(board.id);
-    const rev = (existing?._rev ?? 0) + 1;
-    await db.boards.put({
-      id: board.id,
-      name: board.name,
-      position: board.position,
-      parentId: board.parentId ?? null,
-      createdAt: existing?.createdAt ?? now,
-      updatedAt: now,
-      ownerId: existing?.ownerId ?? this.auth.authState().userId ?? null,
-      _rev: rev,
-      _dirty: 1,
-      _deleted: 0,
-      _serverUpdatedAt: existing?._serverUpdatedAt ?? null
+    await db.transaction('rw', db.boards, db.outbox, async () => {
+      const existing = await db.boards.get(board.id);
+      const rev = (existing?._rev ?? 0) + 1;
+      await db.boards.put({
+        id: board.id,
+        name: board.name,
+        position: board.position,
+        parentId: board.parentId ?? null,
+        createdAt: existing?.createdAt ?? now,
+        updatedAt: now,
+        ownerId: existing?.ownerId ?? this.auth.authState().userId ?? null,
+        _rev: rev,
+        _dirty: 1,
+        _deleted: 0,
+        _serverUpdatedAt: existing?._serverUpdatedAt ?? null
+      });
+      await db.outbox.add({ entity: 'board', entityId: board.id, op: 'upsert', payloadRev: rev, enqueuedAt: now, attempts: 0, nextAttemptAt: now, lastError: null });
     });
-    await db.outbox.add({ entity: 'board', entityId: board.id, op: 'upsert', payloadRev: rev, enqueuedAt: now, attempts: 0, nextAttemptAt: now, lastError: null });
   }
 
   private nextFrontPosition(boardId: string): string {
@@ -272,7 +276,7 @@ export class BoardService {
     if (board) this.writeBoard(board);
   }
 
-  deleteBoard(boardId: string) {
+  async deleteBoard(boardId: string) {
     const fallback = this.boards().find(b => b.id !== boardId);
     if (!fallback) return;
     const now = Date.now();
@@ -287,7 +291,7 @@ export class BoardService {
     );
     this.boards.update(b => b.filter(x => x.id !== boardId));
     toMove.forEach(c => this.writeCard(c));
-    db.transaction('rw', db.boards, db.outbox, async () => {
+    await db.transaction('rw', db.boards, db.outbox, async () => {
       const existing = await db.boards.get(boardId);
       if (!existing) return;
       const rev = existing._rev + 1;
@@ -319,8 +323,8 @@ export class BoardService {
   }
 
   addCard(cardData: Partial<Card> & { title: string; content: string; tags: string[] }): boolean {
-    const boardId = cardData.boardId ?? 'default';
-    if (this.boardCardCount(boardId) >= MAX_CARDS_PER_BOARD) return false;
+    const boardId = cardData.boardId ?? this.boards()[0]?.id;
+    if (!boardId || this.boardCardCount(boardId) >= MAX_CARDS_PER_BOARD) return false;
     const pos = this.nextFrontPosition(boardId);
     const { x, y } = cardData.x !== undefined && cardData.y !== undefined
       ? { x: cardData.x, y: cardData.y }
@@ -366,13 +370,13 @@ export class BoardService {
     this.writeCard(card);
   }
 
-  deleteCard(id: string) {
+  async deleteCard(id: string) {
     const card = this.cards().find(c => c.id === id);
     if (!card) return;
     const now = Date.now();
     this.cards.update(cards => cards.filter(c => c.id !== id));
     this.trashedCards.update(t => [{ ...card, updatedAt: now }, ...t]);
-    db.transaction('rw', db.cards, db.outbox, async () => {
+    await db.transaction('rw', db.cards, db.outbox, async () => {
       const existing = await db.cards.get(id);
       if (!existing) return;
       const rev = existing._rev + 1;
@@ -431,7 +435,7 @@ export class BoardService {
       .filter(c => c.boardId === moved.boardId)
       .sort((a, b) =>
         (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0) ||
-        (a.position ?? '') < (b.position ?? '') ? -1 : (a.position ?? '') > (b.position ?? '') ? 1 : 0
+        ((a.position ?? '') < (b.position ?? '') ? -1 : (a.position ?? '') > (b.position ?? '') ? 1 : 0)
       );
     const withoutMoved = boardCards.filter(c => c.id !== movedId);
     const targetIdx = withoutMoved.findIndex(c => c.id === targetId);
@@ -472,13 +476,16 @@ export class BoardService {
   }
 
   importCardsIntoBoard(newCards: Omit<Card, 'position'>[], boardId: string) {
+    const available = MAX_CARDS_PER_BOARD - this.boardCardCount(boardId);
+    if (available <= 0) return;
+    const toImport = newCards.slice(0, available);
     const now = Date.now();
     const boardCards = this.cards().filter(c => c.boardId === boardId);
     const lastPos = boardCards.length > 0
       ? [...boardCards].sort((a, b) => (a.position ?? '') < (b.position ?? '') ? -1 : (a.position ?? '') > (b.position ?? '') ? 1 : 0).pop()?.position ?? null
       : null;
-    const positions = generateNKeysBetween(lastPos, null, newCards.length);
-    const migrated: Card[] = newCards.map((c, i) => ({
+    const positions = generateNKeysBetween(lastPos, null, toImport.length);
+    const migrated: Card[] = toImport.map((c, i) => ({
       ...c,
       id: crypto.randomUUID(),
       boardId,

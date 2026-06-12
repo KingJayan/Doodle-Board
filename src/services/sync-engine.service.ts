@@ -47,13 +47,24 @@ function fromSbCard(r: Record<string, unknown>): DbCard {
 @Injectable({ providedIn: 'root' })
 export class SyncEngineService {
   private running = false;
+  private intervalId: ReturnType<typeof setInterval> | null = null;
 
   constructor(private auth: AuthService, private boardService: BoardService) {
     if (!supabase) return;
-    effect(() => { if (this.auth.authState().userId) untracked(() => this.runCycle()); });
+    effect(() => {
+      const { userId } = this.auth.authState();
+      untracked(() => {
+        if (userId) {
+          this.runCycle();
+          if (!this.intervalId) this.intervalId = setInterval(() => this.runCycle(), 60_000);
+        } else if (this.intervalId) {
+          clearInterval(this.intervalId);
+          this.intervalId = null;
+        }
+      });
+    });
     window.addEventListener('online', () => this.runCycle());
     document.addEventListener('visibilitychange', () => { if (!document.hidden) this.runCycle(); });
-    setInterval(() => this.runCycle(), 60_000);
   }
 
   async runCycle() {
@@ -130,39 +141,50 @@ export class SyncEngineService {
     }
   }
 
+  private async fetchAll(table: 'boards' | 'cards', userId: string, cursorIso: string): Promise<Record<string, unknown>[]> {
+    const PAGE = 1000;
+    const rows: Record<string, unknown>[] = [];
+    for (let from = 0; ; from += PAGE) {
+      const { data, error } = await supabase!.from(table).select('*')
+        .eq('owner_id', userId).gt('updated_at', cursorIso).order('updated_at').range(from, from + PAGE - 1);
+      if (error) throw error;
+      if (data?.length) rows.push(...(data as Record<string, unknown>[]));
+      if (!data || data.length < PAGE) break;
+    }
+    return rows;
+  }
+
   private async pull(userId: string) {
     const cursorRow = await db.meta.get('lastPullCursor');
     const cursor = (cursorRow?.value as number | null) ?? 0;
     const cursorIso = new Date(cursor).toISOString();
 
-    const [{ data: sBoards, error: bErr }, { data: sCards, error: cErr }] = await Promise.all([
-      supabase!.from('boards').select('*').eq('owner_id', userId).gt('updated_at', cursorIso).order('updated_at'),
-      supabase!.from('cards').select('*').eq('owner_id', userId).gt('updated_at', cursorIso).order('updated_at')
+    const [sBoards, sCards] = await Promise.all([
+      this.fetchAll('boards', userId, cursorIso),
+      this.fetchAll('cards', userId, cursorIso)
     ]);
-    if (bErr) throw bErr;
-    if (cErr) throw cErr;
 
     let newCursor = cursor;
     let changed = false;
 
-    for (const sb of (sBoards ?? []) as Record<string, unknown>[]) {
+    for (const sb of sBoards) {
       const st = +new Date(sb['updated_at'] as string);
       const local = await db.boards.get(sb['id'] as string);
       if (!local) {
         if (!sb['deleted']) { await db.boards.put(fromSbBoard(sb)); changed = true; }
-      } else if (local._dirty === 0 || st > local.updatedAt) {
+      } else if (local._dirty === 0) {
         await db.boards.put({ ...fromSbBoard(sb), _rev: local._rev, _dirty: 0 });
         changed = true;
       }
       newCursor = Math.max(newCursor, st);
     }
 
-    for (const sc of (sCards ?? []) as Record<string, unknown>[]) {
+    for (const sc of sCards) {
       const st = +new Date(sc['updated_at'] as string);
       const local = await db.cards.get(sc['id'] as string);
       if (!local) {
         if (!sc['deleted']) { await db.cards.put(fromSbCard(sc)); changed = true; }
-      } else if (local._dirty === 0 || st > local.updatedAt) {
+      } else if (local._dirty === 0) {
         await db.cards.put({ ...fromSbCard(sc), _rev: local._rev, _dirty: 0 });
         changed = true;
       }
