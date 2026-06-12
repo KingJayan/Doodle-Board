@@ -28,6 +28,7 @@ import { Board } from '../../models/card.model';
             [class.active]="activeBoardId === board.id"
             [class.drag-over]="dragTargetBoardId() === board.id && draggedBoardId !== board.id"
             [class.animate-sidebarItemIn]="newBoardId() === board.id && !themeService.reduceMotion()"
+            [attr.data-board-id]="board.id"
             draggable="true"
             (dragstart)="onBoardDragStart(board.id, $event)"
             (dragend)="onBoardDragEnd()"
@@ -36,6 +37,8 @@ import { Board } from '../../models/card.model';
             (dragenter)="dragTargetBoardId.set(board.id)"
             (dragleave)="dragTargetBoardId.set(null)"
             (drop)="onDropOnBoard(board.id, $event)"
+            (pointerenter)="onBoardPointerEnter(board.id)"
+            (pointerleave)="onBoardPointerLeave()"
           >
             @if (hasChildren(board.id)) {
               <button
@@ -92,11 +95,14 @@ import { Board } from '../../models/card.model';
                 [class.active]="activeBoardId === child.id"
                 [class.drag-over]="dragTargetBoardId() === child.id"
                 [class.animate-sidebarItemIn]="newBoardId() === child.id && !themeService.reduceMotion()"
+                [attr.data-board-id]="child.id"
                 (click)="selectBoard(child.id)"
                 (dragover)="onDragOver($event)"
                 (dragenter)="dragTargetBoardId.set(child.id)"
                 (dragleave)="dragTargetBoardId.set(null)"
                 (drop)="onDropOnBoard(child.id, $event)"
+                (pointerenter)="onBoardPointerEnter(child.id)"
+                (pointerleave)="onBoardPointerLeave()"
               >
                 <span class="text-base flex-none"><app-icon name="page"></app-icon></span>
                 @if (renamingBoardId() === child.id) {
@@ -268,6 +274,14 @@ export class BoardSidebarComponent implements OnInit {
         this.toastService.show('Board deleted', 'info');
       }
     });
+  }
+
+  onBoardPointerEnter(boardId: string) {
+    if (this.draggingCardId) this.dragTargetBoardId.set(boardId);
+  }
+
+  onBoardPointerLeave() {
+    if (this.draggingCardId) this.dragTargetBoardId.set(null);
   }
 
   onBoardDragStart(boardId: string, event: DragEvent) {

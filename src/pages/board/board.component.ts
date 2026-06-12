@@ -317,6 +317,7 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI, CARD_DEFAULTS } from '../../m
       transform: rotate(calc(2deg * var(--motion-scale)));
       box-shadow: 0 16px 40px rgba(0,0,0,0.25);
       z-index: 50;
+      pointer-events: none;
     }
   `]
 })
@@ -609,12 +610,27 @@ export class BoardComponent implements OnInit, OnDestroy {
 
     const upHandler = (e: PointerEvent) => {
       if (!this.pointerDrag) return;
-      const dx = e.clientX - this.pointerDrag.startX;
-      const dy = e.clientY - this.pointerDrag.startY;
-      const { x: nx, y: ny } = this.alignSnap(cardId, this.pointerDrag.origX + dx, this.pointerDrag.origY + dy);
-      this.boardService.moveCard(cardId, nx, ny);
       window.removeEventListener('pointermove', moveHandler);
       window.removeEventListener('pointerup', upHandler);
+
+      const boardEl = document.elementsFromPoint(e.clientX, e.clientY)
+        .find(el => (el as HTMLElement).dataset?.['boardId']) as HTMLElement | undefined;
+      const targetBoardId = boardEl?.dataset?.['boardId'];
+
+      if (targetBoardId) {
+        const card = this.boardService.cards().find(c => c.id === cardId);
+        if (card && targetBoardId !== card.boardId) {
+          this.boardService.updateCard({ ...card, boardId: targetBoardId });
+          this.toastService.show('Moved note to board', 'success');
+        }
+        this.boardService.cards.update(cs => cs.map(c => c.id === cardId ? { ...c, x: this.pointerDrag!.origX, y: this.pointerDrag!.origY } : c));
+      } else {
+        const dx = e.clientX - this.pointerDrag.startX;
+        const dy = e.clientY - this.pointerDrag.startY;
+        const { x: nx, y: ny } = this.alignSnap(cardId, this.pointerDrag.origX + dx, this.pointerDrag.origY + dy);
+        this.boardService.moveCard(cardId, nx, ny);
+      }
+
       this.pointerDrag = null;
       const dropped = cardId;
       this.draggingCardId.set(null);
