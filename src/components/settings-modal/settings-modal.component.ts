@@ -6,7 +6,7 @@ import { PreferencesService, PerfPreset } from '../../services/preferences.servi
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
 import { IconComponent } from '../icon/icon.component';
-const version = '1.1.1';
+const version = '1.1.2';
 
 @Component({
   selector: 'app-settings-modal',

@@ -102,7 +102,7 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mode
         </div>
       </header>
 
-      <div class="flex flex-grow relative max-w-7xl mx-auto w-full min-h-0 overflow-hidden">
+      <div class="flex flex-grow relative max-w-7xl mx-auto w-full min-h-0">
 
         <!-- sidebar -->
         <aside
