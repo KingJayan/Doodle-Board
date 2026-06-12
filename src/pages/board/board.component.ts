@@ -46,7 +46,7 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI, CARD_DEFAULTS } from '../../m
       </div>
 
       <!-- header + toolbar -->
-      <header class="sticky top-0 z-40 bg-[var(--paper-color)]/95 backdrop-blur-sm border-b-2 border-[var(--ink-color)] shadow-sm p-4 transition-all">
+      <header class="z-40 bg-[var(--paper-color)]/95 backdrop-blur-sm border-b-2 border-[var(--ink-color)] shadow-sm p-4 transition-all">
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row gap-4 justify-between items-center">
 
           <div class="flex items-center gap-2 cursor-pointer group" (click)="router.navigate(['/'])">

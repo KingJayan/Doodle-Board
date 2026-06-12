@@ -34,6 +34,7 @@ function dbToBoard(b: DbBoard): Board {
 }
 
 export const MAX_CARDS_PER_BOARD = 20;
+export type SyncStatus = 'Saved locally' | 'Syncing…' | 'Backed up' | 'Offline' | 'Sync error';
 
 @Injectable({ providedIn: 'root' })
 export class BoardService {
@@ -41,7 +42,7 @@ export class BoardService {
   readonly boards = signal<Board[]>([]);
   readonly topLevelBoards = computed(() => this.boards().filter(b => !b.parentId));
   readonly trashedCards = signal<Card[]>([]);
-  readonly syncStatus = signal<string>('Saved locally');
+  readonly syncStatus = signal<SyncStatus>('Saved locally');
   readonly isHydrating = signal(true);
 
   private themeService = inject(ThemeService);

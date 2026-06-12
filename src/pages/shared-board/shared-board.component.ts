@@ -7,12 +7,13 @@ import { AuthService } from '../../services/auth.service';
 import { BoardService } from '../../services/board.service';
 import { ToastService } from '../../services/toast.service';
 import { Card } from '../../models/card.model';
+import { IconComponent } from '../../components/icon/icon.component';
 
 @Component({
   selector: 'app-shared-board',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule],
+  imports: [CommonModule, IconComponent],
   template: `
     <div class="min-h-screen bg-[var(--paper-color)] text-[var(--ink-color)]">
 
@@ -31,7 +32,7 @@ import { Card } from '../../models/card.model';
                 [disabled]="duplicating()"
                 class="doodle-btn bg-[var(--tint-green)] text-[var(--ink-color)] font-bold text-sm"
               >
-                {{ duplicating() ? 'Copying...' : '⊕ Duplicate to my workspace' }}
+                {{ duplicating() ? 'Copying...' : '+ Duplicate to my workspace' }}
               </button>
             </div>
           }
@@ -44,7 +45,7 @@ import { Card } from '../../models/card.model';
           <div class="text-center py-32 text-muted text-xl opacity-60">Loading shared board...</div>
         } @else if (!payload()) {
           <div class="text-center py-32">
-            <div class="text-6xl mb-4">🔗</div>
+            <div class="text-6xl mb-4"><app-icon name="warning"></app-icon></div>
             <p class="text-2xl marker-font mb-2">Link not found</p>
             <p class="text-muted">This share link is invalid, expired, or has been revoked.</p>
             <button (click)="router.navigate(['/'])" class="doodle-btn mt-6">Go to DoodleBoard</button>
@@ -68,7 +69,7 @@ import { Card } from '../../models/card.model';
                   </div>
                 }
                 @if (card.isPinned) {
-                  <span class="text-xs font-bold opacity-60">📌 Pinned</span>
+                  <span class="text-xs font-bold opacity-60"><app-icon name="pin"></app-icon> Pinned</span>
                 }
                 <p class="font-bold text-base leading-tight break-words" style="font-family: var(--font-display)">
                   {{ card.title || 'Untitled' }}

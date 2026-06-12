@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
       const topic = raw.slice(0, 500) || 'Something random and interesting';
       const text = await gemini(
         apiKey,
-        `Create a creative sticky note about: "${topic}". Return a JSON object with 'title' (max 5 words), 'content' (max 20 words), and 'tags' (array of 1-3 strings). Keep the tone playful and handwritten.`,
+        `Create a sticky note about: "${topic}". Return a JSON object with 'title' (max 5 words), 'content' (max 20 words), and 'tags' (array of 1-3 strings).`,
         {
           type: 'OBJECT',
           properties: {
