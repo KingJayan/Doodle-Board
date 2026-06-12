@@ -3,4 +3,6 @@ dist
 .DS_Store
 supabase/.temp
 .env
+.env.*
+*.local
 docs/

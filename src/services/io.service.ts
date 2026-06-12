@@ -7,9 +7,10 @@ import { Card } from '../models/card.model';
 export class IoService {
 
   createMarkdownContent(card: Card): string {
-    const frontmatter = {
+    const frontmatter: Record<string, unknown> = {
       id: card.id,
       title: card.title,
+      boardId: card.boardId,
       tags: card.tags,
       color: card.color,
       rotation: card.rotation,
@@ -17,6 +18,10 @@ export class IoService {
       isPinned: card.isPinned,
       updatedAt: card.updatedAt
     };
+    if (card.x != null) frontmatter['x'] = card.x;
+    if (card.y != null) frontmatter['y'] = card.y;
+    if (card.width != null) frontmatter['width'] = card.width;
+    if (card.height != null) frontmatter['height'] = card.height;
     return `---\n${yamlDump(frontmatter)}---\n\n${card.content}`;
   }
 
@@ -31,10 +36,15 @@ export class IoService {
           const safe: Partial<Card> = {};
           if (typeof raw['id'] === 'string') safe.id = raw['id'];
           if (typeof raw['title'] === 'string') safe.title = raw['title'];
+          if (typeof raw['boardId'] === 'string') safe.boardId = raw['boardId'];
           if (typeof raw['color'] === 'string') safe.color = raw['color'];
           if (typeof raw['rotation'] === 'number') safe.rotation = raw['rotation'];
           if (typeof raw['isPinned'] === 'boolean') safe.isPinned = raw['isPinned'];
           if (typeof raw['updatedAt'] === 'number') safe.updatedAt = raw['updatedAt'];
+          if (typeof raw['x'] === 'number') safe.x = raw['x'];
+          if (typeof raw['y'] === 'number') safe.y = raw['y'];
+          if (typeof raw['width'] === 'number') safe.width = raw['width'];
+          if (typeof raw['height'] === 'number') safe.height = raw['height'];
           if (Array.isArray(raw['tags']) && raw['tags'].every(t => typeof t === 'string')) safe.tags = raw['tags'];
           if (Array.isArray(raw['stickers']) && raw['stickers'].every(s => typeof s === 'string')) safe.stickers = raw['stickers'];
           return { ...safe, content };
