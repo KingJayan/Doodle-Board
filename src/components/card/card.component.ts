@@ -1,10 +1,11 @@
-import { Component, input, Output, EventEmitter, computed, signal, ChangeDetectionStrategy, inject, OnDestroy } from '@angular/core';
+import { Component, input, Output, EventEmitter, computed, signal, ChangeDetectionStrategy, inject, OnDestroy, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Card, CARD_PALETTE, CARD_DEFAULTS } from '../../models/card.model';
 import { BoardService } from '../../services/board.service';
 import { ToastService } from '../../services/toast.service';
 import { ThemeService } from '../../services/theme.service';
+import { MarkdownService } from '../../services/markdown.service';
 import { IconComponent, iconFor } from '../icon/icon.component';
 
 @Component({
@@ -193,8 +194,9 @@ import { IconComponent, iconFor } from '../icon/icon.component';
               <div class="text-base italic opacity-60 mt-1">Minimized</div>
             } @else {
               <div
-                class="whitespace-pre-wrap flex-grow leading-relaxed text-lg break-words markdown-content overflow-y-auto pr-2 custom-scroll"
+                class="flex-grow leading-relaxed text-lg break-words markdown-content overflow-y-auto pr-2 custom-scroll"
                 [innerHTML]="parsedContent()"
+                (click)="onCheckboxClick($event)"
               ></div>
             }
 
@@ -229,21 +231,6 @@ import { IconComponent, iconFor } from '../icon/icon.component';
   styles: [`
     .card-shadow { box-shadow: var(--card-shadow); }
     :host { display: block; }
-    :host ::ng-deep .markdown-content strong { font-weight: 800; }
-    :host ::ng-deep .markdown-content em { font-style: italic; }
-    :host ::ng-deep .markdown-content ul { list-style-type: disc; padding-left: 1em; }
-    :host ::ng-deep .markdown-content blockquote {
-      border-left: 4px solid rgba(0,0,0,0.2);
-      padding-left: 0.5em;
-      margin-left: 0;
-      font-style: italic;
-      opacity: 0.8;
-    }
-    :host ::ng-deep .markdown-content code { font-family: monospace; background: rgba(0,0,0,0.08); padding: 0 3px; border-radius: 3px; font-size: 0.9em; }
-    :host ::ng-deep .markdown-content h3 { font-weight: 800; font-size: 1.1em; margin: 0.3em 0; }
-    :host ::ng-deep .markdown-content h4 { font-weight: 700; font-size: 1em; margin: 0.2em 0; }
-    :host ::ng-deep .markdown-content hr { border: none; border-top: 1px solid rgba(0,0,0,0.2); margin: 0.5em 0; }
-    :host ::ng-deep mark { background-color: #fef08a; padding: 0 2px; border-radius: 2px; }
     .custom-scroll::-webkit-scrollbar { width: 6px; }
     .custom-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 4px; }
     .animate-pinPulse { animation: pinPulse 0.2s var(--ease-stamp); }
@@ -277,6 +264,7 @@ export class CardComponent implements OnDestroy {
   boardService = inject(BoardService);
   private toastService = inject(ToastService);
   private themeService = inject(ThemeService);
+  private markdownService = inject(MarkdownService);
 
   /** Theme-aware sticky-note background (darkened on dark themes). */
   noteBg = (hex: string) => this.themeService.noteBg(hex);
@@ -303,14 +291,20 @@ export class CardComponent implements OnDestroy {
   isSaving = signal(false);
   showMoveMenu = signal(false);
   editForm = { title: '', content: '' };
+  renderedContent = signal<string>('');
 
   previewWidth = signal(0);
   previewHeight = signal(0);
-  // Themes that lay notes on a grid (Blueprint, Terminal) zero out the tilt;
-  // breezy themes (Sakura) amplify it. See ThemeService.tilt.
   rotationStyle = computed(() => `rotate(${this.card().rotation * this.themeService.tilt()}deg)`);
 
   readonly palette = CARD_PALETTE;
+
+  constructor() {
+    effect(() => {
+      const content = this.card().content;
+      this.markdownService.render(content).then(html => this.renderedContent.set(html));
+    });
+  }
 
   stickerTop(i: number) { return (i % 3) * CARD_DEFAULTS.stickerColStep + CARD_DEFAULTS.stickerOffset; }
   stickerRight(i: number) { return Math.floor(i / 3) * CARD_DEFAULTS.stickerRowStep + CARD_DEFAULTS.stickerOffset; }
@@ -323,7 +317,7 @@ export class CardComponent implements OnDestroy {
   private stopResizeListener?: (e: MouseEvent) => void;
 
   private escapeHtml(text: string): string {
-    return text
+    return (text || '')
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
@@ -332,7 +326,7 @@ export class CardComponent implements OnDestroy {
   }
 
   highlightText(text: string): string {
-    const safe = this.escapeHtml(text || '');
+    const safe = this.escapeHtml(text);
     const query = this.searchQuery();
     if (!query) return safe;
     try {
@@ -344,43 +338,15 @@ export class CardComponent implements OnDestroy {
   }
 
   parsedContent = computed(() => {
-    const inlineFormat = (s: string) =>
-      this.escapeHtml(s)
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\*(.*?)\*/g, '<em>$1</em>')
-        .replace(/`(.*?)`/g, '<code>$1</code>');
-
-    const lines = (this.card().content || '').split('\n');
-    const out: string[] = [];
-    let inList = false;
-
-    for (const line of lines) {
-      const listMatch = line.match(/^-\s+(.*)/);
-      if (listMatch) {
-        if (!inList) { out.push('<ul>'); inList = true; }
-        out.push(`<li>${inlineFormat(listMatch[1])}</li>`);
-      } else {
-        if (inList) { out.push('</ul>'); inList = false; }
-        if (/^---+$/.test(line.trim())) { out.push('<hr>'); continue; }
-        const h1Match = line.match(/^#\s+(.*)/);
-        if (h1Match) { out.push(`<h3>${inlineFormat(h1Match[1])}</h3>`); continue; }
-        const h2Match = line.match(/^##\s+(.*)/);
-        if (h2Match) { out.push(`<h4>${inlineFormat(h2Match[1])}</h4>`); continue; }
-        const quoteMatch = line.match(/^>\s+(.*)/);
-        out.push(quoteMatch ? `<blockquote>${inlineFormat(quoteMatch[1])}</blockquote>` : inlineFormat(line));
-      }
-    }
-    if (inList) out.push('</ul>');
-
-    let text = out.join('\n');
+    let html = this.renderedContent();
     const query = this.searchQuery();
-    if (query) {
+    if (query && html) {
       try {
         const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})(?![^<]*>)`, 'gi');
-        text = text.replace(regex, '<mark>$1</mark>');
+        html = html.replace(regex, '<mark>$1</mark>');
       } catch {}
     }
-    return text;
+    return html;
   });
 
   startEdit() {
@@ -396,6 +362,7 @@ export class CardComponent implements OnDestroy {
   }
 
   saveEdit() {
+    this.markdownService.invalidate(this.card().content);
     this.update.emit({ ...this.card(), title: this.editForm.title || 'Untitled', content: this.editForm.content });
     this.isEditing.set(false);
     this.isSaving.set(true);
@@ -424,6 +391,27 @@ export class CardComponent implements OnDestroy {
   handleTagClick(tag: string, event: Event) {
     event.stopPropagation();
     this.tagClick.emit(tag);
+  }
+
+  onCheckboxClick(event: Event) {
+    const target = event.target as HTMLElement;
+    if (target.tagName !== 'INPUT' || (target as HTMLInputElement).type !== 'checkbox') return;
+    event.stopPropagation();
+    event.preventDefault();
+    const allCheckboxes = (event.currentTarget as HTMLElement).querySelectorAll('input[type=checkbox]');
+    const idx = Array.from(allCheckboxes).indexOf(target as HTMLInputElement);
+    if (idx === -1) return;
+    const content = this.card().content;
+    let count = 0;
+    const updated = content.replace(/^(\s*- \[)([x ])(\])/gm, (match, pre, state, post) => {
+      const result = count === idx ? `${pre}${state === ' ' ? 'x' : ' '}${post}` : match;
+      count++;
+      return result;
+    });
+    if (updated !== content) {
+      this.markdownService.invalidate(content);
+      this.update.emit({ ...this.card(), content: updated });
+    }
   }
 
   changeColor(color: string, event: Event) {

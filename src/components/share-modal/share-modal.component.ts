@@ -70,10 +70,11 @@ import { IconComponent } from '../icon/icon.component';
                 class="block w-full text-xs text-muted file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[var(--surface-2)] file:text-[var(--ink-color)] hover:file:bg-[var(--surface-hover)]"
               />
             </div>
-            <div class="bg-[var(--tint-yellow)] p-4 rounded-lg border border-soft">
-              <h3 class="font-bold mb-2"><app-icon name="package"></app-icon> Export Board</h3>
-              <p class="text-xs text-muted mb-3">Download {{ boardName() }} (.zip).</p>
+            <div class="bg-[var(--tint-yellow)] p-4 rounded-lg border border-soft flex flex-col gap-2">
+              <h3 class="font-bold mb-1"><app-icon name="package"></app-icon> Export Board</h3>
+              <p class="text-xs text-muted">Download {{ boardName() }} as a zip or single markdown file.</p>
               <button (click)="exportBoard()" class="doodle-btn w-full bg-[var(--accent)] text-[var(--paper-color)] text-sm font-bold">Download .zip</button>
+              <button (click)="exportBoardMd()" class="doodle-btn w-full text-sm">Download .md</button>
             </div>
             <div class="bg-[var(--tint-blue)] p-4 rounded-lg border border-soft">
               <h3 class="font-bold mb-2"><app-icon name="folder-open"></app-icon> Import to Board</h3>
@@ -156,10 +157,15 @@ export class ShareModalComponent implements OnInit {
   async exportBoard() {
     try {
       await this.ioService.exportBoardAsZip(this.cards(), this.boardName());
-      this.toastService.show('Board packed up! 📦', 'success');
+      this.toastService.show('Board packed up!', 'success');
     } catch {
       this.toastService.show('Failed to pack board', 'error');
     }
+  }
+
+  exportBoardMd() {
+    this.ioService.exportBoardAsSingleMd(this.cards(), this.boardName());
+    this.toastService.show('Board exported as markdown', 'info');
   }
 
   async importZip(event: Event) {

@@ -14,7 +14,7 @@
 
 </div>
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.1.2-blue">
+  <img src="https://img.shields.io/badge/version-1.1.3-blue">
 </p>
 
 >[!IMPORTANT]
@@ -32,6 +32,7 @@
 ## current features
 
 - create and organize sticky notes with drag-and-drop support
+- full markdown compat (import/export, editing, rendering)
 - folder organization (boards)
 - ai-powered brainstorming (via Gemini)
 - themes
@@ -45,7 +46,6 @@
 - live collaboration through cf workers + partykit (leads to team features--paid)
 - language support, browser extension integrations
 - more ai providers + webLLM support(llama 3 8b + qwen 2.5 1.5b dep on hardware -- chunk context, run on sw, few-shot)
-- full markdown editing, rendering, import, and export support
 
 
 ## quickstart

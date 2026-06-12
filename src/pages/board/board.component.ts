@@ -14,6 +14,8 @@ import { AiService } from '../../services/ai.service';
 import { ToastService } from '../../services/toast.service';
 import { ThemeService } from '../../services/theme.service';
 import { PreferencesService } from '../../services/preferences.service';
+import { IoService } from '../../services/io.service';
+import { MarkdownService } from '../../services/markdown.service';
 import { Card, Board, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.model';
 
 @Component({
@@ -270,7 +272,7 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mode
         }
 
         <!-- main card grid -->
-        <main class="p-4 md:p-8 flex-grow w-full z-10 overflow-y-auto h-full" (dragover)="handleDragOver($event)">
+        <main class="p-4 md:p-8 flex-grow w-full z-10 overflow-y-auto h-full" (dragover)="handleDragOver($event)" (drop)="handleFileDrop($event)">
           @if (isHydrating()) {
             <div class="flex flex-wrap gap-6 md:gap-8 pb-20 justify-center md:justify-start">
               @for (i of skeletonCards; track i) {
@@ -434,6 +436,8 @@ export class BoardComponent implements OnInit, OnDestroy {
   private aiService = inject(AiService);
   aiAvailable = this.aiService.isAvailable;
   private toastService = inject(ToastService);
+  private ioService = inject(IoService);
+  private markdownService = inject(MarkdownService);
 
   saveStatus = this.boardService.syncStatus;
   boards = this.boardService.boards;
@@ -541,6 +545,7 @@ export class BoardComponent implements OnInit, OnDestroy {
     this.generateBackgroundDoodles();
     if (window.innerWidth < 768) this.sidebarOpen.set(false);
     document.addEventListener('keydown', this.keydownHandler);
+    this.markdownService.preWarm();
   }
 
   ngOnDestroy() {
@@ -805,6 +810,32 @@ export class BoardComponent implements OnInit, OnDestroy {
   handleDragOver(event: DragEvent) {
     event.preventDefault();
     if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+  }
+
+  async handleFileDrop(event: DragEvent) {
+    const files = event.dataTransfer?.files;
+    if (!files?.length) return;
+    const mdFiles = Array.from(files).filter(f => f.name.endsWith('.md') || f.name.endsWith('.txt'));
+    if (!mdFiles.length) return;
+    event.preventDefault();
+    event.stopPropagation();
+    for (const file of mdFiles) {
+      const text = await this.ioService.readFileAsText(file);
+      const parsed = this.ioService.parseMarkdownContent(text);
+      if (!parsed.title || parsed.title === 'Imported Note') parsed.title = file.name.replace(/\.[^/.]+$/, '');
+      this.markdownService.invalidate(parsed.content);
+      this.boardService.addCard({
+        title: parsed.title || 'Untitled',
+        content: parsed.content || '',
+        tags: parsed.tags || [],
+        color: parsed.color,
+        rotation: parsed.rotation,
+        stickers: parsed.stickers,
+        isPinned: parsed.isPinned,
+        boardId: this.activeBoardId()
+      });
+    }
+    this.toastService.show(`${mdFiles.length} note${mdFiles.length > 1 ? 's' : ''} imported`, 'success');
   }
 
   handleDrop(targetCardId: string, event: DragEvent) {

@@ -27,14 +27,29 @@ export class IoService {
         const yaml = text.substring(3, end);
         const content = text.substring(end + 4).trim();
         try {
-          const frontmatter = yamlLoad(yaml) as Partial<Card>;
-          return { ...frontmatter, content };
-        } catch (e) {
-          console.warn('Failed to parse frontmatter', e);
+          const raw = yamlLoad(yaml) as Record<string, unknown>;
+          const safe: Partial<Card> = {};
+          if (typeof raw['id'] === 'string') safe.id = raw['id'];
+          if (typeof raw['title'] === 'string') safe.title = raw['title'];
+          if (typeof raw['color'] === 'string') safe.color = raw['color'];
+          if (typeof raw['rotation'] === 'number') safe.rotation = raw['rotation'];
+          if (typeof raw['isPinned'] === 'boolean') safe.isPinned = raw['isPinned'];
+          if (typeof raw['updatedAt'] === 'number') safe.updatedAt = raw['updatedAt'];
+          if (Array.isArray(raw['tags']) && raw['tags'].every(t => typeof t === 'string')) safe.tags = raw['tags'];
+          if (Array.isArray(raw['stickers']) && raw['stickers'].every(s => typeof s === 'string')) safe.stickers = raw['stickers'];
+          return { ...safe, content };
+        } catch {
         }
       }
     }
     return { title: 'Imported Note', content: text, tags: [] };
+  }
+
+  exportBoardAsSingleMd(cards: Card[], boardName: string): void {
+    const sections = cards.map(c => `## ${c.title}\n\n${c.content}`).join('\n\n---\n\n');
+    const content = `# ${boardName}\n\n${sections}`;
+    const blob = new Blob([content], { type: 'text/markdown' });
+    this.triggerDownload(blob, `${boardName.replace(/[^a-z0-9]/gi, '_')}-${new Date().toISOString().slice(0, 10)}.md`);
   }
 
   async exportBoardAsZip(cards: Card[], boardName: string): Promise<void> {
