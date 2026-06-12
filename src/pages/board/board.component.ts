@@ -16,7 +16,7 @@ import { ThemeService } from '../../services/theme.service';
 import { PreferencesService } from '../../services/preferences.service';
 import { IoService } from '../../services/io.service';
 import { MarkdownService } from '../../services/markdown.service';
-import { Card, Board, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.model';
+import { Card, Board, CARD_COLORS, CARD_COLORS_AI, CARD_DEFAULTS } from '../../models/card.model';
 
 @Component({
   selector: 'app-board',
@@ -318,6 +318,42 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mode
                   ></app-card>
                 </div>
               }
+              @for (preview of subBoardPreviews(); track preview.board.id) {
+                <div
+                  class="absolute cursor-pointer group"
+                  [style.left.px]="preview.x"
+                  [style.top.px]="preview.y"
+                  [style.z-index]="5"
+                  (click)="activeBoardId.set(preview.board.id)"
+                >
+                  <div class="w-[280px] rounded-sm border-2 border-dashed border-[var(--ink-color)]/30 bg-[var(--surface)]/80 p-3 hover:border-[var(--accent)] hover:shadow-xl transition-all">
+                    <div class="flex items-center gap-2 mb-2">
+                      <app-icon name="folder"></app-icon>
+                      <span class="font-bold marker-font text-base truncate flex-grow">{{ preview.board.name }}</span>
+                      <span class="text-xs opacity-50 flex-none bg-[var(--surface)] px-2 py-0.5 rounded-full">{{ preview.cards.length }} notes</span>
+                    </div>
+                    <div class="relative h-28 overflow-hidden rounded bg-[var(--paper-color)]/50 border border-[var(--border-soft)]">
+                      @for (mc of preview.cards.slice(0, 8); track mc.id; let i = $index) {
+                        <div
+                          class="absolute rounded-sm shadow-sm"
+                          [style.background-color]="mc.color"
+                          [style.width.px]="72"
+                          [style.height.px]="52"
+                          [style.left.px]="(i % 3) * 76 + 4"
+                          [style.top.px]="Math.floor(i / 3) * 56 + 4"
+                          [style.transform]="'rotate(' + ((mc.rotation ?? 0) * 0.4) + 'deg)'"
+                        >
+                          <div class="px-1 pt-1 text-[7px] font-bold leading-tight truncate opacity-80">{{ mc.title || '…' }}</div>
+                        </div>
+                      }
+                      @if (!preview.cards.length) {
+                        <div class="flex items-center justify-center h-full text-xs opacity-30">Empty board</div>
+                      }
+                    </div>
+                    <div class="mt-2 text-xs text-center opacity-40 group-hover:opacity-80 transition-opacity">Open board →</div>
+                  </div>
+                </div>
+              }
             </div>
           }
         </main>
@@ -529,15 +565,55 @@ export class BoardComponent implements OnInit, OnDestroy {
   });
   readonly Math = Math;
   private draggedBoardId: string | null = null;
+  private readonly GRID = 20;
   private pointerDrag: { cardId: string; startX: number; startY: number; origX: number; origY: number; moveHandler: (e: PointerEvent) => void; upHandler: (e: PointerEvent) => void } | null = null;
+
+  subBoardPreviews = computed(() => {
+    const activeId = this.activeBoardId();
+    const children = this.boardService.boards().filter(b => b.parentId === activeId);
+    if (!children.length) return [];
+    const allCards = this.boardService.cards();
+    const activeCards = this.filteredCards();
+    const TW = CARD_DEFAULTS.width + 16;
+    const TH = 212;
+    const PAD = 32;
+    const occupied = activeCards.map(c => ({
+      x: (c.x ?? PAD) - 4, y: (c.y ?? PAD) - 4,
+      w: (c.width ?? CARD_DEFAULTS.width) + 8, h: (c.height ?? CARD_DEFAULTS.height) + 8
+    }));
+    const placed: { x: number; y: number; w: number; h: number }[] = [];
+    const hits = (cx: number, cy: number, rects: { x: number; y: number; w: number; h: number }[]) =>
+      rects.some(o => cx < o.x + o.w && cx + TW > o.x && cy < o.y + o.h && cy + TH > o.y);
+    const findPos = () => {
+      for (let row = 0; row < 20; row++) {
+        for (let col = 0; col < 20; col++) {
+          const cx = PAD + col * TW;
+          const cy = PAD + row * TH;
+          if (!hits(cx, cy, [...occupied, ...placed])) return { x: cx, y: cy };
+        }
+      }
+      return { x: PAD, y: PAD };
+    };
+    return children.map(board => {
+      const boardCards = allCards.filter(c => c.boardId === board.id);
+      const pos = findPos();
+      placed.push({ x: pos.x, y: pos.y, w: TW, h: TH });
+      return { board, cards: boardCards, x: pos.x, y: pos.y };
+    });
+  });
 
   canvasSize = computed(() => {
     const cards = this.filteredCards();
-    if (!cards.length) return { w: 2000, h: 1200 };
+    const previews = this.subBoardPreviews();
+    if (!cards.length && !previews.length) return { w: 2000, h: 1200 };
     let maxX = 0, maxY = 0;
     for (const c of cards) {
-      maxX = Math.max(maxX, (c.x ?? 32) + (c.width ?? 280) + 64);
-      maxY = Math.max(maxY, (c.y ?? 32) + (c.height ?? 320) + 64);
+      maxX = Math.max(maxX, (c.x ?? 32) + (c.width ?? CARD_DEFAULTS.width) + 64);
+      maxY = Math.max(maxY, (c.y ?? 32) + (c.height ?? CARD_DEFAULTS.height) + 64);
+    }
+    for (const p of previews) {
+      maxX = Math.max(maxX, p.x + CARD_DEFAULTS.width + 64);
+      maxY = Math.max(maxY, p.y + 200 + 64);
     }
     return { w: Math.max(maxX, 2000), h: Math.max(maxY, 1200) };
   });
@@ -774,8 +850,8 @@ export class BoardComponent implements OnInit, OnDestroy {
       if (!this.pointerDrag) return;
       const dx = e.clientX - this.pointerDrag.startX;
       const dy = e.clientY - this.pointerDrag.startY;
-      const nx = Math.max(0, this.pointerDrag.origX + dx);
-      const ny = Math.max(0, this.pointerDrag.origY + dy);
+      const nx = Math.max(0, this.snap(this.pointerDrag.origX + dx));
+      const ny = Math.max(0, this.snap(this.pointerDrag.origY + dy));
       this.boardService.cards.update(cards => cards.map(c => c.id === cardId ? { ...c, x: nx, y: ny } : c));
     };
 
@@ -783,8 +859,9 @@ export class BoardComponent implements OnInit, OnDestroy {
       if (!this.pointerDrag) return;
       const dx = e.clientX - this.pointerDrag.startX;
       const dy = e.clientY - this.pointerDrag.startY;
-      const nx = Math.max(0, this.pointerDrag.origX + dx);
-      const ny = Math.max(0, this.pointerDrag.origY + dy);
+      const snappedX = Math.max(0, this.snap(this.pointerDrag.origX + dx));
+      const snappedY = Math.max(0, this.snap(this.pointerDrag.origY + dy));
+      const { x: nx, y: ny } = this.findFreePos(cardId, snappedX, snappedY);
       this.boardService.moveCard(cardId, nx, ny);
       window.removeEventListener('pointermove', moveHandler);
       window.removeEventListener('pointerup', upHandler);
@@ -798,6 +875,31 @@ export class BoardComponent implements OnInit, OnDestroy {
     this.pointerDrag = { cardId, startX: event.clientX, startY: event.clientY, origX, origY, moveHandler, upHandler };
     window.addEventListener('pointermove', moveHandler);
     window.addEventListener('pointerup', upHandler);
+  }
+
+  private snap(v: number) { return Math.round(v / this.GRID) * this.GRID; }
+
+  private findFreePos(cardId: string, x: number, y: number): { x: number; y: number } {
+    const card = this.filteredCards().find(c => c.id === cardId);
+    const cw = (card?.width ?? CARD_DEFAULTS.width) + 8;
+    const ch = (card?.height ?? CARD_DEFAULTS.height) + 8;
+    const others = this.filteredCards().filter(c => c.id !== cardId);
+    const hits = (cx: number, cy: number) =>
+      others.some(o => cx < (o.x ?? 32) + (o.width ?? CARD_DEFAULTS.width) + 8 && cx + cw > (o.x ?? 32) &&
+                       cy < (o.y ?? 32) + (o.height ?? CARD_DEFAULTS.height) + 8 && cy + ch > (o.y ?? 32));
+    if (!hits(x, y)) return { x, y };
+    const G = this.GRID;
+    for (let r = 1; r <= 24; r++) {
+      const ring: [number, number][] = [];
+      for (let i = -r; i <= r; i++) { ring.push([i, -r]); ring.push([i, r]); }
+      for (let i = -r + 1; i < r; i++) { ring.push([-r, i]); ring.push([r, i]); }
+      for (const [dx, dy] of ring) {
+        const cx = Math.max(0, x + dx * G);
+        const cy = Math.max(0, y + dy * G);
+        if (!hits(cx, cy)) return { x: cx, y: cy };
+      }
+    }
+    return { x, y };
   }
 
   handleDragEnterBoard(boardId: string) {
