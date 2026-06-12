@@ -178,6 +178,9 @@ export class EditorComponent {
   viewMode = signal<ViewMode>('write');
   previewHtml = signal<string>('');
   form = { title: '', content: '', tags: '' };
+  private savedTitle = '';
+  private savedContent = '';
+  private savedTags = '';
 
   private previewTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -185,6 +188,9 @@ export class EditorComponent {
     effect(() => {
       const c = this.card();
       this.form = { title: c.title, content: c.content, tags: c.tags.join(', ') };
+      this.savedTitle = c.title;
+      this.savedContent = c.content;
+      this.savedTags = c.tags.join(', ');
     });
   }
 
@@ -200,11 +206,10 @@ export class EditorComponent {
   }
 
   private hasUnsavedChanges(): boolean {
-    const c = this.card();
     return (
-      this.form.title !== c.title ||
-      this.form.content !== c.content ||
-      this.parseTags().join(',') !== c.tags.join(',')
+      this.form.title !== this.savedTitle ||
+      this.form.content !== this.savedContent ||
+      this.form.tags !== this.savedTags
     );
   }
 
@@ -215,9 +220,13 @@ export class EditorComponent {
       content: this.form.content,
       tags: this.parseTags()
     };
-    this.markdownService.invalidate(this.card().content);
+    this.markdownService.invalidate(this.savedContent);
     this.boardService.updateCard(updated);
-    this.toastService.show('Saved successfully', 'success');
+    this.savedTitle = this.form.title;
+    this.savedContent = this.form.content;
+    this.savedTags = this.form.tags;
+    this.schedulePreview();
+    this.toastService.show('Saved', 'success');
   }
 
   startClose() {

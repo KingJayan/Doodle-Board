@@ -274,7 +274,7 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mode
         <!-- main card grid -->
         <main class="p-4 md:p-8 flex-grow w-full z-10 overflow-y-auto h-full" (dragover)="handleDragOver($event)" (drop)="handleFileDrop($event)">
           @if (isHydrating()) {
-            <div class="flex flex-wrap gap-6 md:gap-8 pb-20 justify-center md:justify-start">
+            <div class="flex flex-wrap gap-6 md:gap-8 pt-12 pb-20 justify-center md:justify-start">
               @for (i of skeletonCards; track i) {
                 <div class="flex-none rounded-sm animate-pulse bg-[var(--surface)] opacity-60" style="width:192px;height:140px"></div>
               }
@@ -287,7 +287,7 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mode
                 <p>Drag notes here or create new ones!</p>
               </div>
             }
-            <div class="flex flex-wrap gap-6 md:gap-8 pb-20 justify-center md:justify-start">
+            <div class="flex flex-wrap gap-6 md:gap-8 pt-12 pb-20 justify-center md:justify-start">
               @for (card of filteredCards(); track card.id) {
                 <div
                   class="relative flex-none"
