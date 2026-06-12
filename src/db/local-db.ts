@@ -56,14 +56,14 @@ export interface DbMeta {
   value: unknown;
 }
 
-class LocalDb extends Dexie {
+export class LocalDb extends Dexie {
   boards!: Table<DbBoard>;
   cards!: Table<DbCard>;
   outbox!: Table<DbOutboxEntry>;
   meta!: Table<DbMeta>;
 
-  constructor() {
-    super('DoodleBoardDB');
+  constructor(name = 'DoodleBoardDB') {
+    super(name);
     this.version(1).stores({
       boards: '&id, position, updatedAt, _dirty, _deleted, ownerId',
       cards: '&id, boardId, updatedAt, _dirty, _deleted, isPinned, position, [boardId+position], *tags, ownerId',
