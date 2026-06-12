@@ -41,7 +41,7 @@ interface ThemeSpec {
   motifOpacity?: number;
   motifs: string[];
 
-  /* ---- uniqueness (all optional; sensible defaults derived) ---- *
+  /* ---- uniqueness (all optional; sensible defaults derived) ---- */
 
   /** heading/marker typeface */
   fontDisplay?: string;

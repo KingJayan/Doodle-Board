@@ -1,4 +1,4 @@
-import { Component, inject, signal, Output, EventEmitter, ViewChild, ElementRef, input, effect, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, Output, EventEmitter, ViewChild, ElementRef, input, effect, untracked, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Card } from '../../models/card.model';
@@ -191,6 +191,11 @@ export class EditorComponent {
       this.savedTitle = c.title;
       this.savedContent = c.content;
       this.savedTags = c.tags.join(', ');
+      untracked(() => this.schedulePreview());
+    });
+
+    effect(() => {
+      if (this.viewMode() !== 'write') untracked(() => this.schedulePreview());
     });
   }
 

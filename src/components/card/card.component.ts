@@ -18,22 +18,9 @@ import { IconComponent, iconFor } from '../icon/icon.component';
     <div
       class="transition-transform duration-300 relative select-none"
       [style.transform]="rotationStyle()"
-      [style.width.px]="card().isMinimized ? D.minimizedWidth : (card().width || D.width)"
+      [style.width.px]="isResizing() ? previewWidth() : (card().isMinimized ? D.minimizedWidth : (card().width || D.width))"
       [class.z-overlay]="isResizing()"
     >
-
-      <!-- resize preview -->
-      @if (isResizing()) {
-        <div
-          class="absolute top-0 left-0 border-4 border-dashed border-gray-400/50 bg-gray-100/30 rounded-lg z-overlay pointer-events-none flex items-center justify-center"
-          [style.width.px]="previewWidth()"
-          [style.height.px]="previewHeight()"
-        >
-          <div class="text-3xl font-bold text-gray-700 bg-white/90 px-6 py-3 rounded-xl shadow-lg marker-font backdrop-blur-sm border-2 border-gray-200">
-            {{ previewWidth() | number:'1.0-0' }} x {{ previewHeight() | number:'1.0-0' }}
-          </div>
-        </div>
-      }
 
       <!-- card inner -->
       <div
@@ -48,8 +35,22 @@ import { IconComponent, iconFor } from '../icon/icon.component';
         [class.micro-anim]="isSaving()"
         [class.card-selected]="isSelected()"
         [style.background-color]="noteBg(card().color)"
-        [style.height.px]="card().isMinimized ? null : (card().height || D.height)"
+        [style.height.px]="card().isMinimized ? null : (isResizing() ? previewHeight() : (card().height || D.height))"
       >
+        @if (isResizing()) {
+          <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-50">
+            <div class="text-2xl font-bold text-gray-700 bg-white/90 px-5 py-2 rounded-xl shadow-lg marker-font backdrop-blur-sm border-2 border-gray-200">
+              {{ previewWidth() | number:'1.0-0' }} x {{ previewHeight() | number:'1.0-0' }}
+            </div>
+          </div>
+        }
+        <!-- bulk-select badge -->
+        @if (isSelected()) {
+          <div class="absolute top-2 right-2 z-50 w-6 h-6 rounded-full bg-[var(--accent)] flex items-center justify-center shadow-md pointer-events-none">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,6 5,9 10,3"/></svg>
+          </div>
+        }
+
         <!-- drag handle -->
         <div class="drag-handle absolute top-2 left-2 cursor-grab active:cursor-grabbing z-40 opacity-30 group-hover:opacity-100 transition-opacity p-2 hover:bg-black/5 rounded-full" aria-label="Drag to reorder" role="button">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="pointer-events-none">
@@ -78,7 +79,7 @@ import { IconComponent, iconFor } from '../icon/icon.component';
         </div>
 
         <!-- action controls -->
-        <div class="absolute -top-10 -right-6 flex flex-col gap-2 z-card-float opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-auto p-2 hover:opacity-100">
+        <div class="absolute top-1 right-1 flex flex-col gap-1.5 z-card-float opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-auto bg-[var(--surface)]/85 backdrop-blur-sm rounded-xl p-1.5 shadow-md hover:opacity-100" [class.!hidden]="bulkMode() || isEditing()">
           <div class="flex gap-2">
             <button
               (click)="handlePin($event)"
@@ -136,20 +137,22 @@ import { IconComponent, iconFor } from '../icon/icon.component';
         </div>
 
         <!-- bottom hover tools -->
-        <div class="absolute -bottom-8 left-0 right-0 flex justify-center z-card-float opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-auto" [class.hidden]="card().isMinimized">
+        <div class="absolute bottom-1 left-0 right-0 flex justify-center z-card-float opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-auto" [class.hidden]="card().isMinimized || bulkMode() || isEditing()">
           <div class="bg-[var(--surface)]/95 text-[var(--ink-color)] backdrop-blur px-3 py-2 rounded-full shadow-lg doodle-border flex gap-4 items-center">
             <!-- color picker -->
-            <div class="relative group/colors">
-              <button class="w-8 h-8 rounded-full border-2 border-[var(--border-soft)] shadow-inner hover:scale-110 transition-transform" [style.background-color]="noteBg(card().color)" aria-label="Change color"></button>
-              <div class="absolute bottom-full left-0 mb-3 p-3 bg-[var(--surface)] rounded-xl shadow-xl border-2 border-soft hidden group-hover/colors:flex gap-2 animate-popupSlide">
-                @for (c of palette; track c) {
-                  <button
-                    (click)="changeColor(c, $event)"
-                    class="w-8 h-8 rounded-full border border-soft hover:scale-125 transition-transform"
-                    [style.background-color]="noteBg(c)"
-                  ></button>
-                }
-              </div>
+            <div class="relative">
+              <button (click)="toggleColorPicker($event)" class="w-8 h-8 rounded-full border-2 border-[var(--border-soft)] shadow-inner hover:scale-110 transition-transform" [style.background-color]="noteBg(card().color)" aria-label="Change color"></button>
+              @if (showColorPicker()) {
+                <div class="absolute bottom-full left-0 mb-1 p-3 bg-[var(--surface)] rounded-xl shadow-xl border-2 border-soft flex gap-2 animate-popupSlide" (click)="$event.stopPropagation()">
+                  @for (c of palette; track c) {
+                    <button
+                      (click)="changeColor(c, $event)"
+                      class="w-8 h-8 rounded-full border border-soft hover:scale-125 transition-transform"
+                      [style.background-color]="noteBg(c)"
+                    ></button>
+                  }
+                </div>
+              }
             </div>
             <div class="w-px h-6 bg-[var(--border-soft)]"></div>
             <div class="flex gap-2 text-xl">
@@ -290,6 +293,7 @@ export class CardComponent implements OnDestroy {
   isMinimizing = signal(false);
   isSaving = signal(false);
   showMoveMenu = signal(false);
+  showColorPicker = signal(false);
   editForm = { title: '', content: '' };
   renderedContent = signal<string>('');
 
@@ -299,10 +303,17 @@ export class CardComponent implements OnDestroy {
 
   readonly palette = CARD_PALETTE;
 
+  private renderSeq = 0;
+
   constructor() {
     effect(() => {
-      const content = this.card().content;
-      this.markdownService.render(content).then(html => this.renderedContent.set(html));
+      const c = this.card();
+      if (c.isMinimized) return;
+      const content = c.content;
+      const seq = ++this.renderSeq;
+      this.markdownService.render(content).then(html => {
+        if (seq === this.renderSeq) this.renderedContent.set(html);
+      });
     });
   }
 
@@ -326,14 +337,22 @@ export class CardComponent implements OnDestroy {
   }
 
   highlightText(text: string): string {
-    const safe = this.escapeHtml(text);
     const query = this.searchQuery();
-    if (!query) return safe;
+    if (!query) return this.escapeHtml(text);
     try {
       const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-      return safe.replace(regex, '<mark>$1</mark>');
+      const parts: string[] = [];
+      let last = 0;
+      let m: RegExpExecArray | null;
+      while ((m = regex.exec(text)) !== null) {
+        parts.push(this.escapeHtml(text.slice(last, m.index)));
+        parts.push(`<mark>${this.escapeHtml(m[1])}</mark>`);
+        last = m.index + m[0].length;
+      }
+      parts.push(this.escapeHtml(text.slice(last)));
+      return parts.join('');
     } catch {
-      return safe;
+      return this.escapeHtml(text);
     }
   }
 
@@ -403,7 +422,7 @@ export class CardComponent implements OnDestroy {
     if (idx === -1) return;
     const content = this.card().content;
     let count = 0;
-    const updated = content.replace(/^(\s*- \[)([x ])(\])/gm, (match, pre, state, post) => {
+    const updated = content.replace(/^(\s*- \[)([xX ])(\])/gm, (match, pre, state, post) => {
       const result = count === idx ? `${pre}${state === ' ' ? 'x' : ' '}${post}` : match;
       count++;
       return result;
@@ -414,8 +433,14 @@ export class CardComponent implements OnDestroy {
     }
   }
 
+  toggleColorPicker(event: Event) {
+    event.stopPropagation();
+    this.showColorPicker.update(v => !v);
+  }
+
   changeColor(color: string, event: Event) {
     event.stopPropagation();
+    this.showColorPicker.set(false);
     this.update.emit({ ...this.card(), color });
   }
 

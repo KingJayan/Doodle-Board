@@ -2,6 +2,7 @@ import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/cor
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ThemeService } from '../../services/theme.service';
+import { AuthService } from '../../services/auth.service';
 import { IconComponent } from '../../components/icon/icon.component';
 
 @Component({
@@ -34,7 +35,7 @@ import { IconComponent } from '../../components/icon/icon.component';
           </button>
 
           <div class="text-sm text-muted mt-8 max-w-xs border-l-2 border-soft pl-4 italic">
-            Local-only · No account · No sync
+            {{ authService.supabaseAvailable ? 'Private · Cloud-synced · Shareable' : 'Local-only · No account · No sync' }}
           </div>
         </div>
       </div>
@@ -98,6 +99,7 @@ import { IconComponent } from '../../components/icon/icon.component';
 export class LandingComponent {
   private router = inject(Router);
   themeService = inject(ThemeService);
+  authService = inject(AuthService);
   isExiting = signal(false);
 
   startExit() {

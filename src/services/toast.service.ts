@@ -19,8 +19,11 @@ export class ToastService {
 
   show(message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info', action?: ToastAction) {
     const id = this.counter++;
-    this.toasts.update(current => [...current, { id, message, type, action }]);
-    if (!action) setTimeout(() => this.dismiss(id), 3000);
+    this.toasts.update(current => {
+      const next = [...current, { id, message, type, action }];
+      return next.length > 5 ? next.slice(next.length - 5) : next;
+    });
+    setTimeout(() => this.dismiss(id), action ? 7000 : 3000);
   }
 
   dismiss(id: number) {

@@ -274,7 +274,7 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mode
         <!-- main card grid -->
         <main class="p-4 md:p-8 flex-grow w-full z-10 overflow-y-auto h-full" (dragover)="handleDragOver($event)" (drop)="handleFileDrop($event)">
           @if (isHydrating()) {
-            <div class="flex flex-wrap gap-6 md:gap-8 pt-12 pb-20 justify-center md:justify-start">
+            <div class="flex flex-wrap gap-6 md:gap-8 pb-20 justify-center md:justify-start">
               @for (i of skeletonCards; track i) {
                 <div class="flex-none rounded-sm animate-pulse bg-[var(--surface)] opacity-60" style="width:192px;height:140px"></div>
               }
@@ -287,17 +287,18 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI } from '../../models/card.mode
                 <p>Drag notes here or create new ones!</p>
               </div>
             }
-            <div class="flex flex-wrap gap-6 md:gap-8 pt-12 pb-20 justify-center md:justify-start">
+            <div class="flex flex-wrap gap-6 md:gap-8 pb-20 justify-center md:justify-start">
               @for (card of filteredCards(); track card.id) {
                 <div
                   class="relative flex-none"
-                  [class.animate-popIn]="!justSwitchedBoard() && !themeService.reduceMotion()"
-                  [class.animate-cardEnter]="justSwitchedBoard() && !themeService.reduceMotion()"
+                  [class.animate-popIn]="!justSwitchedBoard() && prefs.motionEnabled()"
+                  [class.animate-cardEnter]="justSwitchedBoard() && prefs.motionEnabled()"
                   [class.is-dragging]="draggingCardId() === card.id"
                   [class.drag-settle]="droppedCardId() === card.id"
                   [class.micro-anim]="droppedCardId() === card.id"
                   [style.animation-delay]="(Math.min($index, 12) * 50) + 'ms'"
                   draggable="true"
+                  (mousedown)="setDragFromHandle($event)"
                   (dragstart)="handleDragStart(card.id, $event)"
                   (dragend)="handleDragEnd()"
                   (drop)="handleDrop(card.id, $event)"
@@ -464,9 +465,12 @@ export class BoardComponent implements OnInit, OnDestroy {
     effect(() => {
       const id = this.activeBoardId();
       untracked(() => {
-        if (prevBoardId && prevBoardId !== id && !this.themeService.reduceMotion()) {
-          this.justSwitchedBoard.set(true);
-          setTimeout(() => this.justSwitchedBoard.set(false), 350);
+        if (prevBoardId && prevBoardId !== id) {
+          this.clearSelection();
+          if (!this.themeService.reduceMotion()) {
+            this.justSwitchedBoard.set(true);
+            setTimeout(() => this.justSwitchedBoard.set(false), 350);
+          }
         }
         prevBoardId = id;
       });
@@ -528,11 +532,14 @@ export class BoardComponent implements OnInit, OnDestroy {
   readonly Math = Math;
   private draggedCardId: string | null = null;
   private draggedBoardId: string | null = null;
+  private dragFromHandle = false;
 
   private readonly keydownHandler = (e: KeyboardEvent) => {
-    const el = document.activeElement as HTMLElement;
-    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') return;
+    const el = document.activeElement as HTMLElement | null;
+    if (el?.tagName === 'INPUT' || el?.tagName === 'TEXTAREA' || el?.isContentEditable) return;
+    const modalOpen = !!this.editingCard() || this.settingsPanelOpen() || this.helpPanelOpen() || this.sharePanelOpen();
     if (e.key === 'n' || e.key === 'N') {
+      if (modalOpen) return;
       e.preventDefault();
       this.createNewCard();
     }
@@ -749,9 +756,13 @@ export class BoardComponent implements OnInit, OnDestroy {
     this.dragTargetBoardId.set(null);
   }
 
+  setDragFromHandle(event: MouseEvent) {
+    this.dragFromHandle = event.composedPath().some((el: any) => el.classList?.contains('drag-handle'));
+  }
+
   handleDragStart(cardId: string, event: DragEvent) {
-    const isHandle = event.composedPath().some((el: any) => el.classList?.contains('drag-handle'));
-    if (!isHandle) { event.preventDefault(); return; }
+    if (!this.dragFromHandle) { event.preventDefault(); return; }
+    this.dragFromHandle = false;
     this.draggedCardId = cardId;
     this.draggingCardId.set(cardId);
     if (event.dataTransfer) {

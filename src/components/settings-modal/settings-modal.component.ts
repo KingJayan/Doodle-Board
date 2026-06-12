@@ -6,7 +6,7 @@ import { PreferencesService, PerfPreset } from '../../services/preferences.servi
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
 import { IconComponent } from '../icon/icon.component';
-const version = '1.1.4';
+const version = '1.1.5';
 
 @Component({
   selector: 'app-settings-modal',
@@ -307,7 +307,8 @@ export class SettingsModalComponent {
   }
 
   isSelected(name: string): boolean {
-    return this.themeService.mode() === name;
+    const mode = this.themeService.mode();
+    return mode === name || (mode === 'system' && this.themeService.resolvedTheme() === name);
   }
 
   motifPreviewOpacity(t: ThemeDef): number {
@@ -323,8 +324,12 @@ export class SettingsModalComponent {
   async linkProvider(provider: 'github' | 'google') {
     this.linking.set(true);
     this.linkError.set(null);
-    const err = await this.authService.linkWithProvider(provider);
-    if (err) { this.linkError.set(err); this.linking.set(false); }
+    try {
+      const err = await this.authService.linkWithProvider(provider);
+      if (err) this.linkError.set(err);
+    } finally {
+      this.linking.set(false);
+    }
   }
 
   confirmLogout() { this.confirmingAction.set('logout'); }

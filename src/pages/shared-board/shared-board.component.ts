@@ -98,6 +98,7 @@ export class SharedBoardComponent implements OnInit, OnDestroy {
   private boardService = inject(BoardService);
   private toastService = inject(ToastService);
   private meta = inject(Meta);
+  private referrerTag: HTMLMetaElement | null = null;
   router = inject(Router);
 
   loading = signal(true);
@@ -105,7 +106,7 @@ export class SharedBoardComponent implements OnInit, OnDestroy {
   duplicating = signal(false);
 
   ngOnInit() {
-    this.meta.addTag({ name: 'referrer', content: 'no-referrer' });
+    this.referrerTag = this.meta.addTag({ name: 'referrer', content: 'no-referrer' });
     const token = this.route.snapshot.paramMap.get('token') ?? '';
     this.shareService.getSharedBoard(token).then(data => {
       this.payload.set(data);
@@ -114,7 +115,7 @@ export class SharedBoardComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    this.meta.removeTag('name="referrer"');
+    if (this.referrerTag) this.referrerTag.remove();
   }
 
   async duplicate() {

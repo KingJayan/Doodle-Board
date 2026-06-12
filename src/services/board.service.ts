@@ -49,8 +49,8 @@ export class BoardService {
       db.cards.where('_deleted').equals(0).toArray(),
       db.cards.where('_deleted').equals(1).toArray()
     ]);
-    this.boards.set(dbBoards.sort((a, b) => a.position.localeCompare(b.position)).map(dbToBoard));
-    this.cards.set(dbCards.sort((a, b) => a.position.localeCompare(b.position)).map(dbToCard));
+    this.boards.set(dbBoards.sort((a, b) => a.position < b.position ? -1 : a.position > b.position ? 1 : 0).map(dbToBoard));
+    this.cards.set(dbCards.sort((a, b) => a.position < b.position ? -1 : a.position > b.position ? 1 : 0).map(dbToCard));
     this.trashedCards.set(dbTrashed.sort((a, b) => b.updatedAt - a.updatedAt).map(dbToCard));
   }
 
@@ -63,14 +63,14 @@ export class BoardService {
       db.boards.where('_deleted').equals(0).toArray(),
       db.cards.where('_deleted').equals(1).toArray()
     ]);
-    const sorted = dbBoards.sort((a, b) => a.position.localeCompare(b.position));
+    const sorted = dbBoards.sort((a, b) => a.position < b.position ? -1 : a.position > b.position ? 1 : 0);
     this.boards.set(sorted.map(dbToBoard));
     this.trashedCards.set(dbTrashed.sort((a, b) => b.updatedAt - a.updatedAt).map(dbToCard));
 
     const firstId = sorted[0]?.id;
     if (firstId) {
       const activeCards = await db.cards.where('boardId').equals(firstId).filter(c => c._deleted === 0).toArray();
-      this.cards.set(activeCards.sort((a, b) => a.position.localeCompare(b.position)).map(dbToCard));
+      this.cards.set(activeCards.sort((a, b) => a.position < b.position ? -1 : a.position > b.position ? 1 : 0).map(dbToCard));
     }
     this.isHydrating.set(false);
 
@@ -237,7 +237,7 @@ export class BoardService {
   private nextFrontPosition(boardId: string): string {
     const sorted = this.cards()
       .filter(c => c.boardId === boardId && c.position)
-      .sort((a, b) => (a.position ?? '').localeCompare(b.position ?? ''));
+      .sort((a, b) => (a.position ?? '') < (b.position ?? '') ? -1 : (a.position ?? '') > (b.position ?? '') ? 1 : 0);
     return generateKeyBetween(null, sorted[0]?.position ?? null);
   }
 
@@ -246,7 +246,7 @@ export class BoardService {
     const siblings = parentId
       ? this.boards().filter(b => b.parentId === parentId)
       : this.boards().filter(b => !b.parentId);
-    const sorted = [...siblings].sort((a, b) => a.position.localeCompare(b.position));
+    const sorted = [...siblings].sort((a, b) => a.position < b.position ? -1 : a.position > b.position ? 1 : 0);
     const lastPos = sorted.length > 0 ? sorted[sorted.length - 1].position : null;
     const pos = generateKeyBetween(lastPos, null);
     const newBoard: Board = { id, name, position: pos, parentId: parentId ?? null };
@@ -386,7 +386,7 @@ export class BoardService {
       .filter(c => c.boardId === moved.boardId)
       .sort((a, b) =>
         (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0) ||
-        (a.position ?? '').localeCompare(b.position ?? '')
+        (a.position ?? '') < (b.position ?? '') ? -1 : (a.position ?? '') > (b.position ?? '') ? 1 : 0
       );
     const withoutMoved = boardCards.filter(c => c.id !== movedId);
     const targetIdx = withoutMoved.findIndex(c => c.id === targetId);
@@ -394,7 +394,8 @@ export class BoardService {
     const prev = withoutMoved[targetIdx - 1];
     const next = withoutMoved[targetIdx];
     const newPos = generateKeyBetween(prev?.position ?? null, next?.position ?? null);
-    const updated = { ...moved, position: newPos };
+    const targetPinned = withoutMoved[targetIdx]?.isPinned ?? prev?.isPinned ?? moved.isPinned;
+    const updated = { ...moved, position: newPos, isPinned: targetPinned };
     this.cards.update(cards => cards.map(c => c.id === movedId ? updated : c));
     this.writeCard(updated);
   }
@@ -402,7 +403,7 @@ export class BoardService {
   duplicateCard(card: Card): void {
     const boardCards = this.cards()
       .filter(c => c.boardId === card.boardId && c.position)
-      .sort((a, b) => (a.position ?? '').localeCompare(b.position ?? ''));
+      .sort((a, b) => (a.position ?? '') < (b.position ?? '') ? -1 : (a.position ?? '') > (b.position ?? '') ? 1 : 0);
     const idx = boardCards.findIndex(c => c.id === card.id);
     const next = boardCards[idx + 1];
     const pos = generateKeyBetween(card.position ?? null, next?.position ?? null);
@@ -427,11 +428,12 @@ export class BoardService {
     const now = Date.now();
     const boardCards = this.cards().filter(c => c.boardId === boardId);
     const lastPos = boardCards.length > 0
-      ? [...boardCards].sort((a, b) => (a.position ?? '').localeCompare(b.position ?? '')).pop()?.position ?? null
+      ? [...boardCards].sort((a, b) => (a.position ?? '') < (b.position ?? '') ? -1 : (a.position ?? '') > (b.position ?? '') ? 1 : 0).pop()?.position ?? null
       : null;
     const positions = generateNKeysBetween(lastPos, null, newCards.length);
     const migrated: Card[] = newCards.map((c, i) => ({
       ...c,
+      id: crypto.randomUUID(),
       boardId,
       position: positions[i],
       stickers: c.stickers ?? [],
@@ -440,5 +442,6 @@ export class BoardService {
     }));
     this.cards.update(current => [...current, ...migrated]);
     migrated.forEach(c => this.writeCard(c));
+    this.auth.triggerAnonymousSignIn();
   }
 }

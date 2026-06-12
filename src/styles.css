@@ -72,11 +72,12 @@ body {
 @keyframes modalOut { to { opacity: 0; transform: scale(0.97); } }
 
 .card-selected {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
+  outline: 3px solid var(--accent);
+  outline-offset: 4px;
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 18%, transparent), var(--card-shadow);
   animation: selectPulse 0.2s var(--ease-stamp);
 }
-@keyframes selectPulse { 50% { outline-offset: 6px; } }
+@keyframes selectPulse { 50% { outline-offset: 8px; } }
 
 app-root {
   display: block;
@@ -183,8 +184,14 @@ body.reduce-motion *::after {
   transform: none !important;
 }
 
+[data-perf='lite'] .animate-popIn,
+[data-perf='lite'] .animate-cardEnter,
+[data-perf='lite'] .animate-slideIn {
+  animation: none !important;
+}
+
 app-card {
-  content-visibility: auto;
+  contain: layout style;
   contain-intrinsic-size: auto 240px;
 }
 

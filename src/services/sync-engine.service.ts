@@ -5,7 +5,7 @@ import { AuthService } from './auth.service';
 import { BoardService } from './board.service';
 
 function toSbBoard(b: DbBoard, uid: string) {
-  return { id: b.id, name: b.name, position: b.position,
+  return { id: b.id, name: b.name, position: b.position, parent_id: b.parentId ?? null,
     created_at: new Date(b.createdAt).toISOString(), updated_at: new Date(b.updatedAt).toISOString(),
     owner_id: uid, deleted: b._deleted === 1 };
 }
@@ -86,7 +86,14 @@ export class SyncEngineService {
     try {
       if (entry.entity === 'board') {
         const row = await db.boards.get(entry.entityId);
-        if (!row) { await db.outbox.where('entityId').equals(entry.entityId).delete(); return; }
+        if (!row) {
+          if (entry.op === 'delete') {
+            const { error } = await supabase!.from('boards').update({ deleted: true }).eq('id', entry.entityId);
+            if (error) throw error;
+          }
+          await db.outbox.where('entityId').equals(entry.entityId).delete();
+          return;
+        }
         const { data: upserted, error } = await supabase!.from('boards').upsert(toSbBoard(row, userId)).select('updated_at').single();
         if (error) throw error;
         const serverTs = upserted?.updated_at ? +new Date(upserted.updated_at) : now;
@@ -97,7 +104,14 @@ export class SyncEngineService {
         });
       } else {
         const row = await db.cards.get(entry.entityId);
-        if (!row) { await db.outbox.where('entityId').equals(entry.entityId).delete(); return; }
+        if (!row) {
+          if (entry.op === 'delete') {
+            const { error } = await supabase!.from('cards').update({ deleted: true }).eq('id', entry.entityId);
+            if (error) throw error;
+          }
+          await db.outbox.where('entityId').equals(entry.entityId).delete();
+          return;
+        }
         const { data: upserted, error } = await supabase!.from('cards').upsert(toSbCard(row, userId)).select('updated_at').single();
         if (error) throw error;
         const serverTs = upserted?.updated_at ? +new Date(upserted.updated_at) : now;
