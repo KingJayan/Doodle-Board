@@ -30,7 +30,10 @@ function dbToCard(c: DbCard): Card {
 }
 
 function dbToBoard(b: DbBoard): Board {
-  return { id: b.id, name: b.name, position: b.position, parentId: b.parentId ?? null };
+  return {
+    id: b.id, name: b.name, position: b.position, parentId: b.parentId ?? null,
+    cameraX: b.cameraX ?? null, cameraY: b.cameraY ?? null, cameraZoom: b.cameraZoom ?? null
+  };
 }
 
 export const MAX_CARDS_PER_BOARD = 20;
@@ -145,6 +148,7 @@ export class BoardService {
       name: f.name,
       position: boardPositions[i],
       parentId: null,
+      cameraX: null, cameraY: null, cameraZoom: null,
       createdAt: now,
       updatedAt: now,
       ownerId: null,
@@ -238,6 +242,9 @@ export class BoardService {
         name: board.name,
         position: board.position,
         parentId: board.parentId ?? null,
+        cameraX: board.cameraX ?? existing?.cameraX ?? null,
+        cameraY: board.cameraY ?? existing?.cameraY ?? null,
+        cameraZoom: board.cameraZoom ?? existing?.cameraZoom ?? null,
         createdAt: existing?.createdAt ?? now,
         updatedAt: now,
         ownerId: existing?.ownerId ?? this.auth.authState().userId ?? null,
@@ -247,6 +254,17 @@ export class BoardService {
         _serverUpdatedAt: existing?._serverUpdatedAt ?? null
       });
       await db.outbox.add({ entity: 'board', entityId: board.id, op: 'upsert', payloadRev: rev, enqueuedAt: now, attempts: 0, nextAttemptAt: now, lastError: null });
+    });
+  }
+
+  async saveCameraForBoard(boardId: string, x: number, y: number, zoom: number) {
+    const now = Date.now();
+    await db.transaction('rw', db.boards, db.outbox, async () => {
+      const existing = await db.boards.get(boardId);
+      if (!existing) return;
+      const rev = existing._rev + 1;
+      await db.boards.update(boardId, { cameraX: x, cameraY: y, cameraZoom: zoom, _dirty: 1, _rev: rev, updatedAt: now });
+      await db.outbox.add({ entity: 'board', entityId: boardId, op: 'upsert', payloadRev: rev, enqueuedAt: now, attempts: 0, nextAttemptAt: now, lastError: null });
     });
   }
 
@@ -323,7 +341,7 @@ export class BoardService {
     return this.cards().filter(c => c.boardId === boardId).length;
   }
 
-  addCard(cardData: Partial<Card> & { title: string; content: string; tags: string[] }): boolean {
+  addCard(cardData: Partial<Card> & { title: string; content: string; tags: string[] }): string | false {
     const boardId = cardData.boardId ?? this.boards()[0]?.id;
     if (!boardId || this.boardCardCount(boardId) >= MAX_CARDS_PER_BOARD) return false;
     const pos = this.nextFrontPosition(boardId);
@@ -353,7 +371,7 @@ export class BoardService {
     this.cards.update(cards => [newCard, ...cards]);
     this.writeCard(newCard);
     this.auth.triggerAnonymousSignIn();
-    return true;
+    return newCard.id;
   }
 
   moveCard(id: string, x: number, y: number) {

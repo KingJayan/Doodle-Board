@@ -5,6 +5,9 @@ export interface DbBoard {
   name: string;
   position: string;
   parentId: string | null;
+  cameraX: number | null;
+  cameraY: number | null;
+  cameraZoom: number | null;
   createdAt: number;
   updatedAt: number;
   ownerId: string | null;
@@ -74,6 +77,7 @@ export class LocalDb extends Dexie {
       boards: '&id, position, updatedAt, _dirty, _deleted, ownerId, parentId'
     });
     this.version(3).stores({});
+    this.version(4).stores({});
   }
 }
 

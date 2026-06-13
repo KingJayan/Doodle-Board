@@ -3,6 +3,9 @@ export interface Board {
   name: string;
   position: string;
   parentId?: string | null;
+  cameraX?: number | null;
+  cameraY?: number | null;
+  cameraZoom?: number | null;
 }
 
 export interface Card {

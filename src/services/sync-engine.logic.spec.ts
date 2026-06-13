@@ -9,6 +9,7 @@ const TS = +new Date(ISO);
 
 function makeBoard(overrides: Partial<DbBoard> = {}): DbBoard {
   return { id: 'b1', name: 'Board', position: 'a', parentId: null,
+    cameraX: null, cameraY: null, cameraZoom: null,
     createdAt: TS, updatedAt: TS, ownerId: 'u1',
     _rev: 1, _dirty: 0, _deleted: 0, _serverUpdatedAt: TS, ...overrides };
 }

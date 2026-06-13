@@ -3,6 +3,7 @@ import { DbBoard, DbCard, DbOutboxEntry, LocalDb } from '../db/local-db';
 
 export function toSbBoard(b: DbBoard, uid: string) {
   return { id: b.id, name: b.name, position: b.position, parent_id: b.parentId ?? null,
+    camera_x: b.cameraX ?? null, camera_y: b.cameraY ?? null, camera_zoom: b.cameraZoom ?? null,
     created_at: new Date(b.createdAt).toISOString(), updated_at: new Date(b.updatedAt).toISOString(),
     owner_id: uid, deleted: b._deleted === 1 };
 }
@@ -19,6 +20,9 @@ export function toSbCard(c: DbCard, uid: string) {
 export function fromSbBoard(r: Record<string, unknown>): DbBoard {
   return { id: r['id'] as string, name: r['name'] as string, position: r['position'] as string,
     parentId: (r['parent_id'] as string | null) ?? null,
+    cameraX: (r['camera_x'] as number | null) ?? null,
+    cameraY: (r['camera_y'] as number | null) ?? null,
+    cameraZoom: (r['camera_zoom'] as number | null) ?? null,
     createdAt: +new Date(r['created_at'] as string), updatedAt: +new Date(r['updated_at'] as string),
     ownerId: r['owner_id'] as string,
     _rev: 1, _dirty: 0, _deleted: r['deleted'] ? 1 : 0,

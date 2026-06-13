@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, effect, untracked, OnInit, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, computed, effect, untracked, OnInit, OnDestroy, ChangeDetectionStrategy, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -18,6 +18,8 @@ import { PreferencesService } from '../../services/preferences.service';
 import { IoService } from '../../services/io.service';
 import { MarkdownService } from '../../services/markdown.service';
 import { Card, Board, CARD_COLORS, CARD_COLORS_AI, CARD_DEFAULTS } from '../../models/card.model';
+
+interface Camera { x: number; y: number; zoom: number }
 
 @Component({
   selector: 'app-board',
@@ -146,8 +148,13 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI, CARD_DEFAULTS } from '../../m
           </div>
         }
 
-        <!-- main canvas -->
-        <main class="flex-grow w-full z-10 overflow-y-auto overflow-x-hidden h-full relative" (dragover)="handleDragOver($event)" (drop)="handleFileDrop($event)">
+        <!-- main infinite canvas -->
+        <main #viewport
+          class="flex-grow w-full z-10 overflow-hidden h-full relative"
+          (pointerdown)="onCanvasPointerDown($event)"
+          (dragover)="handleDragOver($event)"
+          (drop)="handleFileDrop($event)">
+
           @if (isHydrating()) {
             <div class="flex flex-wrap gap-6 p-8">
               @for (i of skeletonCards; track i) {
@@ -155,14 +162,14 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI, CARD_DEFAULTS } from '../../m
               }
             </div>
           } @else {
-            @if (filteredCards().length === 0) {
-              <div class="text-center py-20 opacity-50 pointer-events-none select-none">
+            @if (filteredCards().length === 0 && !subBoardPreviews().length) {
+              <div class="absolute inset-0 flex flex-col items-center justify-center opacity-50 pointer-events-none select-none">
                 <div class="text-6xl mb-4"><app-icon name="leaf"></app-icon></div>
                 <p class="text-2xl marker-font">Empty Board...</p>
                 <p>Drag notes here or create new ones!</p>
               </div>
             }
-            <div class="relative w-full" [style.height.px]="canvasSize().h">
+            <div class="absolute" style="transform-origin: 0 0; will-change: transform;" [style.transform]="cameraTransform()">
               @for (card of filteredCards(); track card.id) {
                 <div
                   class="absolute"
@@ -232,6 +239,15 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI, CARD_DEFAULTS } from '../../m
             </div>
           }
         </main>
+
+        <!-- zoom controls -->
+        <div class="absolute bottom-4 right-4 z-20 flex items-center gap-1 bg-[var(--paper-color)]/90 border border-[var(--ink-color)]/20 rounded-lg px-2 py-1 shadow-sm backdrop-blur-sm cursor-default">
+          <button (click)="zoomBy(1/1.2)" class="w-6 h-6 flex items-center justify-center hover:bg-[var(--surface)] rounded text-sm font-bold leading-none select-none">−</button>
+          <span class="text-xs font-mono w-10 text-center select-none">{{ zoomLevel() }}%</span>
+          <button (click)="zoomBy(1.2)" class="w-6 h-6 flex items-center justify-center hover:bg-[var(--surface)] rounded text-sm font-bold leading-none select-none">+</button>
+          <span class="w-px h-4 bg-[var(--ink-color)]/20 mx-1"></span>
+          <button (click)="fitToBoard()" class="text-xs px-2 py-0.5 hover:bg-[var(--surface)] rounded select-none">Fit</button>
+        </div>
       </div>
 
       <!-- bulk action bar -->
@@ -319,9 +335,13 @@ import { Card, Board, CARD_COLORS, CARD_COLORS_AI, CARD_DEFAULTS } from '../../m
       z-index: 50;
       pointer-events: none;
     }
+    main { cursor: grab; }
+    main:active { cursor: grabbing; }
   `]
 })
 export class BoardComponent implements OnInit, OnDestroy {
+  @ViewChild('viewport') viewportEl!: ElementRef<HTMLElement>;
+
   private boardService = inject(BoardService);
   themeService = inject(ThemeService);
   private prefs = inject(PreferencesService);
@@ -343,6 +363,13 @@ export class BoardComponent implements OnInit, OnDestroy {
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
   activeTag = signal<string | null>(null);
   activeBoardId = signal<string>('default');
+  camera = signal<Camera>({ x: 0, y: 0, zoom: 1 });
+  cameraTransform = computed(() => {
+    const { x, y, zoom } = this.camera();
+    return `translate(${x}px,${y}px) scale(${zoom})`;
+  });
+  zoomLevel = computed(() => Math.round(this.camera().zoom * 100));
+  private cameraSaveTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
     effect(() => {
@@ -362,9 +389,16 @@ export class BoardComponent implements OnInit, OnDestroy {
             this.justSwitchedBoard.set(true);
             setTimeout(() => this.justSwitchedBoard.set(false), 350);
           }
+          this.restoreCameraForBoard(id);
         }
         prevBoardId = id;
       });
+    });
+
+    effect(() => {
+      if (!this.isHydrating()) {
+        untracked(() => this.restoreCameraForBoard(this.activeBoardId()));
+      }
     });
   }
 
@@ -431,16 +465,6 @@ export class BoardComponent implements OnInit, OnDestroy {
     });
   });
 
-  canvasSize = computed(() => {
-    const cards = this.filteredCards();
-    const previews = this.subBoardPreviews();
-    if (!cards.length && !previews.length) return { h: 1200 };
-    let maxY = 0;
-    for (const c of cards) maxY = Math.max(maxY, (c.y ?? 32) + (c.height ?? CARD_DEFAULTS.height) + 64);
-    for (const p of previews) maxY = Math.max(maxY, p.y + 200 + 64);
-    return { h: Math.max(maxY, 1200) };
-  });
-
   private readonly keydownHandler = (e: KeyboardEvent) => {
     const el = document.activeElement as HTMLElement | null;
     if (el?.tagName === 'INPUT' || el?.tagName === 'TEXTAREA' || el?.isContentEditable) return;
@@ -455,6 +479,18 @@ export class BoardComponent implements OnInit, OnDestroy {
     }
   };
 
+  private readonly wheelHandler = (e: WheelEvent) => {
+    e.preventDefault();
+    if (e.ctrlKey || e.metaKey) {
+      const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+      this.zoomAt(e.clientX, e.clientY, factor);
+    } else {
+      const norm = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 600 : 1;
+      this.camera.update(c => ({ ...c, x: c.x - e.deltaX * norm, y: c.y - e.deltaY * norm }));
+      this.scheduleCameraSave();
+    }
+  };
+
   ngOnInit() {
     this.generateBackgroundDoodles();
     if (window.innerWidth < 768) this.sidebarOpen.set(false);
@@ -464,6 +500,9 @@ export class BoardComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     document.removeEventListener('keydown', this.keydownHandler);
+    if (this.viewportEl?.nativeElement) {
+      this.viewportEl.nativeElement.removeEventListener('wheel', this.wheelHandler);
+    }
   }
 
   private generateBackgroundDoodles() {
@@ -474,6 +513,105 @@ export class BoardComponent implements OnInit, OnDestroy {
       scale: 0.5 + Math.random() * 1.5,
       mi: i
     })));
+  }
+
+  ngAfterViewInit() {
+    this.viewportEl.nativeElement.addEventListener('wheel', this.wheelHandler, { passive: false });
+  }
+
+  private scheduleCameraSave() {
+    if (this.cameraSaveTimer) clearTimeout(this.cameraSaveTimer);
+    this.cameraSaveTimer = setTimeout(() => {
+      const { x, y, zoom } = this.camera();
+      this.boardService.saveCameraForBoard(this.activeBoardId(), x, y, zoom);
+    }, 600);
+  }
+
+  private restoreCameraForBoard(boardId: string) {
+    const board = this.boardService.boards().find(b => b.id === boardId);
+    if (board?.cameraX != null && board.cameraY != null && board.cameraZoom != null) {
+      this.camera.set({ x: board.cameraX, y: board.cameraY, zoom: board.cameraZoom });
+    } else {
+      setTimeout(() => this.fitToBoard(), 50);
+    }
+  }
+
+  fitToBoard() {
+    const el = this.viewportEl?.nativeElement;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const vw = rect.width || window.innerWidth;
+    const vh = rect.height || window.innerHeight;
+    const cards = this.filteredCards();
+    const previews = this.subBoardPreviews();
+
+    const items: { x: number; y: number; w: number; h: number }[] = [
+      ...cards.map(c => ({ x: c.x ?? 32, y: c.y ?? 32, w: c.width ?? CARD_DEFAULTS.width, h: c.height ?? CARD_DEFAULTS.height })),
+      ...previews.map(p => ({ x: p.x, y: p.y, w: CARD_DEFAULTS.width, h: 212 }))
+    ];
+
+    if (!items.length) {
+      this.camera.set({ x: 40, y: 40, zoom: 1 });
+      return;
+    }
+
+    const PAD = 80;
+    const minX = Math.min(...items.map(i => i.x));
+    const minY = Math.min(...items.map(i => i.y));
+    const maxX = Math.max(...items.map(i => i.x + i.w));
+    const maxY = Math.max(...items.map(i => i.y + i.h));
+    const contentW = maxX - minX;
+    const contentH = maxY - minY;
+    const zoom = Math.min(Math.max(Math.min((vw - PAD * 2) / contentW, (vh - PAD * 2) / contentH), 0.2), 2);
+    const x = (vw - contentW * zoom) / 2 - minX * zoom;
+    const y = (vh - contentH * zoom) / 2 - minY * zoom;
+    this.camera.set({ x, y, zoom });
+    this.scheduleCameraSave();
+  }
+
+  zoomAt(clientX: number, clientY: number, factor: number) {
+    const el = this.viewportEl?.nativeElement;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const cx = clientX - rect.left;
+    const cy = clientY - rect.top;
+    this.camera.update(c => {
+      const newZoom = Math.min(3, Math.max(0.15, c.zoom * factor));
+      const ratio = newZoom / c.zoom;
+      return { x: cx - ratio * (cx - c.x), y: cy - ratio * (cy - c.y), zoom: newZoom };
+    });
+    this.scheduleCameraSave();
+  }
+
+  zoomBy(factor: number) {
+    const el = this.viewportEl?.nativeElement;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    this.zoomAt(rect.left + rect.width / 2, rect.top + rect.height / 2, factor);
+  }
+
+  onCanvasPointerDown(e: PointerEvent) {
+    if (e.button !== 0) return;
+    const target = e.target as HTMLElement;
+    if (target.closest('app-card') || target.closest('button') || target.closest('input')) return;
+
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startCamX = this.camera().x;
+    const startCamY = this.camera().y;
+    let moved = false;
+
+    const move = (ev: PointerEvent) => {
+      moved = true;
+      this.camera.update(c => ({ ...c, x: startCamX + ev.clientX - startX, y: startCamY + ev.clientY - startY }));
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      if (moved) this.scheduleCameraSave();
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
   }
 
   filteredCards = computed(() => {
@@ -508,11 +646,36 @@ export class BoardComponent implements OnInit, OnDestroy {
 
   createNewCard() {
     const color = CARD_COLORS[Math.floor(Math.random() * CARD_COLORS.length)];
-    if (!this.boardService.addCard({ title: '', content: '', tags: [], color, boardId: this.activeBoardId() })) {
+    const boardId = this.activeBoardId();
+    const cardId = this.boardService.addCard({ title: '', content: '', tags: [], color, boardId });
+    if (!cardId) {
       this.toastService.show(`Board is full — max ${MAX_CARDS_PER_BOARD} notes per board`, 'error');
       return;
     }
     this.toastService.show('Note created', 'success');
+    this.scrollToCard(cardId);
+  }
+
+  private scrollToCard(cardId: string) {
+    const card = this.boardService.cards().find(c => c.id === cardId);
+    const el = this.viewportEl?.nativeElement;
+    if (!card || !el) return;
+    const { x: camX, y: camY, zoom } = this.camera();
+    const rect = el.getBoundingClientRect();
+    const cardScreenX = (card.x ?? 32) * zoom + camX;
+    const cardScreenY = (card.y ?? 32) * zoom + camY;
+    const cardW = (card.width ?? CARD_DEFAULTS.width) * zoom;
+    const cardH = (card.height ?? CARD_DEFAULTS.height) * zoom;
+    const PAD = 40;
+    let dx = 0, dy = 0;
+    if (cardScreenX < PAD) dx = PAD - cardScreenX;
+    else if (cardScreenX + cardW > rect.width - PAD) dx = rect.width - PAD - cardScreenX - cardW;
+    if (cardScreenY < PAD) dy = PAD - cardScreenY;
+    else if (cardScreenY + cardH > rect.height - PAD) dy = rect.height - PAD - cardScreenY - cardH;
+    if (dx || dy) {
+      this.camera.update(c => ({ ...c, x: c.x + dx, y: c.y + dy }));
+      this.scheduleCameraSave();
+    }
   }
 
   duplicateCard(card: Card) {
@@ -570,12 +733,14 @@ export class BoardComponent implements OnInit, OnDestroy {
     try {
       const result = await this.aiService.brainstormCard(topic);
       const color = CARD_COLORS_AI[Math.floor(Math.random() * CARD_COLORS_AI.length)];
-      if (!this.boardService.addCard({ ...result, color, boardId: this.activeBoardId() })) {
+      const cardId = this.boardService.addCard({ ...result, color, boardId: this.activeBoardId() });
+      if (!cardId) {
         this.toastService.show(`Board is full — max ${MAX_CARDS_PER_BOARD} notes per board`, 'error');
         return;
       }
       this.aiPanelOpen.set(false);
       this.toastService.show('Note generated', 'success');
+      this.scrollToCard(cardId);
     } catch {
       this.toastService.show('AI brainstorm failed — check your API key', 'error');
     } finally {
@@ -593,6 +758,7 @@ export class BoardComponent implements OnInit, OnDestroy {
 
   startCardDrag(cardId: string, event: PointerEvent) {
     event.preventDefault();
+    event.stopPropagation();
     const card = this.boardService.cards().find(c => c.id === cardId);
     if (!card) return;
     const origX = card.x ?? 32;
@@ -601,8 +767,9 @@ export class BoardComponent implements OnInit, OnDestroy {
 
     const moveHandler = (e: PointerEvent) => {
       if (!this.pointerDrag) return;
-      const dx = e.clientX - this.pointerDrag.startX;
-      const dy = e.clientY - this.pointerDrag.startY;
+      const zoom = this.camera().zoom;
+      const dx = (e.clientX - this.pointerDrag.startX) / zoom;
+      const dy = (e.clientY - this.pointerDrag.startY) / zoom;
       const nx = Math.max(0, this.pointerDrag.origX + dx);
       const ny = Math.max(0, this.pointerDrag.origY + dy);
       this.boardService.cards.update(cards => cards.map(c => c.id === cardId ? { ...c, x: nx, y: ny } : c));
@@ -618,15 +785,16 @@ export class BoardComponent implements OnInit, OnDestroy {
       const targetBoardId = boardEl?.dataset?.['boardId'];
 
       if (targetBoardId) {
-        const card = this.boardService.cards().find(c => c.id === cardId);
-        if (card && targetBoardId !== card.boardId) {
-          this.boardService.updateCard({ ...card, boardId: targetBoardId });
+        const c = this.boardService.cards().find(c => c.id === cardId);
+        if (c && targetBoardId !== c.boardId) {
+          this.boardService.updateCard({ ...c, boardId: targetBoardId });
           this.toastService.show('Moved note to board', 'success');
         }
         this.boardService.cards.update(cs => cs.map(c => c.id === cardId ? { ...c, x: this.pointerDrag!.origX, y: this.pointerDrag!.origY } : c));
       } else {
-        const dx = e.clientX - this.pointerDrag.startX;
-        const dy = e.clientY - this.pointerDrag.startY;
+        const zoom = this.camera().zoom;
+        const dx = (e.clientX - this.pointerDrag.startX) / zoom;
+        const dy = (e.clientY - this.pointerDrag.startY) / zoom;
         const { x: nx, y: ny } = this.alignSnap(cardId, this.pointerDrag.origX + dx, this.pointerDrag.origY + dy);
         this.boardService.moveCard(cardId, nx, ny);
       }
@@ -644,7 +812,8 @@ export class BoardComponent implements OnInit, OnDestroy {
   }
 
   private alignSnap(cardId: string, x: number, y: number): { x: number; y: number } {
-    const THRESH = 10;
+    const zoom = this.camera().zoom;
+    const THRESH = 10 / zoom;
     const card = this.filteredCards().find(c => c.id === cardId);
     const w = card?.width ?? CARD_DEFAULTS.width;
     const h = card?.height ?? CARD_DEFAULTS.height;
