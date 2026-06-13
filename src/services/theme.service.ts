@@ -689,7 +689,9 @@ export class ThemeService {
         localStorage.setItem('doodle_custom_themes', JSON.stringify(migrated));
         return migrated;
       }
-    } catch { }
+    } catch {
+      // ignore malformed persisted state
+    }
     return [];
   }
 

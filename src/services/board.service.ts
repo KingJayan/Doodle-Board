@@ -3,6 +3,25 @@ import { generateKeyBetween, generateNKeysBetween } from 'fractional-indexing';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function isUUID(s: string) { return UUID_RE.test(s); }
+
+interface LegacyCard {
+  id?: string;
+  boardId?: string;
+  folderId?: string;
+  title?: string;
+  content?: string;
+  tags?: string[];
+  color?: string;
+  rotation?: number;
+  stickers?: string[];
+  isPinned?: boolean;
+  isMinimized?: boolean;
+  x?: number | null;
+  y?: number | null;
+  width?: number;
+  height?: number;
+  updatedAt?: number;
+}
 import { Card, Board, CARD_COLORS, CARD_DEFAULTS, CARD_PALETTE } from '../models/card.model';
 import { db, DbBoard, DbCard } from '../db/local-db';
 import { AuthService } from './auth.service';
@@ -97,9 +116,8 @@ export class BoardService {
           });
         }
       };
-      'requestIdleCallback' in window
-        ? (window as any).requestIdleCallback(loadRest)
-        : setTimeout(loadRest, 0);
+      const ric = (window as { requestIdleCallback?: (cb: () => void) => void }).requestIdleCallback;
+      if (ric) ric(loadRest); else setTimeout(loadRest, 0);
     }
   }
 
@@ -128,7 +146,7 @@ export class BoardService {
   private async migrateFromLocalStorage() {
     const now = Date.now();
     let oldBoards: { id: string; name: string }[];
-    let oldCards: any[];
+    let oldCards: LegacyCard[];
     try {
       oldBoards = JSON.parse(localStorage.getItem('doodle_board_folders') ?? 'null') ?? [{ id: 'default', name: 'General' }];
       if (!oldBoards.length) oldBoards = [{ id: 'default', name: 'General' }];
@@ -166,8 +184,8 @@ export class BoardService {
     }
 
     const cardPositions = generateNKeysBetween(null, null, oldCards.length);
-    const dbCards: DbCard[] = oldCards.map((c: any, i: number) => ({
-      id: (c.id === '1' || c.id === '2' || !isUUID(c.id)) ? crypto.randomUUID() : c.id,
+    const dbCards: DbCard[] = oldCards.map((c: LegacyCard, i: number) => ({
+      id: (c.id === '1' || c.id === '2' || !isUUID(c.id ?? '')) ? crypto.randomUUID() : c.id!,
       boardId: idMap.get(c.boardId ?? c.folderId ?? 'default') ?? idMap.values().next().value!,
       title: c.title ?? '',
       content: c.content ?? '',

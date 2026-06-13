@@ -14,7 +14,7 @@
 
 </div>
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.2.5-blue">
+  <img src="https://img.shields.io/badge/version-1.2.8-blue">
 </p>
 
 >[!IMPORTANT]
@@ -47,6 +47,7 @@
 - paid team features
 - language support, browser extension integrations
 - more ai providers + webLLM support(llama 3 8b + qwen 2.5 1.5b dep on hardware -- chunk context, run on sw, few-shot)
+- pdf ocr(all platforms) + photo-to-note(mobile)
 
 
 ## quickstart

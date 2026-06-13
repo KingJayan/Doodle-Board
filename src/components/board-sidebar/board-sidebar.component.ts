@@ -199,7 +199,9 @@ export class BoardSidebarComponent implements OnInit {
     try {
       const saved = JSON.parse(localStorage.getItem('doodle_expanded_folders') ?? '[]') as string[];
       this.expandedFolders.set(new Set(saved));
-    } catch { }
+    } catch {
+      // ignore malformed persisted state
+    }
   }
 
   selectBoard(id: string) {

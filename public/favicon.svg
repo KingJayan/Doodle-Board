@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" stroke-linejoin="round" stroke-linecap="round">
+  <!-- sticky note body with folded corner -->
+  <path d="M22 20 L 80 22 L 78 64 L 60 80 L 20 78 Z" fill="#ffd23f" stroke="#caa12a" stroke-width="4"/>
+  <!-- folded corner flap -->
+  <path d="M60 80 L 62 62 L 78 64 Z" fill="#e6b833" stroke="#caa12a" stroke-width="4"/>
+  <!-- handwriting scribble -->
+  <path d="M33 38 Q 42 32 50 38 T 67 38" stroke="#6a5410" stroke-width="5"/>
+  <path d="M33 52 Q 41 46 49 52 T 64 52" stroke="#6a5410" stroke-width="5"/>
+</svg>

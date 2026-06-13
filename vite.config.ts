@@ -1,5 +1,10 @@
-import { defineConfig } from 'vite';
+import { defineConfig, Plugin } from 'vite';
 import angular from '@analogjs/vite-plugin-angular';
+
+type TransformObj = {
+  handler: (this: unknown, code: string, id: string, ...a: unknown[]) => unknown;
+  filter?: { id?: RegExp };
+};
 
 const NODE_BUILTINS = new Set([
   'module', 'url', 'path', 'fs', 'os', 'crypto', 'perf_hooks',
@@ -14,13 +19,14 @@ const PATH_STUB = `
   export { posix };
 `;
 
-function fixAnalogPlugin(plugins: any): any {
-  if (Array.isArray(plugins)) return plugins.map(fixAnalogPlugin);
+function fixAnalogPlugin(plugins: Plugin | Plugin[]): Plugin | Plugin[] {
+  if (Array.isArray(plugins)) return plugins.map(fixAnalogPlugin) as Plugin[];
   const p = plugins;
-  if (p?.name === 'analogjs-router-optimization' && p.transform?.handler) {
-    const { handler, filter } = p.transform;
+  const transform = p?.transform as TransformObj | undefined;
+  if (p?.name === 'analogjs-router-optimization' && transform?.handler) {
+    const { handler, filter } = transform;
     const re = filter?.id ?? /fesm(.*?)\.mjs/;
-    p.transform = { ...p.transform, handler(code: string, id: string, ...a: any[]) {
+    (p as { transform: unknown }).transform = { ...transform, handler(this: unknown, code: string, id: string, ...a: unknown[]) {
       if (id && !id.split('?')[0].match(re)) return null;
       return handler.apply(this, [code, id, ...a]);
     }};
@@ -45,7 +51,7 @@ export default defineConfig({
           return 'export default {};';
         }
       },
-      ...fixAnalogPlugin(angular({ jit: false }))
+      ...(fixAnalogPlugin(angular({ jit: false }) as Plugin[]) as Plugin[])
     ],
     build: {
       target: 'esnext',

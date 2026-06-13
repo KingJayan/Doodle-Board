@@ -106,7 +106,7 @@ interface Camera { x: number; y: number; zoom: number }
         </div>
       </header>
 
-      <div class="flex flex-grow relative max-w-7xl mx-auto w-full min-h-0">
+      <div class="flex flex-grow relative w-full min-h-0">
 
         <!-- sidebar -->
         <app-board-sidebar
@@ -561,7 +561,7 @@ export class BoardComponent implements OnInit, OnDestroy {
     const maxY = Math.max(...items.map(i => i.y + i.h));
     const contentW = maxX - minX;
     const contentH = maxY - minY;
-    const zoom = Math.min(Math.max(Math.min((vw - PAD * 2) / contentW, (vh - PAD * 2) / contentH), 0.2), 2);
+    const zoom = Math.min(Math.max(Math.min((vw - PAD * 2) / contentW, (vh - PAD * 2) / contentH), 0.25), 2.5);
     const x = (vw - contentW * zoom) / 2 - minX * zoom;
     const y = (vh - contentH * zoom) / 2 - minY * zoom;
     this.camera.set({ x, y, zoom });
@@ -575,7 +575,7 @@ export class BoardComponent implements OnInit, OnDestroy {
     const cx = clientX - rect.left;
     const cy = clientY - rect.top;
     this.camera.update(c => {
-      const newZoom = Math.min(3, Math.max(0.15, c.zoom * factor));
+      const newZoom = Math.min(2.5, Math.max(0.25, c.zoom * factor));
       const ratio = newZoom / c.zoom;
       return { x: cx - ratio * (cx - c.x), y: cy - ratio * (cy - c.y), zoom: newZoom };
     });
@@ -757,11 +757,14 @@ export class BoardComponent implements OnInit, OnDestroy {
 
     const moveHandler = (e: PointerEvent) => {
       if (!this.pointerDrag) return;
-      const zoom = this.camera().zoom;
+      const { zoom } = this.camera();
+      const el = this.viewportEl?.nativeElement;
+      const limit = (el?.clientWidth ?? window.innerWidth) / 0.25;
+      const limitY = (el?.clientHeight ?? window.innerHeight) / 0.25;
       const dx = (e.clientX - this.pointerDrag.startX) / zoom;
       const dy = (e.clientY - this.pointerDrag.startY) / zoom;
-      const nx = Math.max(0, this.pointerDrag.origX + dx);
-      const ny = Math.max(0, this.pointerDrag.origY + dy);
+      const nx = Math.max(-limit, Math.min(limit, this.pointerDrag.origX + dx));
+      const ny = Math.max(-limitY, Math.min(limitY, this.pointerDrag.origY + dy));
       this.boardService.cards.update(cards => cards.map(c => c.id === cardId ? { ...c, x: nx, y: ny } : c));
     };
 
@@ -825,7 +828,7 @@ export class BoardComponent implements OnInit, OnDestroy {
         }
       }
     }
-    return { x: Math.max(0, nx), y: Math.max(0, ny) };
+    return { x: nx, y: ny };
   }
 
   handleDragOver(event: DragEvent) {

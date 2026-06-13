@@ -6,7 +6,7 @@ import { PreferencesService, PerfPreset } from '../../services/preferences.servi
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
 import { IconComponent, ICON_NAMES } from '../icon/icon.component';
-const version = '1.2.5';
+const version = '1.2.8';
 
 const FONT_DISPLAY_OPTIONS = [
   { label: 'Permanent Marker', value: "'Permanent Marker', cursive" },
@@ -637,7 +637,7 @@ export class SettingsModalComponent {
   toggle(key: string) {
     this.collapsedSections.update(s => {
       const n = new Set(s);
-      n.has(key) ? n.delete(key) : n.add(key);
+      if (n.has(key)) n.delete(key); else n.add(key);
       localStorage.setItem('doodle_settings_collapsed', JSON.stringify([...n]));
       return n;
     });
@@ -647,7 +647,9 @@ export class SettingsModalComponent {
     try {
       const saved = JSON.parse(localStorage.getItem('doodle_settings_collapsed') ?? 'null');
       if (Array.isArray(saved)) return new Set<string>(saved);
-    } catch { }
+    } catch {
+      // ignore malformed persisted state
+    }
     return new Set(['account', 'theme', 'customize', 'perf', 'access']);
   }
 

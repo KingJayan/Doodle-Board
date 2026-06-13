@@ -18,7 +18,7 @@ export class MarkdownService {
         use({ gfm: true, breaks: true });
         this.parseFn = (md: string) => Promise.resolve(marked(md) as string);
 
-        const DOMPurify = (purifyMod as any).default ?? purifyMod;
+        const DOMPurify = purifyMod.default ?? purifyMod;
         DOMPurify.addHook('afterSanitizeAttributes', (node: Element) => {
           if (node.tagName === 'A') {
             node.setAttribute('target', '_blank');
