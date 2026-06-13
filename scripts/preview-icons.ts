@@ -140,6 +140,11 @@ const proc = spawn(
   { stdio: 'ignore' },
 );
 
+interface CdpMessage {
+  id?: number;
+  result: { data: string };
+}
+
 async function cdp() {
   let target;
 
@@ -148,11 +153,13 @@ async function cdp() {
       const list = await fetch(`http://127.0.0.1:${PORT}/json`).then((r) => r.json());
 
       target = list.find(
-        (t: any) => t.type === 'page' && t.webSocketDebuggerUrl,
+        (t: { type: string; webSocketDebuggerUrl?: string }) => t.type === 'page' && t.webSocketDebuggerUrl,
       );
 
       if (target) break;
-    } catch {}
+    } catch {
+      // CDP not ready yet; retry after sleep
+    }
 
     await sleep(250);
   }
@@ -171,7 +178,7 @@ async function cdp() {
   });
 
   let id = 0;
-  const pending = new Map<number, (msg: any) => void>();
+  const pending = new Map<number, (msg: CdpMessage) => void>();
 
   ws.on('message', (data) => {
     const msg = JSON.parse(data.toString());
@@ -183,7 +190,7 @@ async function cdp() {
   });
 
   const send = (method: string, params = {}) =>
-    new Promise<any>((resolve) => {
+    new Promise<CdpMessage>((resolve) => {
       const mid = ++id;
 
       pending.set(mid, resolve);

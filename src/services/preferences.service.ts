@@ -83,7 +83,7 @@ export class PreferencesService {
 
   private detectTier(): PerfTier {
     const cores = navigator.hardwareConcurrency ?? 4;
-    const mem = (navigator as any).deviceMemory ?? 4;
+    const mem = (navigator as { deviceMemory?: number }).deviceMemory ?? 4;
     if (cores <= 2 || mem <= 2) return 'lite';
     if (cores <= 4 || mem <= 4) return 'balanced';
     return 'full';

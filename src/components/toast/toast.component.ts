@@ -1,6 +1,6 @@
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ToastService } from '../../services/toast.service';
+import { ToastService, Toast } from '../../services/toast.service';
 import { IconComponent } from '../icon/icon.component';
 
 @Component({
@@ -60,7 +60,7 @@ import { IconComponent } from '../icon/icon.component';
 export class ToastComponent {
   toastService = inject(ToastService);
 
-  handleAction(toast: any) {
+  handleAction(toast: Toast) {
     if (toast.action) {
       toast.action.callback();
       this.toastService.dismiss(toast.id);

@@ -71,7 +71,7 @@ export class ShareService {
       .eq('board_id', boardId).eq('owner_id', userId)
       .is('revoked_at', null)
       .order('created_at', { ascending: false });
-    return (data ?? []).map((s: any) => ({ token: s.token, createdAt: s.created_at }));
+    return (data ?? []).map((s: { token: string; created_at: string }) => ({ token: s.token, createdAt: s.created_at }));
   }
 
   async getSharedBoard(token: string): Promise<SharedPayload | null> {

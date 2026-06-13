@@ -55,7 +55,7 @@ export class AuthService {
       options: { redirectTo: window.location.origin + '/board' }
     });
     if (!error) return null;
-    if (error.message?.includes('already') || (error as any).code === 'identity_already_exists') {
+    if (error.message?.includes('already') || (error as { code?: string }).code === 'identity_already_exists') {
       return 'That account is already linked to another workspace. Sign in there instead, or export your data first.';
     }
     return error.message;
@@ -84,7 +84,7 @@ export class AuthService {
     if (!email.trim()) return 'Enter a valid email address';
     const { error } = await supabase.auth.updateUser({ email: email.trim() });
     if (!error) return null;
-    if (error.message?.includes('already') || (error as any).code === 'email_exists') {
+    if (error.message?.includes('already') || (error as { code?: string }).code === 'email_exists') {
       return 'That email belongs to another account. Sign in there instead, or export your data first.';
     }
     return error.message;
