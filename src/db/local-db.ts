@@ -82,3 +82,8 @@ export class LocalDb extends Dexie {
 }
 
 export const db = new LocalDb();
+
+export function txRun<T>(fn: () => Promise<T>): Promise<T> {
+  const root = (globalThis as { Zone?: { root: { run<R>(fn: () => R): R } } }).Zone?.root;
+  return root ? root.run(fn) : fn();
+}

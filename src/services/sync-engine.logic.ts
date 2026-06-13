@@ -1,5 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { DbBoard, DbCard, DbOutboxEntry, LocalDb } from '../db/local-db';
+import { DbBoard, DbCard, DbOutboxEntry, LocalDb, txRun } from '../db/local-db';
 
 export function toSbBoard(b: DbBoard, uid: string) {
   const base = { id: b.id, name: b.name, position: b.position, parent_id: b.parentId ?? null,
@@ -103,11 +103,11 @@ export async function uploadEntry(
       const { data: upserted, error } = await client.from('boards').upsert(toSbBoard(row, userId)).select('updated_at').single();
       if (error) throw error;
       const serverTs = upserted?.updated_at ? +new Date(upserted.updated_at) : now;
-      await localDb.transaction('rw', localDb.boards, localDb.outbox, async () => {
+      await txRun(() => localDb.transaction('rw', localDb.boards, localDb.outbox, async () => {
         const staleSeqs = await localDb.outbox.where('entityId').equals(entry.entityId).primaryKeys();
         await localDb.boards.update(entry.entityId, { _dirty: 0, _serverUpdatedAt: serverTs });
         await localDb.outbox.bulkDelete(staleSeqs);
-      });
+      }));
     } else {
       const row = await localDb.cards.get(entry.entityId);
       if (!row) {
@@ -121,11 +121,11 @@ export async function uploadEntry(
       const { data: upserted, error } = await client.from('cards').upsert(toSbCard(row, userId)).select('updated_at').single();
       if (error) throw error;
       const serverTs = upserted?.updated_at ? +new Date(upserted.updated_at) : now;
-      await localDb.transaction('rw', localDb.cards, localDb.outbox, async () => {
+      await txRun(() => localDb.transaction('rw', localDb.cards, localDb.outbox, async () => {
         const staleCardSeqs = await localDb.outbox.where('entityId').equals(entry.entityId).primaryKeys();
         await localDb.cards.update(entry.entityId, { _dirty: 0, _serverUpdatedAt: serverTs });
         await localDb.outbox.bulkDelete(staleCardSeqs);
-      });
+      }));
     }
   } catch (e) {
     const attempts = (entry.attempts ?? 0) + 1;

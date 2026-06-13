@@ -23,7 +23,7 @@ interface LegacyCard {
   updatedAt?: number;
 }
 import { Card, Board, CARD_COLORS, CARD_DEFAULTS, CARD_PALETTE } from '../models/card.model';
-import { db, DbBoard, DbCard } from '../db/local-db';
+import { db, DbBoard, DbCard, txRun } from '../db/local-db';
 import { AuthService } from './auth.service';
 import { ThemeService } from './theme.service';
 
@@ -134,13 +134,13 @@ export class BoardService {
       db.cards.where('boardId').equals('default').toArray(),
       db.outbox.where('[entity+entityId]').equals(['board', 'default']).toArray()
     ]);
-    await db.transaction('rw', db.boards, db.cards, db.outbox, db.meta, async () => {
+    await txRun(() => db.transaction('rw', db.boards, db.cards, db.outbox, db.meta, async () => {
       await db.boards.delete('default');
       await db.boards.put({ ...defaultBoard, id: newId });
       await db.cards.bulkPut(cardsToUpdate.map(c => ({ ...c, boardId: newId })));
       for (const e of boardOutbox) await db.outbox.update(e.seq!, { entityId: newId });
       await db.meta.put({ key: 'migratedDefaultBoardId', value: true });
-    });
+    }));
   }
 
   private async migrateFromLocalStorage() {
@@ -209,16 +209,16 @@ export class BoardService {
       _serverUpdatedAt: null
     }));
 
-    await db.transaction('rw', db.boards, db.cards, db.meta, async () => {
+    await txRun(() => db.transaction('rw', db.boards, db.cards, db.meta, async () => {
       await db.boards.bulkPut(dbBoards);
       await db.cards.bulkPut(dbCards);
       await db.meta.put({ key: 'migratedFromLocalStorage', value: true });
-    });
+    }));
   }
 
   private async writeCard(card: Card, position?: string) {
     const now = Date.now();
-    await db.transaction('rw', db.cards, db.outbox, async () => {
+    await txRun(() => db.transaction('rw', db.cards, db.outbox, async () => {
       const existing = await db.cards.get(card.id);
       const pos = position ?? card.position ?? existing?.position ?? this.nextFrontPosition(card.boardId);
       const rev = (existing?._rev ?? 0) + 1;
@@ -247,12 +247,12 @@ export class BoardService {
         _serverUpdatedAt: existing?._serverUpdatedAt ?? null
       });
       await db.outbox.add({ entity: 'card', entityId: card.id, op: 'upsert', payloadRev: rev, enqueuedAt: now, attempts: 0, nextAttemptAt: now, lastError: null });
-    });
+    }));
   }
 
   private async writeBoard(board: Board) {
     const now = Date.now();
-    await db.transaction('rw', db.boards, db.outbox, async () => {
+    await txRun(() => db.transaction('rw', db.boards, db.outbox, async () => {
       const existing = await db.boards.get(board.id);
       const rev = (existing?._rev ?? 0) + 1;
       await db.boards.put({
@@ -272,18 +272,18 @@ export class BoardService {
         _serverUpdatedAt: existing?._serverUpdatedAt ?? null
       });
       await db.outbox.add({ entity: 'board', entityId: board.id, op: 'upsert', payloadRev: rev, enqueuedAt: now, attempts: 0, nextAttemptAt: now, lastError: null });
-    });
+    }));
   }
 
   async saveCameraForBoard(boardId: string, x: number, y: number, zoom: number) {
     const now = Date.now();
-    await db.transaction('rw', db.boards, db.outbox, async () => {
+    await txRun(() => db.transaction('rw', db.boards, db.outbox, async () => {
       const existing = await db.boards.get(boardId);
       if (!existing) return;
       const rev = existing._rev + 1;
       await db.boards.update(boardId, { cameraX: x, cameraY: y, cameraZoom: zoom, _dirty: 1, _rev: rev, updatedAt: now });
       await db.outbox.add({ entity: 'board', entityId: boardId, op: 'upsert', payloadRev: rev, enqueuedAt: now, attempts: 0, nextAttemptAt: now, lastError: null });
-    });
+    }));
   }
 
   private nextFrontPosition(boardId: string): string {
@@ -328,13 +328,13 @@ export class BoardService {
     );
     this.boards.update(b => b.filter(x => x.id !== boardId));
     toMove.forEach(c => this.writeCard(c));
-    await db.transaction('rw', db.boards, db.outbox, async () => {
+    await txRun(() => db.transaction('rw', db.boards, db.outbox, async () => {
       const existing = await db.boards.get(boardId);
       if (!existing) return;
       const rev = existing._rev + 1;
       await db.boards.put({ ...existing, _deleted: 1, _dirty: 1, _rev: rev, updatedAt: now });
       await db.outbox.add({ entity: 'board', entityId: boardId, op: 'delete', payloadRev: rev, enqueuedAt: now, attempts: 0, nextAttemptAt: now, lastError: null });
-    });
+    }));
   }
 
   renameBoard(id: string, name: string) {
@@ -413,13 +413,13 @@ export class BoardService {
     const now = Date.now();
     this.cards.update(cards => cards.filter(c => c.id !== id));
     this.trashedCards.update(t => [{ ...card, updatedAt: now }, ...t]);
-    await db.transaction('rw', db.cards, db.outbox, async () => {
+    await txRun(() => db.transaction('rw', db.cards, db.outbox, async () => {
       const existing = await db.cards.get(id);
       if (!existing) return;
       const rev = existing._rev + 1;
       await db.cards.put({ ...existing, _deleted: 1, _dirty: 1, _rev: rev, updatedAt: now });
       await db.outbox.add({ entity: 'card', entityId: id, op: 'delete', payloadRev: rev, enqueuedAt: now, attempts: 0, nextAttemptAt: now, lastError: null });
-    });
+    }));
   }
 
   restoreCard(id: string) {
