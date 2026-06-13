@@ -33,6 +33,36 @@ import globe from '../../assets/icons/globe.svg?raw';
 import octopus from '../../assets/icons/octopus.svg?raw';
 import target from '../../assets/icons/target.svg?raw';
 import trash from '../../assets/icons/trash.svg?raw';
+import heart from '../../assets/icons/heart.svg?raw';
+import bell from '../../assets/icons/bell.svg?raw';
+import clock from '../../assets/icons/clock.svg?raw';
+import calendar from '../../assets/icons/calendar.svg?raw';
+import bookmark from '../../assets/icons/bookmark.svg?raw';
+import lightbulb from '../../assets/icons/lightbulb.svg?raw';
+import lock from '../../assets/icons/lock.svg?raw';
+import key from '../../assets/icons/key.svg?raw';
+import mail from '../../assets/icons/mail.svg?raw';
+import link from '../../assets/icons/link.svg?raw';
+import bolt from '../../assets/icons/bolt.svg?raw';
+import cloud from '../../assets/icons/cloud.svg?raw';
+import sun from '../../assets/icons/sun.svg?raw';
+import moon from '../../assets/icons/moon.svg?raw';
+import music from '../../assets/icons/music.svg?raw';
+import camera from '../../assets/icons/camera.svg?raw';
+import brush from '../../assets/icons/brush.svg?raw';
+import flag from '../../assets/icons/flag.svg?raw';
+import rocket from '../../assets/icons/rocket.svg?raw';
+import gift from '../../assets/icons/gift.svg?raw';
+import trophy from '../../assets/icons/trophy.svg?raw';
+import mapPin from '../../assets/icons/map-pin.svg?raw';
+import eye from '../../assets/icons/eye.svg?raw';
+import compass from '../../assets/icons/compass.svg?raw';
+import home from '../../assets/icons/home.svg?raw';
+import user from '../../assets/icons/user.svg?raw';
+import download from '../../assets/icons/download.svg?raw';
+import share from '../../assets/icons/share.svg?raw';
+import plus from '../../assets/icons/plus.svg?raw';
+import refresh from '../../assets/icons/refresh.svg?raw';
 
 const ICONS = {
   pin,
@@ -67,6 +97,36 @@ const ICONS = {
   octopus,
   target,
   trash,
+  heart,
+  bell,
+  clock,
+  calendar,
+  bookmark,
+  lightbulb,
+  lock,
+  key,
+  mail,
+  link,
+  bolt,
+  cloud,
+  sun,
+  moon,
+  music,
+  camera,
+  brush,
+  flag,
+  rocket,
+  gift,
+  trophy,
+  'map-pin': mapPin,
+  eye,
+  compass,
+  home,
+  user,
+  download,
+  share,
+  plus,
+  refresh,
 } satisfies Record<string, string>;
 
 export type IconName = keyof typeof ICONS;

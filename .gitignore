@@ -6,3 +6,5 @@ supabase/.temp
 .env.*.local
 *.local
 docs/
+scripts/icon-preview-*.png
+scripts/icon-preview-*.html

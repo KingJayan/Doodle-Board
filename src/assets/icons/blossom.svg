@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
   <path d="M50 50 C 41 38 44 23 50 21 C 56 23 59 38 50 50 Z"/>
   <path d="M50 50 C 41 38 44 23 50 21 C 56 23 59 38 50 50 Z" transform="rotate(72 50 50)"/>
   <path d="M50 50 C 41 38 44 23 50 21 C 56 23 59 38 50 50 Z" transform="rotate(144 50 50)"/>

@@ -6,3 +6,7 @@
 .env.keys
 .env.local
 .env.*.local
+
+# script outputs
+scripts/icon-preview.png
+scripts/icon-preview.html
