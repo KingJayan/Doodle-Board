@@ -2,10 +2,13 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { DbBoard, DbCard, DbOutboxEntry, LocalDb } from '../db/local-db';
 
 export function toSbBoard(b: DbBoard, uid: string) {
-  return { id: b.id, name: b.name, position: b.position, parent_id: b.parentId ?? null,
-    camera_x: b.cameraX ?? null, camera_y: b.cameraY ?? null, camera_zoom: b.cameraZoom ?? null,
+  const base = { id: b.id, name: b.name, position: b.position, parent_id: b.parentId ?? null,
     created_at: new Date(b.createdAt).toISOString(), updated_at: new Date(b.updatedAt).toISOString(),
     owner_id: uid, deleted: b._deleted === 1 };
+  if (b.cameraX != null || b.cameraY != null || b.cameraZoom != null) {
+    return { ...base, camera_x: b.cameraX ?? null, camera_y: b.cameraY ?? null, camera_zoom: b.cameraZoom ?? null };
+  }
+  return base;
 }
 
 export function toSbCard(c: DbCard, uid: string) {

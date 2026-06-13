@@ -5,19 +5,26 @@ import { ThemeService, ThemeDef, CustomThemeConfig, DEFAULT_CUSTOM_THEME } from 
 import { PreferencesService, PerfPreset } from '../../services/preferences.service';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
-import { IconComponent } from '../icon/icon.component';
-const version = '1.2.4';
+import { IconComponent, ICON_NAMES } from '../icon/icon.component';
+const version = '1.2.5';
 
 const FONT_DISPLAY_OPTIONS = [
   { label: 'Permanent Marker', value: "'Permanent Marker', cursive" },
   { label: 'Caveat', value: "'Caveat', cursive" },
+  { label: 'Kalam', value: "'Kalam', cursive" },
+  { label: 'Dancing Script', value: "'Dancing Script', cursive" },
+  { label: 'Indie Flower', value: "'Indie Flower', cursive" },
   { label: 'Special Elite', value: "'Special Elite', cursive" },
+  { label: 'Architects Daughter', value: "'Architects Daughter', cursive" },
   { label: 'Outfit (Clean)', value: "'Outfit', system-ui, sans-serif" },
 ];
 
 const FONT_BODY_OPTIONS = [
   { label: 'Patrick Hand', value: "'Patrick Hand', cursive" },
   { label: 'Caveat', value: "'Caveat', cursive" },
+  { label: 'Kalam', value: "'Kalam', cursive" },
+  { label: 'Indie Flower', value: "'Indie Flower', cursive" },
+  { label: 'Architects Daughter', value: "'Architects Daughter', cursive" },
   { label: 'Outfit (Clean)', value: "'Outfit', system-ui, sans-serif" },
 ];
 
@@ -228,7 +235,7 @@ const CORNER_OPTIONS = [
                               }
                             </div>
                             <div class="flex items-center gap-2 px-2 py-1.5 bg-surface">
-                              <span class="text-[var(--ink-color)]"><app-icon name="pencil"></app-icon></span>
+                              <span class="text-[var(--ink-color)]"><app-icon [name]="c.icon ?? 'pencil'"></app-icon></span>
                               <span class="text-sm font-bold truncate text-[var(--ink-color)]" [style.font-family]="c.fontDisplay">{{ c.name }}</span>
                             </div>
                           </button>
@@ -307,6 +314,26 @@ const CORNER_OPTIONS = [
                         <span class="mini-line" [style.background-color]="draft().ink"></span>
                         <span class="mini-line short" [style.background-color]="draft().ink"></span>
                       </div>
+                    </div>
+                  </div>
+
+                  <!-- icon -->
+                  <div>
+                    <div class="text-xs font-bold opacity-60 uppercase tracking-wide mb-2">Icon</div>
+                    <div class="flex flex-wrap gap-1.5">
+                      @for (ic of ICONS; track ic) {
+                        <button
+                          type="button"
+                          (click)="patch({ icon: ic })"
+                          class="w-8 h-8 rounded-lg border flex items-center justify-center text-base transition-all hover-surface"
+                          [class.border-soft]="draft().icon !== ic"
+                          [style.border-color]="draft().icon === ic ? 'var(--accent)' : null"
+                          [style.box-shadow]="draft().icon === ic ? '0 0 0 1px var(--accent)' : null"
+                          [style.color]="'var(--ink-color)'"
+                          [attr.aria-label]="'Use ' + ic + ' icon'"
+                          [attr.aria-pressed]="draft().icon === ic"
+                        ><app-icon [name]="ic"></app-icon></button>
+                      }
                     </div>
                   </div>
 
@@ -574,6 +601,7 @@ export class SettingsModalComponent {
     { label: 'Dark', themes: this.themeService.darkThemes },
   ];
 
+  readonly ICONS = ICON_NAMES;
   readonly FONT_DISPLAY = FONT_DISPLAY_OPTIONS;
   readonly FONT_BODY = FONT_BODY_OPTIONS;
   readonly CORNERS = CORNER_OPTIONS;

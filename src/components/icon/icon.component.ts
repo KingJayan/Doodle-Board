@@ -71,6 +71,8 @@ const ICONS = {
 
 export type IconName = keyof typeof ICONS;
 
+export const ICON_NAMES = Object.keys(ICONS) as IconName[];
+
 export const EMOJI_ICON: Record<string, IconName> = {
   '📌': 'pin',
   '📍': 'pin-active',

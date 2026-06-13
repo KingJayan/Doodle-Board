@@ -14,6 +14,7 @@ export type ThemeCategory = 'light' | 'dark';
 
 export interface CustomThemeConfig {
   name: string;
+  icon: IconName;
   paper: string;
   ink: string;
   accent: string;
@@ -27,6 +28,7 @@ export interface CustomThemeConfig {
 
 export const DEFAULT_CUSTOM_THEME: CustomThemeConfig = {
   name: 'My Theme',
+  icon: 'pencil',
   paper: '#fdfbf7',
   ink: '#2d2d2d',
   accent: '#ff6b6b',
@@ -605,7 +607,7 @@ export class ThemeService {
       name: 'custom',
       label: c.name,
       emoji: '✏️',
-      icon: 'pencil',
+      icon: c.icon ?? 'pencil',
       dark,
       paper: c.paper,
       ink: c.ink,
@@ -677,7 +679,10 @@ export class ThemeService {
   private loadCustomConfigs(): CustomThemeConfig[] {
     try {
       const newKey = localStorage.getItem('doodle_custom_themes');
-      if (newKey) return JSON.parse(newKey) as CustomThemeConfig[];
+      if (newKey) {
+        const parsed = JSON.parse(newKey) as CustomThemeConfig[];
+        return parsed.map((c) => ({ ...DEFAULT_CUSTOM_THEME, ...c }));
+      }
       const oldKey = localStorage.getItem('doodle_custom_theme');
       if (oldKey) {
         const migrated = [{ ...DEFAULT_CUSTOM_THEME, ...JSON.parse(oldKey) }];

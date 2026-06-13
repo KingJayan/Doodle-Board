@@ -44,11 +44,19 @@ import { IconComponent, iconFor } from '../icon/icon.component';
             </div>
           </div>
         }
-        <!-- bulk-select badge -->
-        @if (isSelected()) {
-          <div class="absolute top-2 right-2 z-50 w-6 h-6 rounded-full bg-[var(--accent)] flex items-center justify-center shadow-md pointer-events-none">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,6 5,9 10,3"/></svg>
-          </div>
+        <!-- bulk-select badge (interactive; visible when selected or in bulk mode) -->
+        @if (isSelected() || bulkMode()) {
+          <button
+            (click)="handleSelect($event)"
+            class="absolute top-2 right-2 z-50 w-6 h-6 rounded-full flex items-center justify-center transition-all"
+            [class.badge-checked]="isSelected()"
+            [class.badge-unchecked]="!isSelected()"
+            aria-label="Toggle selection"
+          >
+            @if (isSelected()) {
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,6 5,9 10,3"/></svg>
+            }
+          </button>
         }
 
         <!-- drag handle -->
@@ -117,6 +125,16 @@ import { IconComponent, iconFor } from '../icon/icon.component';
           </div>
 
           <div class="flex gap-2 justify-end">
+            <button
+              (click)="handleSelect($event)"
+              class="w-9 h-9 bg-[var(--surface)] text-[var(--ink-color)] rounded-full flex items-center justify-center shadow-md hover-surface hover:scale-110 transition-transform doodle-border cursor-pointer"
+              aria-label="Select note"
+            >
+              <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="7.5" cy="7.5" r="5.5"/>
+                <polyline points="4.5,7.5 6.5,9.5 10.5,5.5" class="pointer-events-none"/>
+              </svg>
+            </button>
             <button
               (click)="handleDuplicate($event)"
               class="w-9 h-9 bg-[var(--surface)] text-[var(--ink-color)] rounded-full flex items-center justify-center shadow-md hover-surface hover:scale-110 transition-transform doodle-border text-sm cursor-pointer"
@@ -234,6 +252,8 @@ import { IconComponent, iconFor } from '../icon/icon.component';
   styles: [`
     .card-shadow { box-shadow: var(--card-shadow); }
     :host { display: block; }
+    .badge-checked { background: var(--accent); box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
+    .badge-unchecked { border: 2px solid rgba(0,0,0,0.22); background: rgba(255,255,255,0.65); }
     .custom-scroll::-webkit-scrollbar { width: 6px; }
     .custom-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 4px; }
     .animate-pinPulse { animation: pinPulse 0.2s var(--ease-stamp); }
@@ -400,6 +420,11 @@ export class CardComponent implements OnDestroy {
     if (this.card().isMinimized) return;
     this.editForm = { title: this.card().title, content: this.card().content };
     this.isEditing.set(true);
+  }
+
+  handleSelect(event: Event) {
+    event.stopPropagation();
+    this.select.emit();
   }
 
   handleDuplicate(event: Event) {

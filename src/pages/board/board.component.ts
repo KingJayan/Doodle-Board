@@ -101,7 +101,6 @@ interface Camera { x: number; y: number; zoom: number }
             @if (aiAvailable) {
               <button (click)="aiPanelOpen.set(!aiPanelOpen())" class="doodle-btn bg-[var(--tint-blue)] text-[var(--ink-color)] text-base" title="Brainstorm with AI"><app-icon name="sparkles"></app-icon> AI</button>
             }
-            <button (click)="toggleBulkMode()" class="doodle-btn text-sm" [class.bg-surface-2]="isBulkMode()">{{ isBulkMode() ? 'Cancel' : 'Select' }}</button>
             <button (click)="createNewCard()" class="doodle-btn bg-[var(--tint-green)] text-[var(--ink-color)] font-bold text-base">+ New Note</button>
           </div>
         </div>
@@ -415,7 +414,7 @@ export class BoardComponent implements OnInit, OnDestroy {
   draggingCardId = signal<string | null>(null);
   droppedCardId = signal<string | null>(null);
   selectedCardIds = signal<Set<string>>(new Set());
-  isBulkMode = signal(false);
+  isBulkMode = computed(() => this.selectedCardIds().size > 0);
   showBulkMoveMenu = signal(false);
   editingCard = signal<Card | null>(null);
 
@@ -686,14 +685,6 @@ export class BoardComponent implements OnInit, OnDestroy {
     this.toastService.show('Note duplicated', 'success');
   }
 
-  toggleBulkMode() {
-    if (this.isBulkMode()) {
-      this.clearSelection();
-    } else {
-      this.isBulkMode.set(true);
-    }
-  }
-
   toggleCardSelection(cardId: string) {
     this.selectedCardIds.update(set => {
       const next = new Set(set);
@@ -705,7 +696,6 @@ export class BoardComponent implements OnInit, OnDestroy {
 
   clearSelection() {
     this.selectedCardIds.set(new Set());
-    this.isBulkMode.set(false);
     this.showBulkMoveMenu.set(false);
   }
 
