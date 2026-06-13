@@ -57,7 +57,7 @@ export default defineConfig({
           manualChunks: {
             'vendor-angular': ['@angular/core', '@angular/common', '@angular/forms', '@angular/router', '@angular/platform-browser', '@angular/animations', 'rxjs', 'zone.js', 'tslib'],
             'vendor-data':    ['@supabase/supabase-js', 'dexie'],
-            'vendor-util':    ['@google/genai', 'jszip', 'js-yaml', 'fractional-indexing'],
+            'vendor-util':    ['jszip', 'js-yaml', 'fractional-indexing'],
           }
         }
       },
