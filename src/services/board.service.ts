@@ -134,13 +134,15 @@ export class BoardService {
       db.cards.where('boardId').equals('default').toArray(),
       db.outbox.where('[entity+entityId]').equals(['board', 'default']).toArray()
     ]);
-    await txRun(() => db.transaction('rw', db.boards, db.cards, db.outbox, db.meta, async () => {
-      await db.boards.delete('default');
-      await db.boards.put({ ...defaultBoard, id: newId });
-      await db.cards.bulkPut(cardsToUpdate.map(c => ({ ...c, boardId: newId })));
-      for (const e of boardOutbox) await db.outbox.update(e.seq!, { entityId: newId });
-      await db.meta.put({ key: 'migratedDefaultBoardId', value: true });
-    }));
+    await txRun(() => db.transaction('rw', db.boards, db.cards, db.outbox, db.meta, () =>
+      Promise.all([
+        db.boards.delete('default'),
+        db.boards.put({ ...defaultBoard, id: newId }),
+        db.cards.bulkPut(cardsToUpdate.map(c => ({ ...c, boardId: newId }))),
+        ...boardOutbox.map(e => db.outbox.update(e.seq!, { entityId: newId })),
+        db.meta.put({ key: 'migratedDefaultBoardId', value: true })
+      ])
+    ));
   }
 
   private async migrateFromLocalStorage() {
@@ -209,11 +211,13 @@ export class BoardService {
       _serverUpdatedAt: null
     }));
 
-    await txRun(() => db.transaction('rw', db.boards, db.cards, db.meta, async () => {
-      await db.boards.bulkPut(dbBoards);
-      await db.cards.bulkPut(dbCards);
-      await db.meta.put({ key: 'migratedFromLocalStorage', value: true });
-    }));
+    await txRun(() => db.transaction('rw', db.boards, db.cards, db.meta, () =>
+      Promise.all([
+        db.boards.bulkPut(dbBoards),
+        db.cards.bulkPut(dbCards),
+        db.meta.put({ key: 'migratedFromLocalStorage', value: true })
+      ])
+    ));
   }
 
   private async writeCard(card: Card, position?: string) {
@@ -222,31 +226,19 @@ export class BoardService {
       const existing = await db.cards.get(card.id);
       const pos = position ?? card.position ?? existing?.position ?? this.nextFrontPosition(card.boardId);
       const rev = (existing?._rev ?? 0) + 1;
-      await db.cards.put({
-        id: card.id,
-        boardId: card.boardId,
-        title: card.title,
-        content: card.content,
-        tags: card.tags,
-        color: card.color,
-        rotation: card.rotation,
-        stickers: card.stickers,
-        isPinned: card.isPinned ? 1 : 0,
-        isMinimized: card.isMinimized ? 1 : 0,
-        position: pos,
-        x: card.x ?? null,
-        y: card.y ?? null,
-        width: card.width ?? null,
-        height: card.height ?? null,
-        createdAt: existing?.createdAt ?? card.updatedAt,
-        updatedAt: card.updatedAt,
-        ownerId: existing?.ownerId ?? this.auth.authState().userId ?? null,
-        _rev: rev,
-        _dirty: 1,
-        _deleted: 0,
-        _serverUpdatedAt: existing?._serverUpdatedAt ?? null
-      });
-      await db.outbox.add({ entity: 'card', entityId: card.id, op: 'upsert', payloadRev: rev, enqueuedAt: now, attempts: 0, nextAttemptAt: now, lastError: null });
+      await Promise.all([
+        db.cards.put({
+          id: card.id, boardId: card.boardId, title: card.title, content: card.content,
+          tags: card.tags, color: card.color, rotation: card.rotation, stickers: card.stickers,
+          isPinned: card.isPinned ? 1 : 0, isMinimized: card.isMinimized ? 1 : 0,
+          position: pos, x: card.x ?? null, y: card.y ?? null,
+          width: card.width ?? null, height: card.height ?? null,
+          createdAt: existing?.createdAt ?? card.updatedAt, updatedAt: card.updatedAt,
+          ownerId: existing?.ownerId ?? this.auth.authState().userId ?? null,
+          _rev: rev, _dirty: 1, _deleted: 0, _serverUpdatedAt: existing?._serverUpdatedAt ?? null
+        }),
+        db.outbox.add({ entity: 'card', entityId: card.id, op: 'upsert', payloadRev: rev, enqueuedAt: now, attempts: 0, nextAttemptAt: now, lastError: null })
+      ]);
     }));
   }
 
@@ -255,23 +247,18 @@ export class BoardService {
     await txRun(() => db.transaction('rw', db.boards, db.outbox, async () => {
       const existing = await db.boards.get(board.id);
       const rev = (existing?._rev ?? 0) + 1;
-      await db.boards.put({
-        id: board.id,
-        name: board.name,
-        position: board.position,
-        parentId: board.parentId ?? null,
-        cameraX: board.cameraX ?? existing?.cameraX ?? null,
-        cameraY: board.cameraY ?? existing?.cameraY ?? null,
-        cameraZoom: board.cameraZoom ?? existing?.cameraZoom ?? null,
-        createdAt: existing?.createdAt ?? now,
-        updatedAt: now,
-        ownerId: existing?.ownerId ?? this.auth.authState().userId ?? null,
-        _rev: rev,
-        _dirty: 1,
-        _deleted: 0,
-        _serverUpdatedAt: existing?._serverUpdatedAt ?? null
-      });
-      await db.outbox.add({ entity: 'board', entityId: board.id, op: 'upsert', payloadRev: rev, enqueuedAt: now, attempts: 0, nextAttemptAt: now, lastError: null });
+      await Promise.all([
+        db.boards.put({
+          id: board.id, name: board.name, position: board.position, parentId: board.parentId ?? null,
+          cameraX: board.cameraX ?? existing?.cameraX ?? null,
+          cameraY: board.cameraY ?? existing?.cameraY ?? null,
+          cameraZoom: board.cameraZoom ?? existing?.cameraZoom ?? null,
+          createdAt: existing?.createdAt ?? now, updatedAt: now,
+          ownerId: existing?.ownerId ?? this.auth.authState().userId ?? null,
+          _rev: rev, _dirty: 1, _deleted: 0, _serverUpdatedAt: existing?._serverUpdatedAt ?? null
+        }),
+        db.outbox.add({ entity: 'board', entityId: board.id, op: 'upsert', payloadRev: rev, enqueuedAt: now, attempts: 0, nextAttemptAt: now, lastError: null })
+      ]);
     }));
   }
 
@@ -281,8 +268,10 @@ export class BoardService {
       const existing = await db.boards.get(boardId);
       if (!existing) return;
       const rev = existing._rev + 1;
-      await db.boards.update(boardId, { cameraX: x, cameraY: y, cameraZoom: zoom, _dirty: 1, _rev: rev, updatedAt: now });
-      await db.outbox.add({ entity: 'board', entityId: boardId, op: 'upsert', payloadRev: rev, enqueuedAt: now, attempts: 0, nextAttemptAt: now, lastError: null });
+      await Promise.all([
+        db.boards.update(boardId, { cameraX: x, cameraY: y, cameraZoom: zoom, _dirty: 1, _rev: rev, updatedAt: now }),
+        db.outbox.add({ entity: 'board', entityId: boardId, op: 'upsert', payloadRev: rev, enqueuedAt: now, attempts: 0, nextAttemptAt: now, lastError: null })
+      ]);
     }));
   }
 
@@ -332,8 +321,10 @@ export class BoardService {
       const existing = await db.boards.get(boardId);
       if (!existing) return;
       const rev = existing._rev + 1;
-      await db.boards.put({ ...existing, _deleted: 1, _dirty: 1, _rev: rev, updatedAt: now });
-      await db.outbox.add({ entity: 'board', entityId: boardId, op: 'delete', payloadRev: rev, enqueuedAt: now, attempts: 0, nextAttemptAt: now, lastError: null });
+      await Promise.all([
+        db.boards.put({ ...existing, _deleted: 1, _dirty: 1, _rev: rev, updatedAt: now }),
+        db.outbox.add({ entity: 'board', entityId: boardId, op: 'delete', payloadRev: rev, enqueuedAt: now, attempts: 0, nextAttemptAt: now, lastError: null })
+      ]);
     }));
   }
 
@@ -417,8 +408,10 @@ export class BoardService {
       const existing = await db.cards.get(id);
       if (!existing) return;
       const rev = existing._rev + 1;
-      await db.cards.put({ ...existing, _deleted: 1, _dirty: 1, _rev: rev, updatedAt: now });
-      await db.outbox.add({ entity: 'card', entityId: id, op: 'delete', payloadRev: rev, enqueuedAt: now, attempts: 0, nextAttemptAt: now, lastError: null });
+      await Promise.all([
+        db.cards.put({ ...existing, _deleted: 1, _dirty: 1, _rev: rev, updatedAt: now }),
+        db.outbox.add({ entity: 'card', entityId: id, op: 'delete', payloadRev: rev, enqueuedAt: now, attempts: 0, nextAttemptAt: now, lastError: null })
+      ]);
     }));
   }
 

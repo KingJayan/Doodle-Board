@@ -11,6 +11,7 @@ import { ShareModalComponent } from '../../components/share-modal/share-modal.co
 import { TrashModalComponent } from '../../components/trash-modal/trash-modal.component';
 import { BoardSidebarComponent } from '../../components/board-sidebar/board-sidebar.component';
 import { IconComponent } from '../../components/icon/icon.component';
+import { SearchPanelComponent } from '../../components/search-panel/search-panel.component';
 import { AiService } from '../../services/ai.service';
 import { ToastService } from '../../services/toast.service';
 import { ThemeService } from '../../services/theme.service';
@@ -25,7 +26,7 @@ interface Camera { x: number; y: number; zoom: number }
   selector: 'app-board',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, CardComponent, EditorComponent, SettingsModalComponent, HelpModalComponent, ShareModalComponent, TrashModalComponent, BoardSidebarComponent, IconComponent],
+  imports: [CommonModule, FormsModule, CardComponent, EditorComponent, SettingsModalComponent, HelpModalComponent, ShareModalComponent, TrashModalComponent, BoardSidebarComponent, IconComponent, SearchPanelComponent],
   template: `
     <div class="h-screen flex flex-col overflow-hidden">
 
@@ -58,16 +59,25 @@ interface Camera { x: number; y: number; zoom: number }
           </div>
 
           <div class="flex flex-wrap gap-4 items-center justify-center">
-            <!-- search -->
+            <!-- search trigger -->
             <div class="relative group">
               <input
                 type="text"
-                [ngModel]="searchRaw()"
-                (ngModelChange)="onSearch($event)"
-                placeholder="Search notes..."
-                class="doodle-input bg-[var(--surface)]/60 rounded-full px-4 py-1 w-48 focus:w-64 transition-all"
+                readonly
+                (click)="searchPanelOpen.set(true)"
+                (focus)="searchPanelOpen.set(true)"
+                [value]="searchQuery()"
+                placeholder="Search notes…"
+                class="doodle-input bg-[var(--surface)]/60 rounded-full px-4 py-1 w-48 cursor-pointer"
               />
-              <span class="absolute right-3 top-2 opacity-50"><app-icon name="search"></app-icon></span>
+              @if (searchQuery()) {
+                <button
+                  class="absolute right-7 top-1.5 opacity-40 hover:opacity-80 text-sm leading-none px-1"
+                  (click)="clearSearch($event)"
+                  title="Clear search"
+                >×</button>
+              }
+              <span class="absolute right-3 top-2 opacity-50 pointer-events-none"><app-icon name="search"></app-icon></span>
             </div>
 
             <div class="hidden md:flex items-center gap-1 text-xs font-mono px-2 py-1 rounded-full border border-[var(--ink-color)]/20 bg-[var(--surface)]/60 text-[var(--ink-color)] opacity-70">
@@ -184,7 +194,7 @@ interface Camera { x: number; y: number; zoom: number }
                 >
                   <app-card
                     [card]="card"
-                    [searchQuery]="searchQuery()"
+                    [searchQuery]="searchTerms()"
                     [bulkMode]="isBulkMode()"
                     [isSelected]="selectedCardIds().has(card.id)"
                     (update)="updateCard($event)"
@@ -302,6 +312,15 @@ interface Camera { x: number; y: number; zoom: number }
           <app-trash-modal (close)="trashPanelOpen.set(false)"></app-trash-modal>
         }
       } @placeholder { <span></span> }
+
+      @if (searchPanelOpen()) {
+        <app-search-panel
+          [initialQuery]="searchQuery()"
+          (close)="searchPanelOpen.set(false)"
+          (queryChange)="searchQuery.set($event)"
+          (navigateToCard)="handleSearchNavigate($event)"
+        ></app-search-panel>
+      }
     </div>
   `,
   styles: [`
@@ -357,9 +376,13 @@ export class BoardComponent implements OnInit, OnDestroy {
   toggleSticker = (id: string, sticker: string) => this.boardService.toggleSticker(id, sticker);
   togglePin = (id: string) => this.boardService.togglePin(id);
 
-  searchRaw = signal('');
+  searchPanelOpen = signal(false);
   searchQuery = signal('');
-  private searchTimer: ReturnType<typeof setTimeout> | null = null;
+  searchTerms = computed(() =>
+    this.searchQuery().trim().toLowerCase().split(/\s+/)
+      .filter(t => t && !t.includes(':') && t[0] !== '#' && t[0] !== '-')
+      .join(' ')
+  );
   activeTag = signal<string | null>(null);
   activeBoardId = signal<string>('default');
   camera = signal<Camera>({ x: 0, y: 0, zoom: 1 });
@@ -522,7 +545,7 @@ export class BoardComponent implements OnInit, OnDestroy {
     if (this.cameraSaveTimer) clearTimeout(this.cameraSaveTimer);
     this.cameraSaveTimer = setTimeout(() => {
       const { x, y, zoom } = this.camera();
-      this.boardService.saveCameraForBoard(this.activeBoardId(), x, y, zoom);
+      this.boardService.saveCameraForBoard(this.activeBoardId(), x, y, zoom).catch(() => {});
     }, 600);
   }
 
@@ -614,18 +637,20 @@ export class BoardComponent implements OnInit, OnDestroy {
   }
 
   filteredCards = computed(() => {
-    const query = this.searchQuery().toLowerCase();
+    const terms = this.searchQuery().trim().toLowerCase().split(/\s+/)
+      .filter(t => t && !t.includes(':') && t[0] !== '#' && t[0] !== '-');
     const tag = this.activeTag();
     const board = this.activeBoardId();
 
     return this.boardService.cards()
       .filter((card: Card) => {
         if (card.boardId !== board) return false;
-        const matchesSearch =
-          card.title.toLowerCase().includes(query) ||
-          card.content.toLowerCase().includes(query) ||
-          card.tags.some((t: string) => t.toLowerCase().includes(query));
-        return matchesSearch && (tag ? card.tags.includes(tag) : true);
+        if (terms.length && !terms.every(t =>
+          card.title.toLowerCase().includes(t) ||
+          card.content.toLowerCase().includes(t) ||
+          card.tags.some((g: string) => g.toLowerCase().includes(t))
+        )) return false;
+        return !tag || card.tags.includes(tag);
       })
       .sort((a, b) =>
         (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0) ||
@@ -637,10 +662,19 @@ export class BoardComponent implements OnInit, OnDestroy {
     this.boardService.boards().find((b: Board) => b.id === this.activeBoardId())?.name ?? 'Board'
   );
 
-  onSearch(val: string) {
-    this.searchRaw.set(val);
-    if (this.searchTimer) clearTimeout(this.searchTimer);
-    this.searchTimer = setTimeout(() => this.searchQuery.set(val), 150);
+  clearSearch(e: Event) {
+    e.stopPropagation();
+    this.searchQuery.set('');
+  }
+
+  handleSearchNavigate(event: { boardId: string; cardId: string }) {
+    this.searchPanelOpen.set(false);
+    if (event.boardId !== this.activeBoardId()) {
+      this.activeBoardId.set(event.boardId);
+      setTimeout(() => this.scrollToCard(event.cardId), 100);
+    } else {
+      this.scrollToCard(event.cardId);
+    }
   }
 
   createNewCard() {

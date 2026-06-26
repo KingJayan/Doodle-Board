@@ -105,8 +105,10 @@ export async function uploadEntry(
       const serverTs = upserted?.updated_at ? +new Date(upserted.updated_at) : now;
       await txRun(() => localDb.transaction('rw', localDb.boards, localDb.outbox, async () => {
         const staleSeqs = await localDb.outbox.where('entityId').equals(entry.entityId).primaryKeys();
-        await localDb.boards.update(entry.entityId, { _dirty: 0, _serverUpdatedAt: serverTs });
-        await localDb.outbox.bulkDelete(staleSeqs);
+        await Promise.all([
+          localDb.boards.update(entry.entityId, { _dirty: 0, _serverUpdatedAt: serverTs }),
+          localDb.outbox.bulkDelete(staleSeqs)
+        ]);
       }));
     } else {
       const row = await localDb.cards.get(entry.entityId);
@@ -123,8 +125,10 @@ export async function uploadEntry(
       const serverTs = upserted?.updated_at ? +new Date(upserted.updated_at) : now;
       await txRun(() => localDb.transaction('rw', localDb.cards, localDb.outbox, async () => {
         const staleCardSeqs = await localDb.outbox.where('entityId').equals(entry.entityId).primaryKeys();
-        await localDb.cards.update(entry.entityId, { _dirty: 0, _serverUpdatedAt: serverTs });
-        await localDb.outbox.bulkDelete(staleCardSeqs);
+        await Promise.all([
+          localDb.cards.update(entry.entityId, { _dirty: 0, _serverUpdatedAt: serverTs }),
+          localDb.outbox.bulkDelete(staleCardSeqs)
+        ]);
       }));
     }
   } catch (e) {
