@@ -80,8 +80,15 @@ export class BoardService {
       db.cards.where('_deleted').equals(1).toArray()
     ]);
     this.boards.set(dbBoards.sort((a, b) => a.position < b.position ? -1 : a.position > b.position ? 1 : 0).map(dbToBoard));
-    this.cards.set(dbCards.sort((a, b) => a.position < b.position ? -1 : a.position > b.position ? 1 : 0).map(dbToCard));
     this.trashedCards.set(dbTrashed.sort((a, b) => b.updatedAt - a.updatedAt).map(dbToCard));
+    const incoming = dbCards.map(dbToCard);
+    this.cards.update(current => {
+      const inMap = new Map(incoming.map(c => [c.id, c]));
+      const existingIds = new Set(current.map(c => c.id));
+      const merged = current.filter(c => inMap.has(c.id)).map(c => inMap.get(c.id)!);
+      const added = incoming.filter(c => !existingIds.has(c.id));
+      return [...merged, ...added].sort((a, b) => (a.position ?? '') < (b.position ?? '') ? -1 : (a.position ?? '') > (b.position ?? '') ? 1 : 0);
+    });
   }
 
   private async init() {
@@ -381,6 +388,10 @@ export class BoardService {
     this.writeCard(newCard);
     this.auth.triggerAnonymousSignIn();
     return newCard.id;
+  }
+
+  moveCardOptimistic(id: string, x: number, y: number) {
+    this.cards.update(cards => cards.map(c => c.id === id ? { ...c, x, y } : c));
   }
 
   moveCard(id: string, x: number, y: number) {

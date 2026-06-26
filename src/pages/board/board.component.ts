@@ -402,25 +402,27 @@ export class BoardComponent implements OnInit, OnDestroy {
     });
 
     let prevBoardId = '';
+    let cameraSet = false;
     effect(() => {
       const id = this.activeBoardId();
+      const hydrating = this.isHydrating();
       untracked(() => {
-        if (prevBoardId && prevBoardId !== id) {
-          this.clearSelection();
-          if (!this.themeService.reduceMotion()) {
-            this.justSwitchedBoard.set(true);
-            setTimeout(() => this.justSwitchedBoard.set(false), 350);
+        if (!hydrating) {
+          const isBoardSwitch = !!prevBoardId && prevBoardId !== id;
+          if (isBoardSwitch) {
+            this.clearSelection();
+            if (!this.themeService.reduceMotion()) {
+              this.justSwitchedBoard.set(true);
+              setTimeout(() => this.justSwitchedBoard.set(false), 350);
+            }
           }
-          this.restoreCameraForBoard(id);
+          if (!cameraSet || isBoardSwitch) {
+            this.restoreCameraForBoard(id);
+            cameraSet = true;
+          }
         }
         prevBoardId = id;
       });
-    });
-
-    effect(() => {
-      if (!this.isHydrating()) {
-        untracked(() => this.restoreCameraForBoard(this.activeBoardId()));
-      }
     });
   }
 
@@ -554,7 +556,7 @@ export class BoardComponent implements OnInit, OnDestroy {
     if (board?.cameraX != null && board.cameraY != null && board.cameraZoom != null) {
       this.camera.set({ x: board.cameraX, y: board.cameraY, zoom: board.cameraZoom });
     } else {
-      setTimeout(() => this.fitToBoard(), 50);
+      requestAnimationFrame(() => this.fitToBoard());
     }
   }
 
@@ -799,7 +801,7 @@ export class BoardComponent implements OnInit, OnDestroy {
       const dy = (e.clientY - this.pointerDrag.startY) / zoom;
       const nx = Math.max(-limit, Math.min(limit, this.pointerDrag.origX + dx));
       const ny = Math.max(-limitY, Math.min(limitY, this.pointerDrag.origY + dy));
-      this.boardService.cards.update(cards => cards.map(c => c.id === cardId ? { ...c, x: nx, y: ny } : c));
+      this.boardService.moveCardOptimistic(cardId, nx, ny);
     };
 
     const upHandler = (e: PointerEvent) => {
@@ -817,7 +819,7 @@ export class BoardComponent implements OnInit, OnDestroy {
           this.boardService.updateCard({ ...c, boardId: targetBoardId });
           this.toastService.show('Moved note to board', 'success');
         }
-        this.boardService.cards.update(cs => cs.map(c => c.id === cardId ? { ...c, x: this.pointerDrag!.origX, y: this.pointerDrag!.origY } : c));
+        this.boardService.moveCardOptimistic(cardId, this.pointerDrag!.origX, this.pointerDrag!.origY);
       } else {
         const zoom = this.camera().zoom;
         const dx = (e.clientX - this.pointerDrag.startX) / zoom;
