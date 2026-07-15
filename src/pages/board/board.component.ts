@@ -62,15 +62,14 @@ interface Camera { x: number; y: number; zoom: number }
           <div class="flex flex-wrap gap-4 items-center justify-center">
             <!-- search trigger -->
             <div class="relative group">
-              <input
-                type="text"
-                readonly
+              <button
+                type="button"
                 (click)="searchPanelOpen.set(true)"
-                (focus)="searchPanelOpen.set(true)"
-                [value]="searchQuery()"
-                placeholder="Search notes…"
-                class="doodle-input bg-[var(--surface)]/60 rounded-full px-4 py-1 w-48 cursor-pointer"
-              />
+                class="doodle-input bg-[var(--surface)]/60 rounded-full px-4 py-1 w-48 text-left truncate cursor-pointer"
+                aria-label="Open search"
+              >
+                <span [class.opacity-40]="!searchQuery()">{{ searchQuery() || 'Search notes…' }}</span>
+              </button>
               @if (searchQuery()) {
                 <button
                   class="absolute right-7 top-1.5 opacity-40 hover:opacity-80 text-sm leading-none px-1"
@@ -82,7 +81,7 @@ interface Camera { x: number; y: number; zoom: number }
               <span class="absolute right-3 top-2 opacity-50 pointer-events-none"><app-icon name="search"></app-icon></span>
             </div>
 
-            <div class="hidden md:flex items-center gap-1 text-xs font-mono px-2 py-1 rounded-full border border-[var(--ink-color)]/20 bg-[var(--surface)]/60 text-[var(--ink-color)] opacity-70">
+            <div class="flex items-center gap-1 text-xs font-mono px-2 py-1 rounded-full border border-[var(--ink-color)]/20 bg-[var(--surface)]/60 text-[var(--ink-color)] opacity-70">
               @if (saveStatus() === 'Syncing…') {
                 <app-icon name="sparkles"></app-icon>
               } @else if (saveStatus() === 'Backed up') {

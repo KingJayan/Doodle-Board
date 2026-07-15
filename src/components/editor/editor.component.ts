@@ -1,4 +1,4 @@
-import { Component, inject, signal, Output, EventEmitter, ViewChild, ElementRef, input, effect, untracked, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, Output, EventEmitter, ViewChild, ElementRef, input, effect, untracked, ChangeDetectionStrategy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Card } from '../../models/card.model';
@@ -238,6 +238,11 @@ export class EditorComponent {
     this.isClosing.set(true);
     if (this.previewTimer) clearTimeout(this.previewTimer);
     setTimeout(() => this.close.emit(), 150);
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape() {
+    if (!this.isClosing()) this.requestClose();
   }
 
   requestClose() {

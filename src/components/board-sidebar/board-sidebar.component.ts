@@ -50,6 +50,7 @@ import { Board } from '../../models/card.model';
             }
             @if (renamingBoardId() === board.id) {
               <input
+                autofocus
                 class="doodle-input text-sm flex-grow"
                 [value]="board.name"
                 (keyup.enter)="commitRename($any($event.target).value, board.id)"
@@ -61,6 +62,12 @@ import { Board } from '../../models/card.model';
               <span class="truncate flex-grow text-sm" (dblclick)="renamingBoardId.set(board.id); $event.stopPropagation()">{{ board.name }}</span>
             }
             <div class="flex gap-0.5 opacity-0 group-hover:opacity-100 flex-none ml-auto">
+              <button
+                (click)="startRename(board.id, $event)"
+                class="w-5 h-5 flex items-center justify-center rounded hover-surface text-xs"
+                title="Rename board"
+                aria-label="Rename board"
+              ><app-icon name="pencil"></app-icon></button>
               <button
                 (click)="showAddSubBoard(board.id, $event)"
                 class="w-5 h-5 flex items-center justify-center rounded hover-surface text-sm font-bold"
@@ -107,6 +114,7 @@ import { Board } from '../../models/card.model';
                 <span class="text-base flex-none"><app-icon name="page"></app-icon></span>
                 @if (renamingBoardId() === child.id) {
                   <input
+                    autofocus
                     class="doodle-input text-xs flex-grow"
                     [value]="child.name"
                     (keyup.enter)="commitRename($any($event.target).value, child.id)"
@@ -117,11 +125,19 @@ import { Board } from '../../models/card.model';
                 } @else {
                   <span class="truncate flex-grow text-xs" (dblclick)="renamingBoardId.set(child.id); $event.stopPropagation()">{{ child.name }}</span>
                 }
-                <button
-                  class="opacity-0 group-hover:opacity-100 w-5 h-5 flex items-center justify-center rounded hover-surface text-red-500"
-                  (click)="deleteBoard(child.id, $event)"
-                  title="Delete board"
-                >×</button>
+                <div class="flex gap-0.5 opacity-0 group-hover:opacity-100 flex-none ml-auto">
+                  <button
+                    class="w-5 h-5 flex items-center justify-center rounded hover-surface text-xs"
+                    (click)="startRename(child.id, $event)"
+                    title="Rename board"
+                    aria-label="Rename board"
+                  ><app-icon name="pencil"></app-icon></button>
+                  <button
+                    class="w-5 h-5 flex items-center justify-center rounded hover-surface text-red-500"
+                    (click)="deleteBoard(child.id, $event)"
+                    title="Delete board"
+                  >×</button>
+                </div>
               </div>
             }
           }
@@ -254,6 +270,11 @@ export class BoardSidebarComponent implements OnInit {
     this.newBoardId.set(id);
     setTimeout(() => this.newBoardId.set(null), 400);
     this.toastService.show(`Created board "${name}"`, 'success');
+  }
+
+  startRename(id: string, event: Event) {
+    event.stopPropagation();
+    this.renamingBoardId.set(id);
   }
 
   commitRename(name: string, id: string) {
