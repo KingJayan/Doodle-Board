@@ -145,11 +145,13 @@ import { IconComponent, iconFor } from '../icon/icon.component';
               (click)="handleExpand($event)"
               class="w-9 h-9 bg-[var(--surface)] text-[var(--ink-color)] rounded-full flex items-center justify-center shadow-md hover-surface hover:scale-110 transition-transform doodle-border text-sm cursor-pointer"
               aria-label="Open editor"
+              title="Open editor"
             >↗</button>
             <button
               (click)="handleDelete($event)"
               class="w-9 h-9 bg-[var(--surface)] text-red-500 rounded-full flex items-center justify-center shadow-md hover-surface hover:scale-110 transition-transform doodle-border cursor-pointer font-bold text-sm"
               aria-label="Delete note"
+              title="Delete"
             >✕</button>
           </div>
         </div>

@@ -6,7 +6,7 @@ import { PreferencesService, PerfPreset } from '../../services/preferences.servi
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
 import { IconComponent, ICON_NAMES } from '../icon/icon.component';
-const version = '1.2.10';
+const version = '1.2.11';
 
 const FONT_DISPLAY_OPTIONS = [
   { label: 'Permanent Marker', value: "'Permanent Marker', cursive" },

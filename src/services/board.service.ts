@@ -55,7 +55,7 @@ function dbToBoard(b: DbBoard): Board {
   };
 }
 
-export const MAX_CARDS_PER_BOARD = 20;
+export const MAX_CARDS_PER_BOARD = 100;
 export type SyncStatus = 'Saved locally' | 'Syncing…' | 'Backed up' | 'Offline' | 'Sync error';
 
 @Injectable({ providedIn: 'root' })
