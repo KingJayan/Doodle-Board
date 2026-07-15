@@ -13,7 +13,7 @@ if [ "$TYPE" = "patch" ] || [ "$TYPE" = "minor" ] || [ "$TYPE" = "major" ]; then
 
   VERSION=$(node -p "require('./package.json').version")
   FILE="src/components/settings-modal/settings-modal.component.ts"
-  sed -i '' "s/const version = '[^']*';/const version = '$VERSION';/" "$FILE"
+  node -e "const fs=require('fs'),v='$VERSION',f='$FILE';fs.writeFileSync(f,fs.readFileSync(f,'utf8').replace(/const version = '[^']*';/,\"const version = '\"+v+\"';\"));"
 
   git add package.json README.md "$FILE"
   [ -f package-lock.json ] && git add package-lock.json

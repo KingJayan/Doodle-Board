@@ -19,6 +19,7 @@ import { PreferencesService } from '../../services/preferences.service';
 import { IoService } from '../../services/io.service';
 import { MarkdownService } from '../../services/markdown.service';
 import { Card, Board, CARD_COLORS, CARD_COLORS_AI, CARD_DEFAULTS } from '../../models/card.model';
+import { parseQuery, matchesQuery } from '../../utils/search';
 
 interface Camera { x: number; y: number; zoom: number }
 
@@ -379,11 +380,7 @@ export class BoardComponent implements OnInit, OnDestroy {
 
   searchPanelOpen = signal(false);
   searchQuery = signal('');
-  searchTerms = computed(() =>
-    this.searchQuery().trim().toLowerCase().split(/\s+/)
-      .filter(t => t && !t.includes(':') && t[0] !== '#' && t[0] !== '-')
-      .join(' ')
-  );
+  searchTerms = computed(() => parseQuery(this.searchQuery()).terms.join(' '));
   activeTag = signal<string | null>(null);
   activeBoardId = signal<string>('default');
   camera = signal<Camera>({ x: 0, y: 0, zoom: 1 });
@@ -518,6 +515,14 @@ export class BoardComponent implements OnInit, OnDestroy {
   };
 
   private readonly wheelHandler = (e: WheelEvent) => {
+    if (!e.ctrlKey && !e.metaKey) {
+      let el = e.target as HTMLElement | null;
+      while (el && el !== this.viewportEl?.nativeElement) {
+        const oy = getComputedStyle(el).overflowY;
+        if ((oy === 'auto' || oy === 'scroll') && el.scrollHeight > el.clientHeight) return;
+        el = el.parentElement;
+      }
+    }
     e.preventDefault();
     if (e.ctrlKey || e.metaKey) {
       const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
@@ -656,20 +661,19 @@ export class BoardComponent implements OnInit, OnDestroy {
   }
 
   filteredCards = computed(() => {
-    const terms = this.searchQuery().trim().toLowerCase().split(/\s+/)
-      .filter(t => t && !t.includes(':') && t[0] !== '#' && t[0] !== '-');
+    const raw = this.searchQuery().trim();
+    const q = raw ? parseQuery(raw) : null;
     const tag = this.activeTag();
-    const board = this.activeBoardId();
+    const boardId = this.activeBoardId();
+    const boardMap = new Map(this.boardService.boards().map(b => [b.id, b]));
 
     return this.boardService.cards()
       .filter((card: Card) => {
-        if (card.boardId !== board) return false;
-        if (terms.length && !terms.every(t =>
-          card.title.toLowerCase().includes(t) ||
-          card.content.toLowerCase().includes(t) ||
-          card.tags.some((g: string) => g.toLowerCase().includes(t))
-        )) return false;
-        return !tag || card.tags.includes(tag);
+        if (card.boardId !== boardId) return false;
+        if (tag && !card.tags.includes(tag)) return false;
+        if (!q) return true;
+        const board = boardMap.get(card.boardId);
+        return !!board && matchesQuery(card, board, q);
       })
       .sort((a, b) =>
         (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0) ||

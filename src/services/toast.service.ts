@@ -23,7 +23,7 @@ export class ToastService {
       const next = [...current, { id, message, type, action }];
       return next.length > 5 ? next.slice(next.length - 5) : next;
     });
-    setTimeout(() => this.dismiss(id), action ? 7000 : 3000);
+    if (type !== 'warning' || !action) setTimeout(() => this.dismiss(id), action ? 7000 : 3000);
   }
 
   dismiss(id: number) {

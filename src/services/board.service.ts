@@ -532,20 +532,33 @@ export class BoardService {
       ? [...boardCards].sort((a, b) => (a.position ?? '') < (b.position ?? '') ? -1 : (a.position ?? '') > (b.position ?? '') ? 1 : 0).pop()?.position ?? null
       : null;
     const positions = generateNKeysBetween(lastPos, null, toImport.length);
-    const migrated: Card[] = toImport.map((c, i) => ({
-      ...c,
-      id: crypto.randomUUID(),
-      boardId,
-      position: positions[i],
-      stickers: c.stickers ?? [],
-      isPinned: c.isPinned ?? false,
-      updatedAt: c.updatedAt ?? now,
-      rotation: Math.max(-15, Math.min(15, c.rotation ?? 0)),
-      width: c.width != null ? Math.max(CARD_DEFAULTS.minWidth, Math.min(800, c.width)) : undefined,
-      height: c.height != null ? Math.max(CARD_DEFAULTS.minHeight, Math.min(800, c.height)) : undefined,
-      x: undefined,
-      y: undefined,
-    }));
+    const baseCount = boardCards.length;
+    const migrated: Card[] = toImport.map((c, i) => {
+      let x: number, y: number;
+      if (c.x != null && c.y != null) {
+        x = c.x;
+        y = c.y;
+      } else {
+        const n = baseCount + i;
+        const cols = Math.ceil(Math.sqrt(n + 1));
+        x = 32 + (n % cols) * (CARD_DEFAULTS.width + 32) + Math.round(Math.random() * 16 - 8);
+        y = 32 + Math.floor(n / cols) * (CARD_DEFAULTS.height + 32) + Math.round(Math.random() * 16 - 8);
+      }
+      return {
+        ...c,
+        id: crypto.randomUUID(),
+        boardId,
+        position: positions[i],
+        stickers: c.stickers ?? [],
+        isPinned: c.isPinned ?? false,
+        updatedAt: c.updatedAt ?? now,
+        rotation: Math.max(-15, Math.min(15, c.rotation ?? 0)),
+        width: c.width != null ? Math.max(CARD_DEFAULTS.minWidth, Math.min(800, c.width)) : undefined,
+        height: c.height != null ? Math.max(CARD_DEFAULTS.minHeight, Math.min(800, c.height)) : undefined,
+        x,
+        y,
+      };
+    });
     this.cards.update(current => [...current, ...migrated]);
     migrated.forEach(c => this.writeCard(c));
     this.auth.triggerAnonymousSignIn();

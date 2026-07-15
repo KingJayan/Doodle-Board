@@ -164,11 +164,12 @@ export async function pull(
     const local = await localDb.boards.get(row['id'] as string);
     if (!local) {
       if (!row['deleted']) { await localDb.boards.put(fromSbBoard(row)); changed = true; }
+      newCursor = Math.max(newCursor, st);
     } else if (local._dirty === 0 && !local._deleted) {
       await localDb.boards.put({ ...fromSbBoard(row), _rev: local._rev, _dirty: 0 });
       changed = true;
+      newCursor = Math.max(newCursor, st);
     }
-    newCursor = Math.max(newCursor, st);
   }
 
   for (const row of serverCards) {
@@ -176,11 +177,12 @@ export async function pull(
     const local = await localDb.cards.get(row['id'] as string);
     if (!local) {
       if (!row['deleted']) { await localDb.cards.put(fromSbCard(row)); changed = true; }
+      newCursor = Math.max(newCursor, st);
     } else if (local._dirty === 0 && !local._deleted) {
       await localDb.cards.put({ ...fromSbCard(row), _rev: local._rev, _dirty: 0 });
       changed = true;
+      newCursor = Math.max(newCursor, st);
     }
-    newCursor = Math.max(newCursor, st);
   }
 
   if (newCursor > cursor) await localDb.meta.put({ key: 'lastPullCursor', value: newCursor });
