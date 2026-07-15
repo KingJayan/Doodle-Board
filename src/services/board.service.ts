@@ -1,4 +1,4 @@
-import { Injectable, signal, computed, inject } from '@angular/core';
+import { Injectable, signal, computed, inject, Signal } from '@angular/core';
 import { generateKeyBetween, generateNKeysBetween } from 'fractional-indexing';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -64,8 +64,12 @@ export class BoardService {
   readonly boards = signal<Board[]>([]);
   readonly topLevelBoards = computed(() => this.boards().filter(b => !b.parentId));
   readonly trashedCards = signal<Card[]>([]);
-  readonly syncStatus = signal<SyncStatus>('Saved locally');
+  private readonly _syncStatus = signal<SyncStatus>('Saved locally');
+  readonly syncStatus: Signal<SyncStatus> = this._syncStatus.asReadonly();
   readonly isHydrating = signal(true);
+  private restLoaded = false;
+
+  setSyncStatus(status: SyncStatus) { this._syncStatus.set(status); }
 
   private themeService = inject(ThemeService);
 
@@ -74,6 +78,7 @@ export class BoardService {
   }
 
   async rehydrate() {
+    this.restLoaded = true;
     const [dbBoards, dbCards, dbTrashed] = await Promise.all([
       db.boards.where('_deleted').equals(0).toArray(),
       db.cards.where('_deleted').equals(0).toArray(),
@@ -113,6 +118,7 @@ export class BoardService {
 
     if (sorted.length > 1) {
       const loadRest = async () => {
+        if (this.restLoaded) return;
         const otherIds = sorted.slice(1).map(b => b.id);
         const rest = await db.cards.where('boardId').anyOf(otherIds).filter(c => c._deleted === 0).toArray();
         if (rest.length) {

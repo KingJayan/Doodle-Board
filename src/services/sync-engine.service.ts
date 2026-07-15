@@ -32,13 +32,13 @@ export class SyncEngineService {
     const { userId } = this.auth.authState();
     if (!supabase || !userId || this.running) return;
     this.running = true;
-    this.boardService.syncStatus.set('Syncing…');
+    this.boardService.setSyncStatus('Syncing…');
     try {
       await upload(db, supabase, userId);
       await pull(db, supabase, userId, () => this.boardService.rehydrate());
-      this.boardService.syncStatus.set('Backed up');
+      this.boardService.setSyncStatus('Backed up');
     } catch {
-      this.boardService.syncStatus.set(navigator.onLine ? 'Sync error' : 'Offline');
+      this.boardService.setSyncStatus(navigator.onLine ? 'Sync error' : 'Offline');
     } finally {
       this.running = false;
     }

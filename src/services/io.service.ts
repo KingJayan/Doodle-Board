@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import JSZip from 'jszip';
-import { load as yamlLoad, dump as yamlDump } from 'js-yaml';
+import { load as yamlLoad, dump as yamlDump, JSON_SCHEMA } from 'js-yaml';
 import { Card } from '../models/card.model';
 
 @Injectable({ providedIn: 'root' })
@@ -30,7 +30,7 @@ export class IoService {
       const end = text.indexOf('\n---', 3);
       if (end !== -1) {
         try {
-          const raw = yamlLoad(text.substring(3, end)) as Record<string, unknown>;
+          const raw = yamlLoad(text.substring(3, end), { schema: JSON_SCHEMA }) as Record<string, unknown>;
           const content = text.substring(end + 4).trim();
           const safe: Partial<Card> = {};
           if (typeof raw['id'] === 'string') safe.id = raw['id'];

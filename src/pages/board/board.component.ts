@@ -38,7 +38,7 @@ interface Camera { x: number; y: number; zoom: number }
             [style.left.%]="doodle.x"
             [style.top.%]="doodle.y"
             [style.opacity]="'var(--motif-opacity)'"
-            [style.transform]="'rotate(' + doodle.rot + 'deg) scale(' + doodle.scale + ')'"
+            [style.transform]="doodle.transform"
             [style.color]="'var(--ink-color)'"
             width="100" height="100" viewBox="0 0 100 100"
             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -53,7 +53,7 @@ interface Camera { x: number; y: number; zoom: number }
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row gap-4 justify-between items-center">
 
           <div class="flex items-center gap-2 cursor-pointer group" (click)="router.navigate(['/'])">
-            <button class="md:hidden text-2xl mr-2" (click)="sidebarOpen.set(!sidebarOpen()); $event.stopPropagation()">☰</button>
+            <button class="md:hidden text-2xl mr-2" aria-label="Toggle sidebar" (click)="sidebarOpen.set(!sidebarOpen()); $event.stopPropagation()">☰</button>
             <span class="text-3xl marker-font text-brand -rotate-2 group-hover:rotate-0 transition-transform">DoodleBoard</span>
             <span class="text-sm bg-[var(--accent)] text-[var(--paper-color)] px-2 rounded-full transform rotate-3">Beta</span>
           </div>
@@ -74,6 +74,7 @@ interface Camera { x: number; y: number; zoom: number }
                 <button
                   class="absolute right-7 top-1.5 opacity-40 hover:opacity-80 text-sm leading-none px-1"
                   (click)="clearSearch($event)"
+                  aria-label="Clear search"
                   title="Clear search"
                 >×</button>
               }
@@ -137,7 +138,7 @@ interface Camera { x: number; y: number; zoom: number }
         @if (aiPanelOpen()) {
           <div class="absolute top-4 left-4 right-4 md:left-auto md:right-auto md:w-96 z-30">
             <div class="p-4 border-2 border-dashed border-[var(--accent-2)] rounded-lg bg-[var(--tint-blue)] text-[var(--ink-color)] relative animate-slideDown shadow-xl">
-              <button (click)="aiPanelOpen.set(false)" class="absolute top-2 right-2 text-xl hover:text-red-500 text-[var(--ink-color)]">×</button>
+              <button (click)="aiPanelOpen.set(false)" class="absolute top-2 right-2 text-xl hover:text-red-500 text-[var(--ink-color)]" aria-label="Close">×</button>
               <h3 class="font-bold text-lg mb-2 text-[var(--ink-color)]"><app-icon name="sparkles"></app-icon> Brainstorm with AI</h3>
               <div class="flex gap-2">
                 <input
@@ -251,9 +252,9 @@ interface Camera { x: number; y: number; zoom: number }
 
         <!-- zoom controls -->
         <div class="absolute bottom-4 right-4 z-20 flex items-center gap-1 bg-[var(--paper-color)]/90 border border-[var(--ink-color)]/20 rounded-lg px-2 py-1 shadow-sm backdrop-blur-sm cursor-default">
-          <button (click)="zoomBy(1/1.2)" class="w-6 h-6 flex items-center justify-center hover:bg-[var(--surface)] rounded text-sm font-bold leading-none select-none">−</button>
-          <span class="text-xs font-mono w-10 text-center select-none">{{ zoomLevel() }}%</span>
-          <button (click)="zoomBy(1.2)" class="w-6 h-6 flex items-center justify-center hover:bg-[var(--surface)] rounded text-sm font-bold leading-none select-none">+</button>
+          <button (click)="zoomBy(1/1.2)" class="w-6 h-6 flex items-center justify-center hover:bg-[var(--surface)] rounded text-sm font-bold leading-none select-none" aria-label="Zoom out">−</button>
+          <span class="text-xs font-mono w-10 text-center select-none" aria-live="polite" aria-label="Zoom level">{{ zoomLevel() }}%</span>
+          <button (click)="zoomBy(1.2)" class="w-6 h-6 flex items-center justify-center hover:bg-[var(--surface)] rounded text-sm font-bold leading-none select-none" aria-label="Zoom in">+</button>
           <span class="w-px h-4 bg-[var(--ink-color)]/20 mx-1"></span>
           <button (click)="fitToBoard()" class="text-xs px-2 py-0.5 hover:bg-[var(--surface)] rounded select-none">Fit</button>
         </div>
@@ -274,7 +275,7 @@ interface Camera { x: number; y: number; zoom: number }
             }
           </div>
           <button (click)="bulkDelete()" class="doodle-btn text-xs border-red-300 text-red-500">Delete</button>
-          <button (click)="clearSelection()" class="text-xl hover:text-red-500 leading-none">✕</button>
+          <button (click)="clearSelection()" class="text-xl hover:text-red-500 leading-none" aria-label="Clear selection">✕</button>
         </div>
       }
 
@@ -396,8 +397,20 @@ export class BoardComponent implements OnInit, OnDestroy {
   constructor() {
     effect(() => {
       const boards = this.boardService.boards();
-      if (boards.length > 0 && !boards.find(b => b.id === this.activeBoardId())) {
-        untracked(() => this.activeBoardId.set(boards[0].id));
+      const id = untracked(() => this.activeBoardId());
+      if (boards.length > 0 && !boards.find(b => b.id === id)) {
+        this.activeBoardId.set(boards[0].id);
+      }
+    });
+
+    effect(() => {
+      const pending = this.pendingScrollCardId();
+      if (!pending) return;
+      if (this.filteredCards().some(c => c.id === pending)) {
+        untracked(() => {
+          this.scrollToCard(pending);
+          this.pendingScrollCardId.set(null);
+        });
       }
     });
 
@@ -442,9 +455,10 @@ export class BoardComponent implements OnInit, OnDestroy {
   isBulkMode = computed(() => this.selectedCardIds().size > 0);
   showBulkMoveMenu = signal(false);
   editingCard = signal<Card | null>(null);
+  private readonly pendingScrollCardId = signal<string | null>(null);
 
   motifs = this.themeService.motifs;
-  private allDoodles = signal<{ x: number; y: number; rot: number; scale: number; mi: number }[]>([]);
+  private allDoodles = signal<{ x: number; y: number; transform: string; mi: number }[]>([]);
   visibleDoodles = computed(() => {
     const tier = this.prefs.effectiveTier();
     const all = this.allDoodles();
@@ -530,13 +544,16 @@ export class BoardComponent implements OnInit, OnDestroy {
   }
 
   private generateBackgroundDoodles() {
-    this.allDoodles.set(Array.from({ length: 14 }, (_, i) => ({
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      rot: Math.random() * 360,
-      scale: 0.5 + Math.random() * 1.5,
-      mi: i
-    })));
+    this.allDoodles.set(Array.from({ length: 14 }, (_, i) => {
+      const rot = Math.random() * 360;
+      const scale = 0.5 + Math.random() * 1.5;
+      return {
+        x: Math.random() * 100,
+        y: Math.random() * 100,
+        transform: `rotate(${rot}deg) scale(${scale})`,
+        mi: i
+      };
+    }));
   }
 
   ngAfterViewInit() {
@@ -673,7 +690,7 @@ export class BoardComponent implements OnInit, OnDestroy {
     this.searchPanelOpen.set(false);
     if (event.boardId !== this.activeBoardId()) {
       this.activeBoardId.set(event.boardId);
-      setTimeout(() => this.scrollToCard(event.cardId), 100);
+      this.pendingScrollCardId.set(event.cardId);
     } else {
       this.scrollToCard(event.cardId);
     }
