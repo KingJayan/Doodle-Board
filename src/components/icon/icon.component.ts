@@ -63,6 +63,12 @@ import download from '../../assets/icons/download.svg?raw';
 import share from '../../assets/icons/share.svg?raw';
 import plus from '../../assets/icons/plus.svg?raw';
 import refresh from '../../assets/icons/refresh.svg?raw';
+import image from '../../assets/icons/image.svg?raw';
+import table from '../../assets/icons/table.svg?raw';
+import expand from '../../assets/icons/expand.svg?raw';
+import close from '../../assets/icons/close.svg?raw';
+import chevron from '../../assets/icons/chevron.svg?raw';
+import menu from '../../assets/icons/menu.svg?raw';
 
 const ICONS = {
   pin,
@@ -127,6 +133,12 @@ const ICONS = {
   share,
   plus,
   refresh,
+  image,
+  table,
+  expand,
+  close,
+  chevron,
+  menu,
 } satisfies Record<string, string>;
 
 export type IconName = keyof typeof ICONS;

@@ -16,7 +16,7 @@ import { IconComponent } from '../icon/icon.component';
   template: `
     <div class="fixed inset-0 z-overlay flex items-center justify-center bg-black/50 backdrop-blur-sm" [class.animate-modalOut]="isClosing()" (click)="startClose()">
       <div role="dialog" aria-modal="true" aria-labelledby="share-title" class="bg-[var(--paper-color)] p-8 rounded-lg max-w-lg w-full m-4 shadow-xl doodle-border relative text-[var(--ink-color)] max-h-[90vh] overflow-y-auto" (click)="$event.stopPropagation()">
-        <button (click)="startClose()" class="absolute top-4 right-4 text-2xl hover:text-red-500" aria-label="Close">×</button>
+        <button (click)="startClose()" class="absolute top-4 right-4 text-2xl hover:text-red-500" aria-label="Close"><app-icon name="close"></app-icon></button>
         <h2 id="share-title" class="text-3xl marker-font mb-6 text-center">Backup & Share</h2>
         <div class="text-center text-sm text-muted mb-4">Current Board: {{ boardName() }}</div>
 

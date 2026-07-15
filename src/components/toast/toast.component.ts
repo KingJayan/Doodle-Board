@@ -35,7 +35,7 @@ import { IconComponent } from '../icon/icon.component';
             <div class="pt-1 text-[var(--ink-color)] font-hand text-xl leading-snug flex-grow">
               {{ toast.message }}
             </div>
-            <button (click)="toastService.dismiss(toast.id)" class="text-muted hover:text-[var(--ink-color)] self-start text-xl">×</button>
+            <button (click)="toastService.dismiss(toast.id)" class="text-muted hover:text-[var(--ink-color)] self-start text-xl" aria-label="Dismiss"><app-icon name="close"></app-icon></button>
           </div>
 
           <!--action btn -->

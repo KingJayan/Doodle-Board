@@ -37,7 +37,7 @@ interface SearchResult {
             (keydown)="onKeydown($event)"
           />
           @if (query()) {
-            <button class="opacity-40 hover:opacity-80 flex-none text-xl leading-none" (click)="clear()">×</button>
+            <button class="opacity-40 hover:opacity-80 flex-none text-xl leading-none" (click)="clear()" aria-label="Clear search"><app-icon name="close"></app-icon></button>
           }
           <kbd
             class="text-[11px] px-2 py-0.5 rounded border border-[var(--ink-color)]/20 opacity-40 flex-none font-mono cursor-pointer select-none"

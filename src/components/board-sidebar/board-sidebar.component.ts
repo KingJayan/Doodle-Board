@@ -43,8 +43,9 @@ import { Board } from '../../models/card.model';
             @if (hasChildren(board.id)) {
               <button
                 (click)="toggleExpand(board.id); $event.stopPropagation()"
-                class="text-sm opacity-50 hover:opacity-100 flex-none w-5 text-center"
-              >{{ expandedFolders().has(board.id) ? '▾' : '▸' }}</button>
+                class="text-sm opacity-50 hover:opacity-100 flex-none w-5 flex items-center justify-center transition-transform"
+                [class.rotate-90]="expandedFolders().has(board.id)"
+              ><app-icon name="chevron"></app-icon></button>
             } @else {
               <span class="text-xl flex-none"><app-icon name="folder"></app-icon></span>
             }
@@ -72,13 +73,15 @@ import { Board } from '../../models/card.model';
                 (click)="showAddSubBoard(board.id, $event)"
                 class="w-5 h-5 flex items-center justify-center rounded hover-surface text-sm font-bold"
                 title="Add sub-board"
-              >+</button>
+                aria-label="Add sub-board"
+              ><app-icon name="plus"></app-icon></button>
               @if (boardService.boards().length > 1) {
                 <button
                   class="w-5 h-5 flex items-center justify-center rounded hover-surface text-red-500"
                   (click)="deleteBoard(board.id, $event)"
                   title="Delete board"
-                >×</button>
+                  aria-label="Delete board"
+                ><app-icon name="close"></app-icon></button>
               }
             </div>
           </div>
@@ -136,7 +139,8 @@ import { Board } from '../../models/card.model';
                     class="w-5 h-5 flex items-center justify-center rounded hover-surface text-red-500"
                     (click)="deleteBoard(child.id, $event)"
                     title="Delete board"
-                  >×</button>
+                    aria-label="Delete board"
+                  ><app-icon name="close"></app-icon></button>
                 </div>
               </div>
             }

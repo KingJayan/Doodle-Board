@@ -6,7 +6,7 @@ import { PreferencesService, PerfPreset } from '../../services/preferences.servi
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
 import { IconComponent, ICON_NAMES } from '../icon/icon.component';
-const version = '1.2.13';
+const version = '1.2.14';
 
 const FONT_DISPLAY_OPTIONS = [
   { label: 'Permanent Marker', value: "'Permanent Marker', cursive" },
@@ -42,7 +42,7 @@ const CORNER_OPTIONS = [
   template: `
     <div class="fixed inset-0 z-overlay flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" [class.animate-modalOut]="isClosing()" (click)="startClose()">
       <div role="dialog" aria-modal="true" aria-labelledby="settings-title" class="bg-[var(--paper-color)] p-6 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-xl doodle-border relative text-[var(--ink-color)]" (click)="$event.stopPropagation()">
-        <button (click)="startClose()" class="absolute top-4 right-4 text-2xl hover:text-red-500" aria-label="Close settings">×</button>
+        <button (click)="startClose()" class="absolute top-4 right-4 text-2xl hover:text-red-500" aria-label="Close settings"><app-icon name="close"></app-icon></button>
         <h2 id="settings-title" class="text-3xl marker-font mb-6 text-center">Settings</h2>
 
         <div class="flex flex-col gap-4">
@@ -244,12 +244,13 @@ const CORNER_OPTIONS = [
                               (click)="setEditIdx(i)"
                               class="w-6 h-6 rounded-full flex items-center justify-center text-xs bg-[var(--paper-color)] border border-[var(--border-soft)] hover:border-[var(--accent)] shadow-sm"
                               title="Edit theme"
-                            >✏️</button>
+                            ><app-icon name="pencil"></app-icon></button>
                             <button
                               (click)="confirmDeleteCustomTheme(i)"
                               class="w-6 h-6 rounded-full flex items-center justify-center text-xs bg-[var(--paper-color)] border border-[var(--border-soft)] hover:border-red-400 hover:text-red-500 shadow-sm"
                               title="Delete theme"
-                            >×</button>
+                              aria-label="Delete theme"
+                            ><app-icon name="close"></app-icon></button>
                           </div>
                         </div>
                       }

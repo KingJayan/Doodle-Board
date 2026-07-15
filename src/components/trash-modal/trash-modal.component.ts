@@ -29,7 +29,7 @@ import { IconComponent } from '../icon/icon.component';
                 class="doodle-btn text-sm border-red-300 text-red-500 px-3 py-1"
               >Empty Trash</button>
             }
-            <button (click)="startClose()" class="text-2xl hover:text-red-500 transition-colors leading-none px-1 text-[var(--ink-color)]">×</button>
+            <button (click)="startClose()" class="text-2xl hover:text-red-500 transition-colors leading-none px-1 text-[var(--ink-color)]" aria-label="Close"><app-icon name="close"></app-icon></button>
           </div>
         </div>
 
@@ -59,7 +59,8 @@ import { IconComponent } from '../icon/icon.component';
                     (click)="deleteForever(card.id)"
                     class="w-8 h-8 text-red-400 hover:text-red-600 rounded-full flex items-center justify-center transition-colors text-base"
                     title="Delete permanently"
-                  >✕</button>
+                    aria-label="Delete permanently"
+                  ><app-icon name="close"></app-icon></button>
                 </div>
               </div>
             }

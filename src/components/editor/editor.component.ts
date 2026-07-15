@@ -34,7 +34,7 @@ type ViewMode = 'write' | 'preview' | 'split';
           <span class="font-bold text-[var(--ink-color)] px-2">File</span>
           <button (click)="save()" class="hover-surface px-2 rounded">Save</button>
           <button (click)="downloadMd()" class="hover-surface px-2 rounded">Download .md</button>
-          <button (click)="requestClose()" class="hover:bg-red-500/15 text-red-500 px-2 rounded ml-auto" aria-label="Close editor">Close ✕</button>
+          <button (click)="requestClose()" class="hover:bg-red-500/15 text-red-500 px-2 rounded ml-auto flex items-center gap-1" aria-label="Close editor">Close <app-icon name="close"></app-icon></button>
         </div>
 
         <!-- toolbar -->
@@ -63,9 +63,9 @@ type ViewMode = 'write' | 'preview' | 'split';
           </div>
 
           <div class="flex gap-1 border-r pr-2 border-soft">
-            <button (click)="applyFormat('link')" class="w-8 h-8 rounded hover-surface text-xs font-bold" title="Link (Ctrl+K)">🔗</button>
-            <button (click)="applyFormat('image')" class="w-8 h-8 rounded hover-surface text-xs" title="Image">🖼</button>
-            <button (click)="applyFormat('table')" class="w-8 h-8 rounded hover-surface text-xs font-bold" title="Table">⊞</button>
+            <button (click)="applyFormat('link')" class="w-8 h-8 rounded hover-surface flex items-center justify-center" title="Link (Ctrl+K)"><app-icon name="link"></app-icon></button>
+            <button (click)="applyFormat('image')" class="w-8 h-8 rounded hover-surface flex items-center justify-center" title="Image"><app-icon name="image"></app-icon></button>
+            <button (click)="applyFormat('table')" class="w-8 h-8 rounded hover-surface flex items-center justify-center" title="Table"><app-icon name="table"></app-icon></button>
           </div>
 
           <!-- view mode toggle -->

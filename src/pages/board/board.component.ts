@@ -54,7 +54,7 @@ interface Camera { x: number; y: number; zoom: number }
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row gap-4 justify-between items-center">
 
           <div class="flex items-center gap-2 cursor-pointer group" (click)="router.navigate(['/'])">
-            <button class="md:hidden text-2xl mr-2" aria-label="Toggle sidebar" title="Toggle sidebar" (click)="sidebarOpen.set(!sidebarOpen()); $event.stopPropagation()">☰</button>
+            <button class="md:hidden text-2xl mr-2 w-11 h-11 flex items-center justify-center" aria-label="Toggle sidebar" title="Toggle sidebar" (click)="sidebarOpen.set(!sidebarOpen()); $event.stopPropagation()"><app-icon name="menu"></app-icon></button>
             <span class="text-3xl marker-font text-brand -rotate-2 group-hover:rotate-0 transition-transform">DoodleBoard</span>
             <span class="text-sm bg-[var(--accent)] text-[var(--paper-color)] px-2 rounded-full transform rotate-3">Beta</span>
           </div>
@@ -76,7 +76,7 @@ interface Camera { x: number; y: number; zoom: number }
                   (click)="clearSearch($event)"
                   aria-label="Clear search"
                   title="Clear search"
-                >×</button>
+                ><app-icon name="close"></app-icon></button>
               }
               <span class="absolute right-3 top-2 opacity-50 pointer-events-none"><app-icon name="search"></app-icon></span>
             </div>
@@ -100,7 +100,7 @@ interface Camera { x: number; y: number; zoom: number }
                 (click)="activeTag.set(null)"
               >
                 <span>#{{ activeTag() }}</span>
-                <span class="font-bold">×</span>
+                <span class="font-bold"><app-icon name="close"></app-icon></span>
               </div>
             }
           </div>
@@ -138,7 +138,7 @@ interface Camera { x: number; y: number; zoom: number }
         @if (aiPanelOpen()) {
           <div class="absolute top-4 left-4 right-4 md:left-auto md:right-auto md:w-96 z-30">
             <div class="p-4 border-2 border-dashed border-[var(--accent-2)] rounded-lg bg-[var(--tint-blue)] text-[var(--ink-color)] relative animate-slideDown shadow-xl">
-              <button (click)="aiPanelOpen.set(false)" class="absolute top-2 right-2 text-xl hover:text-red-500 text-[var(--ink-color)]" aria-label="Close" title="Close">×</button>
+              <button (click)="aiPanelOpen.set(false)" class="absolute top-2 right-2 text-xl hover:text-red-500 text-[var(--ink-color)]" aria-label="Close" title="Close"><app-icon name="close"></app-icon></button>
               <h3 class="font-bold text-lg mb-2 text-[var(--ink-color)]"><app-icon name="sparkles"></app-icon> Brainstorm with AI</h3>
               <div class="flex gap-2">
                 <input
@@ -265,7 +265,7 @@ interface Camera { x: number; y: number; zoom: number }
         <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[var(--paper-color)] border-2 border-[var(--ink-color)] rounded-full shadow-2xl px-6 py-3 flex items-center gap-4 animate-slideDown">
           <span class="font-bold text-sm">{{ selectedCardIds().size }} selected</span>
           <div class="relative">
-            <button (click)="showBulkMoveMenu.set(!showBulkMoveMenu())" class="doodle-btn text-xs">Move to ▾</button>
+            <button (click)="showBulkMoveMenu.set(!showBulkMoveMenu())" class="doodle-btn text-xs inline-flex items-center gap-1">Move to <app-icon name="chevron" class="rotate-90"></app-icon></button>
             @if (showBulkMoveMenu()) {
               <div class="absolute bottom-full mb-2 left-0 bg-[var(--surface)] border-2 border-[var(--ink-color)] rounded-lg p-2 w-44 shadow-xl flex flex-col gap-1" (click)="$event.stopPropagation()">
                 @for (board of boards(); track board.id) {
@@ -275,7 +275,7 @@ interface Camera { x: number; y: number; zoom: number }
             }
           </div>
           <button (click)="bulkDelete()" class="doodle-btn text-xs border-red-300 text-red-500">Delete</button>
-          <button (click)="clearSelection()" class="text-xl hover:text-red-500 leading-none" aria-label="Clear selection" title="Clear selection">✕</button>
+          <button (click)="clearSelection()" class="text-xl hover:text-red-500 leading-none" aria-label="Clear selection" title="Clear selection"><app-icon name="close"></app-icon></button>
         </div>
       }
 

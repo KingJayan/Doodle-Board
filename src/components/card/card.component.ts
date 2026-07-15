@@ -39,7 +39,7 @@ import { IconComponent, iconFor } from '../icon/icon.component';
       >
         @if (isResizing()) {
           <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-50">
-            <div class="text-2xl font-bold text-gray-700 bg-white/90 px-5 py-2 rounded-xl shadow-lg marker-font backdrop-blur-sm border-2 border-gray-200">
+            <div class="text-2xl font-bold text-[var(--ink-color)] bg-[var(--surface)]/90 px-5 py-2 rounded-xl shadow-lg marker-font backdrop-blur-sm border-2 border-soft">
               {{ previewWidth() | number:'1.0-0' }} x {{ previewHeight() | number:'1.0-0' }}
             </div>
           </div>
@@ -146,13 +146,13 @@ import { IconComponent, iconFor } from '../icon/icon.component';
               class="w-9 h-9 bg-[var(--surface)] text-[var(--ink-color)] rounded-full flex items-center justify-center shadow-md hover-surface hover:scale-110 transition-transform doodle-border text-sm cursor-pointer"
               aria-label="Open editor"
               title="Open editor"
-            >↗</button>
+            ><app-icon name="expand"></app-icon></button>
             <button
               (click)="handleDelete($event)"
               class="w-9 h-9 bg-[var(--surface)] text-red-500 rounded-full flex items-center justify-center shadow-md hover-surface hover:scale-110 transition-transform doodle-border cursor-pointer font-bold text-sm"
               aria-label="Delete note"
               title="Delete"
-            >✕</button>
+            ><app-icon name="close"></app-icon></button>
           </div>
         </div>
 
@@ -255,7 +255,7 @@ import { IconComponent, iconFor } from '../icon/icon.component';
     .card-shadow { box-shadow: var(--card-shadow); }
     :host { display: block; }
     .badge-checked { background: var(--accent); box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
-    .badge-unchecked { border: 2px solid rgba(0,0,0,0.22); background: rgba(255,255,255,0.65); }
+    .badge-unchecked { border: 2px solid var(--border-soft); background: var(--surface); }
     .custom-scroll::-webkit-scrollbar { width: 6px; }
     .custom-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 4px; }
     .animate-pinPulse { animation: pinPulse 0.2s var(--ease-stamp); }
