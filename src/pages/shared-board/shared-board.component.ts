@@ -7,7 +7,8 @@ import { AuthService } from '../../services/auth.service';
 import { BoardService } from '../../services/board.service';
 import { ToastService } from '../../services/toast.service';
 import { Card } from '../../models/card.model';
-import { IconComponent } from '../../components/icon/icon.component';
+import { ThemeService } from '../../services/theme.service';
+import { IconComponent, iconFor } from '../../components/icon/icon.component';
 
 @Component({
   selector: 'app-shared-board',
@@ -57,21 +58,23 @@ import { IconComponent } from '../../components/icon/icon.component';
           <div class="flex flex-wrap gap-6 justify-center md:justify-start">
             @for (card of payload()!.cards; track card.id) {
               <div
-                class="rounded-lg border-2 border-[var(--ink-color)] shadow-md p-4 flex flex-col gap-2 select-none"
-                [style.background]="card.color"
+                class="relative doodle-border card-shadow card-ink p-4 flex flex-col gap-2 select-none"
+                [style.background-color]="themeService.noteBg(card.color)"
                 [style.transform]="'rotate(' + card.rotation + 'deg)'"
                 [style.width.px]="card.width ?? 280"
                 [style.min-height.px]="120"
               >
+                @if (card.isPinned) {
+                  <div class="absolute -top-5 left-1/2 -translate-x-1/2 text-4xl drop-shadow-md pointer-events-none"><app-icon name="pin"></app-icon></div>
+                } @else {
+                  <div class="absolute -top-3 left-1/2 -translate-x-1/2 w-28 h-8 rotate-1 backdrop-blur-sm shadow-sm pointer-events-none" style="clip-path: polygon(2% 0%, 98% 0%, 100% 100%, 0% 100%); background-color: var(--tape-color)"></div>
+                }
                 @if (card.stickers?.length) {
                   <div class="flex gap-1 text-lg flex-wrap">
-                    @for (s of card.stickers; track s) { <span>{{ s }}</span> }
+                    @for (s of card.stickers; track s) { <app-icon [name]="iconFor(s)"></app-icon> }
                   </div>
                 }
-                @if (card.isPinned) {
-                  <span class="text-xs font-bold opacity-60"><app-icon name="pin"></app-icon> Pinned</span>
-                }
-                <p class="font-bold text-base leading-tight break-words" style="font-family: var(--font-display)">
+                <p class="font-bold text-2xl leading-tight break-words marker-font">
                   {{ card.title || 'Untitled' }}
                 </p>
                 @if (card.content) {
@@ -80,7 +83,7 @@ import { IconComponent } from '../../components/icon/icon.component';
                 @if (card.tags?.length) {
                   <div class="flex flex-wrap gap-1 mt-auto pt-1">
                     @for (tag of card.tags; track tag) {
-                      <span class="text-xs bg-black/10 rounded-full px-2 py-0.5">#{{ tag }}</span>
+                      <span class="text-xs font-bold px-2 py-0.5 border border-[var(--note-ink)]/20 rounded-full bg-[var(--note-ink)]/5">#{{ tag }}</span>
                     }
                   </div>
                 }
@@ -100,6 +103,8 @@ export class SharedBoardComponent implements OnInit, OnDestroy {
   private toastService = inject(ToastService);
   private meta = inject(Meta);
   private referrerTag: HTMLMetaElement | null = null;
+  protected iconFor = iconFor;
+  themeService = inject(ThemeService);
   router = inject(Router);
 
   loading = signal(true);

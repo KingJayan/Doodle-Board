@@ -62,7 +62,7 @@ import { Board } from '../../models/card.model';
             } @else {
               <span class="truncate flex-grow text-sm" (dblclick)="renamingBoardId.set(board.id); $event.stopPropagation()">{{ board.name }}</span>
             }
-            <div class="flex gap-0.5 opacity-0 group-hover:opacity-100 flex-none ml-auto">
+            <div class="row-actions flex gap-0.5 flex-none ml-auto">
               <button
                 (click)="startRename(board.id, $event)"
                 class="w-5 h-5 flex items-center justify-center rounded hover-surface text-xs"
@@ -128,7 +128,7 @@ import { Board } from '../../models/card.model';
                 } @else {
                   <span class="truncate flex-grow text-xs" (dblclick)="renamingBoardId.set(child.id); $event.stopPropagation()">{{ child.name }}</span>
                 }
-                <div class="flex gap-0.5 opacity-0 group-hover:opacity-100 flex-none ml-auto">
+                <div class="row-actions flex gap-0.5 flex-none ml-auto">
                   <button
                     class="w-5 h-5 flex items-center justify-center rounded hover-surface text-xs"
                     (click)="startRename(child.id, $event)"
@@ -183,6 +183,14 @@ import { Board } from '../../models/card.model';
       box-shadow: inset 3px 0 0 var(--accent);
     }
     .board-item--child { border-left: 2px solid var(--border-soft); margin-left: 8px; }
+    .row-actions { opacity: 0; transition: opacity 0.15s ease; }
+    .board-item:hover .row-actions,
+    .board-item:focus-within .row-actions { opacity: 1; }
+    @media (hover: none) {
+      .row-actions { opacity: 1; }
+      .row-actions button,
+      .board-item > button { width: 2.75rem; height: 2.75rem; }
+    }
     .board-item.drag-over {
       border: 2px dashed var(--accent);
       background-color: var(--surface-hover);
