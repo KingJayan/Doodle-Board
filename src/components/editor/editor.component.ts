@@ -18,7 +18,7 @@ type ViewMode = 'write' | 'preview' | 'split';
   imports: [CommonModule, FormsModule, IconComponent],
   template: `
     <div
-      class="fixed inset-0 z-overlay flex items-start justify-center p-0 md:p-8 bg-gray-900/50 backdrop-blur-sm animate-fadeIn overflow-y-auto"
+      class="fixed inset-0 z-overlay flex items-start justify-center p-0 md:p-8 bg-[var(--scrim)] backdrop-blur-sm animate-fadeIn overflow-y-auto"
       [class.animate-modalOut]="isClosing()"
       (click)="requestClose()"
     >
@@ -34,7 +34,7 @@ type ViewMode = 'write' | 'preview' | 'split';
           <span class="font-bold text-[var(--ink-color)] px-2">File</span>
           <button (click)="save()" class="hover-surface px-2 rounded">Save</button>
           <button (click)="downloadMd()" class="hover-surface px-2 rounded">Download .md</button>
-          <button (click)="requestClose()" class="hover:bg-red-500/15 text-red-500 px-2 rounded ml-auto flex items-center gap-1" aria-label="Close editor">Close <app-icon name="close"></app-icon></button>
+          <button (click)="requestClose()" class="hover:bg-[var(--danger-tint)] text-[var(--danger)] px-2 rounded ml-auto flex items-center gap-1" aria-label="Close editor">Close <app-icon name="close"></app-icon></button>
         </div>
 
         <!-- toolbar -->

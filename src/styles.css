@@ -16,6 +16,10 @@
   --muted: #7a756b;
   --border-soft: #ddd6c6;
   --accent: #ff6b6b;
+  --danger: #dc2626;
+  --danger-strong: #b91c1c;
+  --danger-tint: rgba(220,38,38,0.1);
+  --scrim: rgba(0,0,0,0.4);
   --scroll-thumb: #cfc8b8;
 
   --tint-yellow: #fff1c2;
@@ -67,6 +71,14 @@ body {
 
 .card-ink { color: var(--note-ink); }
 .card-animated { will-change: transform; }
+
+.tactile {
+  transition: transform 0.16s var(--ease-spring), box-shadow 0.16s var(--ease-spring), border-color 0.16s var(--ease-spring), background-color 0.16s ease;
+}
+.tactile:hover { transform: translateY(-1px); }
+.tactile:active { transform: scale(0.95); transition-duration: 0.08s; }
+.tactile-pop:hover { transform: scale(1.06) rotate(-1deg); }
+.tactile-pop:active { transform: scale(0.93); transition-duration: 0.08s; }
 
 .animate-modalOut { animation: modalOut 0.15s ease-in forwards; }
 @keyframes modalOut { to { opacity: 0; transform: scale(0.97); } }
@@ -181,6 +193,17 @@ body.reduce-motion *::after {
 }
 
 [data-perf='lite'] .hover\:scale-\[1\.02\]:hover {
+  transform: none !important;
+}
+
+[data-perf='lite'] .tactile,
+[data-perf='lite'] .tactile-pop {
+  transition: none !important;
+}
+[data-perf='lite'] .tactile:hover,
+[data-perf='lite'] .tactile:active,
+[data-perf='lite'] .tactile-pop:hover,
+[data-perf='lite'] .tactile-pop:active {
   transform: none !important;
 }
 

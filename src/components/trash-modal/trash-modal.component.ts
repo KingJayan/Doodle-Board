@@ -10,7 +10,7 @@ import { IconComponent } from '../icon/icon.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, IconComponent],
   template: `
-    <div class="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4" [class.animate-modalOut]="isClosing()" (click)="startClose()">
+    <div class="fixed inset-0 bg-[var(--scrim)] z-50 flex items-center justify-center p-4" [class.animate-modalOut]="isClosing()" (click)="startClose()">
       <div
         class="bg-[var(--paper-color)] border-2 border-[var(--ink-color)] rounded-lg shadow-2xl w-full max-w-lg flex flex-col max-h-[80vh]"
         (click)="$event.stopPropagation()"
@@ -26,10 +26,10 @@ import { IconComponent } from '../icon/icon.component';
             @if (boardService.trashedCards().length) {
               <button
                 (click)="emptyTrash()"
-                class="doodle-btn text-sm border-red-300 text-red-500 px-3 py-1"
+                class="doodle-btn text-sm border-[var(--danger)]/50 text-[var(--danger)] px-3 py-1"
               >Empty Trash</button>
             }
-            <button (click)="startClose()" class="text-2xl hover:text-red-500 transition-colors leading-none px-1 text-[var(--ink-color)]" aria-label="Close"><app-icon name="close"></app-icon></button>
+            <button (click)="startClose()" class="text-2xl hover:text-[var(--danger)] transition-colors leading-none px-1 text-[var(--ink-color)]" aria-label="Close"><app-icon name="close"></app-icon></button>
           </div>
         </div>
 
@@ -57,7 +57,7 @@ import { IconComponent } from '../icon/icon.component';
                   >↩ Restore</button>
                   <button
                     (click)="deleteForever(card.id)"
-                    class="w-8 h-8 text-red-400 hover:text-red-600 rounded-full flex items-center justify-center transition-colors text-base"
+                    class="w-8 h-8 text-[var(--danger)] hover:text-[var(--danger-strong)] rounded-full flex items-center justify-center transition-colors text-base"
                     title="Delete permanently"
                     aria-label="Delete permanently"
                   ><app-icon name="close"></app-icon></button>

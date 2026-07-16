@@ -14,7 +14,7 @@ import { Board } from '../../models/card.model';
   imports: [CommonModule, FormsModule, IconComponent],
   template: `
     <aside
-      class="absolute md:static top-0 left-0 bottom-0 z-30 w-64 bg-[var(--paper-color)] border-r-2 border-[var(--ink-color)] transform transition-transform duration-300 md:translate-x-0 p-4 flex flex-col gap-4 shadow-xl md:shadow-none h-full"
+      class="absolute md:static top-0 left-0 bottom-0 z-30 w-64 bg-[var(--paper-color)] border-r-2 border-dashed border-soft transform transition-transform duration-300 md:translate-x-0 p-4 flex flex-col gap-4 shadow-xl md:shadow-none h-full"
       [class.-translate-x-full]="!isOpen"
     >
       <h3 class="marker-font text-xl border-b-2 border-dashed border-soft pb-2 mb-2">
@@ -77,7 +77,7 @@ import { Board } from '../../models/card.model';
               ><app-icon name="plus"></app-icon></button>
               @if (boardService.boards().length > 1) {
                 <button
-                  class="w-5 h-5 flex items-center justify-center rounded hover-surface text-red-500"
+                  class="w-5 h-5 flex items-center justify-center rounded hover-surface text-[var(--danger)]"
                   (click)="deleteBoard(board.id, $event)"
                   title="Delete board"
                   aria-label="Delete board"
@@ -136,7 +136,7 @@ import { Board } from '../../models/card.model';
                     aria-label="Rename board"
                   ><app-icon name="pencil"></app-icon></button>
                   <button
-                    class="w-5 h-5 flex items-center justify-center rounded hover-surface text-red-500"
+                    class="w-5 h-5 flex items-center justify-center rounded hover-surface text-[var(--danger)]"
                     (click)="deleteBoard(child.id, $event)"
                     title="Delete board"
                     aria-label="Delete board"

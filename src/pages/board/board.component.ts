@@ -50,7 +50,7 @@ interface Camera { x: number; y: number; zoom: number }
       </div>
 
       <!-- header + toolbar -->
-      <header class="z-40 bg-[var(--paper-color)]/95 backdrop-blur-sm border-b-2 border-[var(--ink-color)] shadow-sm p-4 transition-all">
+      <header class="z-40 bg-[var(--paper-color)]/95 backdrop-blur-sm border-b-2 border-dashed border-soft shadow-sm p-4 transition-all">
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row gap-4 justify-between items-center">
 
           <div class="flex items-center gap-2 cursor-pointer group" (click)="router.navigate(['/'])">
@@ -65,7 +65,7 @@ interface Camera { x: number; y: number; zoom: number }
               <button
                 type="button"
                 (click)="searchPanelOpen.set(true)"
-                class="doodle-input bg-[var(--surface)]/60 rounded-full px-4 py-1 w-48 text-left truncate cursor-pointer"
+                class="tactile bg-[var(--surface)]/60 rounded-full border border-[var(--ink-color)]/20 px-4 py-1 pr-9 w-48 text-left truncate cursor-pointer text-[var(--ink-color)] hover:border-[var(--ink-color)]/40 focus-visible:outline-none focus-visible:border-[var(--accent)]"
                 aria-label="Open search"
               >
                 <span [class.opacity-40]="!searchQuery()">{{ searchQuery() || 'Search notes…' }}</span>
@@ -96,7 +96,7 @@ interface Camera { x: number; y: number; zoom: number }
 
             @if (activeTag()) {
               <div
-                class="bg-[var(--tint-yellow)] text-[var(--ink-color)] px-3 py-1 rounded-full border border-soft flex items-center gap-2 cursor-pointer hover:bg-[var(--tint-pink)] transition-colors"
+                class="tactile bg-[var(--tint-yellow)] text-[var(--ink-color)] px-3 py-1 rounded-full border border-soft flex items-center gap-2 cursor-pointer hover:bg-[var(--tint-pink)]"
                 (click)="activeTag.set(null)"
               >
                 <span>#{{ activeTag() }}</span>
@@ -131,14 +131,14 @@ interface Camera { x: number; y: number; zoom: number }
 
         <!-- sidebar overlay (mobile) -->
         @if (sidebarOpen()) {
-          <div class="fixed inset-0 bg-black/20 z-20 md:hidden" (click)="sidebarOpen.set(false)"></div>
+          <div class="fixed inset-0 bg-[var(--scrim)] z-20 md:hidden" (click)="sidebarOpen.set(false)"></div>
         }
 
         <!-- ai genie panel -->
         @if (aiPanelOpen()) {
           <div class="absolute top-4 left-4 right-4 md:left-auto md:right-auto md:w-96 z-30">
             <div class="p-4 border-2 border-dashed border-[var(--accent-2)] rounded-lg bg-[var(--tint-blue)] text-[var(--ink-color)] relative animate-slideDown shadow-xl">
-              <button (click)="aiPanelOpen.set(false)" class="absolute top-2 right-2 text-xl hover:text-red-500 text-[var(--ink-color)]" aria-label="Close" title="Close"><app-icon name="close"></app-icon></button>
+              <button (click)="aiPanelOpen.set(false)" class="absolute top-2 right-2 text-xl hover:text-[var(--danger)] text-[var(--ink-color)]" aria-label="Close" title="Close"><app-icon name="close"></app-icon></button>
               <h3 class="font-bold text-lg mb-2 text-[var(--ink-color)]"><app-icon name="sparkles"></app-icon> Brainstorm with AI</h3>
               <div class="flex gap-2">
                 <input
@@ -274,8 +274,8 @@ interface Camera { x: number; y: number; zoom: number }
               </div>
             }
           </div>
-          <button (click)="bulkDelete()" class="doodle-btn text-xs border-red-300 text-red-500">Delete</button>
-          <button (click)="clearSelection()" class="text-xl hover:text-red-500 leading-none" aria-label="Clear selection" title="Clear selection"><app-icon name="close"></app-icon></button>
+          <button (click)="bulkDelete()" class="doodle-btn text-xs border-[var(--danger)]/50 text-[var(--danger)]">Delete</button>
+          <button (click)="clearSelection()" class="text-xl hover:text-[var(--danger)] leading-none" aria-label="Clear selection" title="Clear selection"><app-icon name="close"></app-icon></button>
         </div>
       }
 

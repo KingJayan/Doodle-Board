@@ -149,7 +149,7 @@ import { IconComponent, iconFor } from '../icon/icon.component';
             ><app-icon name="expand"></app-icon></button>
             <button
               (click)="handleDelete($event)"
-              class="w-9 h-9 bg-[var(--surface)] text-red-500 rounded-full flex items-center justify-center shadow-md hover-surface hover:scale-110 transition-transform doodle-border cursor-pointer font-bold text-sm"
+              class="w-9 h-9 bg-[var(--surface)] text-[var(--danger)] rounded-full flex items-center justify-center shadow-md hover-surface hover:scale-110 transition-transform doodle-border cursor-pointer font-bold text-sm"
               aria-label="Delete note"
               title="Delete"
             ><app-icon name="close"></app-icon></button>

@@ -19,7 +19,7 @@ import { IconComponent, iconFor } from '../../components/icon/icon.component';
     <div class="min-h-screen bg-[var(--paper-color)] text-[var(--ink-color)]">
 
       <!-- header -->
-      <header class="sticky top-0 z-40 bg-[var(--paper-color)]/95 backdrop-blur-sm border-b-2 border-[var(--ink-color)] shadow-sm p-4">
+      <header class="sticky top-0 z-40 bg-[var(--paper-color)]/95 backdrop-blur-sm border-b-2 border-dashed border-soft shadow-sm p-4">
         <div class="max-w-7xl mx-auto flex items-center justify-between gap-4 flex-wrap">
           <div class="flex items-center gap-3">
             <span class="text-3xl marker-font text-brand">DoodleBoard</span>

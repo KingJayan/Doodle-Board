@@ -4,6 +4,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IconComponent } from '../icon/icon.component';
+import { AnimateDirective } from '../../directives/animate.directive';
 import { BoardService } from '../../services/board.service';
 import { Card, Board } from '../../models/card.model';
 import { parseQuery, matchesQuery } from '../../utils/search';
@@ -18,11 +19,11 @@ interface SearchResult {
   selector: 'app-search-panel',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, IconComponent],
+  imports: [CommonModule, IconComponent, AnimateDirective],
   template: `
     <div class="fixed inset-0 z-50 flex flex-col" (mousedown)="onBackdropDown($event)">
 
-      <div class="bg-[var(--paper-color)] border-b-2 border-[var(--ink-color)] shadow-2xl" (mousedown)="$event.stopPropagation()">
+      <div appAnimate="slide-down" class="bg-[var(--paper-color)] border-b-2 border-dashed border-soft shadow-2xl" (mousedown)="$event.stopPropagation()">
 
         <div class="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
           <span class="opacity-40 flex-none text-base"><app-icon name="search"></app-icon></span>
@@ -45,7 +46,7 @@ interface SearchResult {
           >Esc</kbd>
         </div>
 
-        <div class="border-t border-[var(--ink-color)]/10"></div>
+        <div class="border-t border-dashed border-soft"></div>
 
         <div class="max-w-3xl mx-auto px-2 pb-3 overflow-y-auto" style="max-height:56vh">
           @if (!query().trim()) {
@@ -80,7 +81,7 @@ interface SearchResult {
                     (mouseenter)="activeIndex.set(r.flatIndex)"
                     (click)="select(r)"
                   >
-                    <span class="w-3 h-3 rounded-sm flex-none mt-0.5 border border-black/10 shrink-0" [style.background]="r.card.color"></span>
+                    <span class="w-3 h-3 rounded-sm flex-none mt-0.5 border border-[var(--ink-color)]/15 shrink-0" [style.background]="r.card.color"></span>
                     <div class="flex-grow min-w-0">
                       <p class="text-sm font-semibold truncate leading-tight">{{ r.card.title || '(untitled)' }}</p>
                       @if (r.card.content) {
@@ -106,7 +107,7 @@ interface SearchResult {
         </div>
       </div>
 
-      <div class="flex-grow" style="background:rgba(0,0,0,0.3);backdrop-filter:blur(2px)"></div>
+      <div class="flex-grow" style="background:var(--scrim);backdrop-filter:blur(2px)"></div>
     </div>
   `,
   styles: [`
